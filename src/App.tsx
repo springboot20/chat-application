@@ -28,7 +28,8 @@ function App() {
         element={
           <PrivateRoutes>
             <ChatLayout />
-         ww </PrivateRoutes>
+            ww{' '}
+          </PrivateRoutes>
         }
       />
       <Route
@@ -56,7 +57,7 @@ function App() {
         }
       />
       <Route
-        path="/otp2"
+        path="/verify-otp"
         element={
           <PublicRoutes>
             <OtpForm />
