@@ -11,7 +11,7 @@ export const MessagePanel: React.FC<
 > = ({ open, setOpen }) => {
   return (
     <div
-      className={`fixed w-[35rem] lg:left-32 bg-white dark:bg-gray-800 border-r-2 flex-1 border-r-gray-200/40 h-screen z-20 lg:lg:z-10  transform -translate-x-full md:translate-x-0 ${
+      className={`fixed w-[35rem] lg:left-32 bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-20 lg:lg:z-10  transform -translate-x-full md:translate-x-0 ${
         open ? 'translate-x-0' : ''
       }`}
     >
@@ -26,7 +26,7 @@ export const MessagePanel: React.FC<
             aria-hidden={true}
           />
         </Disclosure.Button>
-        <div className="flex justify-between items-center w-full p-8 border-b-2 border-b-gray-200/40 mt-10">
+        <div className="flex justify-between items-center w-full p-8 border-b-[1.5px] border-b-gray-600/30 mt-10">
           <div className="flex items-center">
             <span className="text-3xl block text-gray-600 font-medium dark:text-white">
               Messages

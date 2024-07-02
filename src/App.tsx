@@ -1,13 +1,12 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ChatLayout } from './layouts/ChatLayout'
-import { Login } from './pages/Login'
+import { Login } from './pages/login/Login'
 import { useAuth } from './context/AuthContext'
-import { Register } from './pages/Register'
-import { Forgot } from './pages/Forgot'
-import { Otp } from './pages/Otp'
+import { Register } from './pages/signup/Register'
+import { Forgot } from './pages/forgot-password/Forgot'
 import { PrivateRoutes } from './routes/PrivateRoute'
 import { PublicRoutes } from './routes/PublicRoutes'
-import { OtpForm } from './pages/OtpForm'
+import { OtpForm } from './pages/otp-code-form/OtpForm'
 
 function App() {
   const { user, token } = useAuth()
@@ -53,14 +52,6 @@ function App() {
         element={
           <PublicRoutes>
             <Forgot />
-          </PublicRoutes>
-        }
-      />
-      <Route
-        path="/otp"
-        element={
-          <PublicRoutes>
-            <Otp />
           </PublicRoutes>
         }
       />

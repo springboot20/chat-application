@@ -25,9 +25,9 @@ export const ModeToggler: React.FC<{
         checked={active}
         onChange={toggleTheme}
         className={classNames(
-          'relative bg-slate-200 appearance-none w-[50px] h-[22px] rounded-[20px]',
+          'relative bg-slate-200 appearance-none w-[44px] h-[22px] rounded-[20px]',
           active ? 'after:left-[calc(100%-22px)]' : 'after:left-0',
-          ' after:absolute after:h-[22px] after:w-[22px] after:bg-slate-500 after:rounded-full after:top-0 after:scale-75 after:transition'
+          ' after:absolute after:h-[22px]  after:w-[22px] after:bg-slate-500 after:rounded-full after:top-0 after:scale-[0.7] after:transition'
         )}></Switch>
       {icon}
     </div>

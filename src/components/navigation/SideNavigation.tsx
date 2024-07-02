@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons'
 import { Disclosure } from '@headlessui/react'
 import { PanelProps } from '../../types/panels.type'
-import { Settings } from '../../pages/Settings'
+import { Settings } from '../../pages/settings/Settings'
 import { useState } from 'react'
 
 const navLinks = {

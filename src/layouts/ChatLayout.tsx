@@ -30,7 +30,7 @@ export const ChatLayout = () => {
             <NavigationLayout setOpen={setOpenChat} />
             <main className="w-full left-32 lg:w-[calc(100%-43rem)] sticky lg:left-[43rem] min-h-screen right-0">
               <div className="w-full relative flex flex-col justify-between h-full">
-                <header className="fixed top-0 right-0 left-32 lg:left-[43rem] h-28 bg-white dark:bg-gray-800 dark:shadow-md -z-10">
+                <header className="fixed top-0 right-0 left-32 lg:left-[43rem] h-28 bg-white dark:bg-gray-800 border-b-[1.5px] border-b-gray-600/30 -z-10">
                   <div className="flex justify-between items-center p-4 h-full">
                     <div className="flex items-start space-x-4">
                       <span className="flex items-center justify-center p-2 h-16 w-16 rounded-lg dark:bg-white shadow-md cursor-pointer">

@@ -1,5 +1,5 @@
-import { useTheme } from '../context/ThemeContext'
-import { ModeToggler } from '../components/ModeToggler'
+import { useTheme } from '../../context/ThemeContext'
+import { ModeToggler } from '../../components/ModeToggler'
 import { SunIcon, MoonIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
