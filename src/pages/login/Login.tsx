@@ -5,7 +5,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { Button } from '../../components/buttons/Buttons'
 import React, { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 export const Login = () => {
@@ -95,19 +95,18 @@ export const Login = () => {
                 <label htmlFor="check" className="hidden sr-only">
                   Check box
                 </label>
-                <input
-                  id="check"
-                  type="checkbox"
-                  className="rounded-sm h-3 w-3"
-                />
+                <input id="check" type="checkbox" className="rounded-sm" />
               </div>
               <span className="text-sm font-medium text-gray-700">
                 Remember me
               </span>
             </div>
-            <NavLink to={'/forgot'} className="text-sm text-indigo-600 font-medium">
+            <Link
+              to={'/forgot'}
+              className="text-sm text-indigo-600 font-medium"
+            >
               forgot password?
-            </NavLink>
+            </Link>
           </div>
           <Button
             type="submit"
@@ -117,6 +116,14 @@ export const Login = () => {
             Sign in
           </Button>
         </form>
+      </div>
+      <div className="mx-auto mt-3">
+        <p className="text-center text-sm font-normal">
+          Don't have an account?{' '}
+          <Link to="/register" className="text-[#4632A8]">
+            SignUp
+          </Link>
+        </p>
       </div>
     </div>
   )

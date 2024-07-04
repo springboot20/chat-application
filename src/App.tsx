@@ -60,7 +60,7 @@ function App() {
         path="/verify-otp"
         element={
           <PublicRoutes>
-            <OtpForm />
+            <OtpForm initialExpiresIn={60}/>
           </PublicRoutes>
         }
       />

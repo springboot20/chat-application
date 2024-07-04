@@ -6,8 +6,9 @@ import {
 } from '@heroicons/react/24/outline'
 import { Button } from '../../components/buttons/Buttons'
 import { useRef, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { classNames } from '../../utils'
 
 export const Register = () => {
   const { registerUser } = useAuth()
@@ -15,6 +16,8 @@ export const Register = () => {
   const [show, setShow] = useState<boolean>(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const [isDropping, setIsDropping] = useState<boolean>(false)
 
   const [value, setValue] = useState({
     username: '',
@@ -68,15 +71,38 @@ export const Register = () => {
     formData.append('avatar', selectedFile as Blob)
     await registerUser(value)
   }
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDropping(false)
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      setSelectedFile(event.dataTransfer.files[0])
+      event.dataTransfer.clearData()
+    }
+  }
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+  }
+
+  const handleDragLeave = () => {
+    setIsDropping(false)
+  }
+
+  const handleDragEnter = (e: React.DragEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    setIsDropping(true)
+  }
+
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen">
-      <div className="sm:mx-auto sm:w-full sm:max-w-xl">
+    <div className="flex flex-col justify-center items-center min-h-screen p-3">
+      <div className="mx-auto w-full max-w-md">
         <UserCircleIcon className="sm:mx-auto h-12 w-auto text-indigo-600" />
         <h2 className="mt-2 text-3xl text-center font-semibold text-gray-800 dark:text-gray-50">
           Sign up to create an account
         </h2>
       </div>
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-xl">
+      <div className="mt-10 w-full bg-white rounded-lg p-4 sm:p-6 md:max-w-xl">
         <form onSubmit={handleSubmit}>
           <fieldset>
             <label
@@ -91,7 +117,7 @@ export const Register = () => {
                 name="username"
                 onChange={(event) => handleChange(event.target.name)}
                 placeholder="enter your username..."
-                className="block w-full px-3 rounded-md border-0 py-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
+                className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
             </div>
           </fieldset>
@@ -108,7 +134,7 @@ export const Register = () => {
                 placeholder="enter your email..."
                 name="email"
                 onChange={(event) => handleChange(event.target.name)}
-                className="block w-full px-3 rounded-md border-0 py-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
+                className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
             </div>
           </fieldset>
@@ -126,7 +152,7 @@ export const Register = () => {
                 name="password"
                 onChange={(event) => handleChange(event.target.name)}
                 placeholder="enter your password..."
-                className="block w-full px-3 rounded-md border-0 py-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
+                className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
               <button
                 type="button"
@@ -181,7 +207,13 @@ export const Register = () => {
             >
               Upload photo
             </label>
-            <div className="border-dashed px-6 py-9 mt-2 border-2 rounded-md border-gray-400 flex justify-center">
+            <div
+              className={classNames("border-dashed px-6 py-9 mt-2 border-2 rounded-md flex justify-center", isDropping ? "border-indigo-400" : "border-gray-400" )}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <div className="text-center">
                 {selectedFile ? (
                   <img
@@ -227,12 +259,12 @@ export const Register = () => {
 
       <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-50">
         Already have an account?{' '}
-        <NavLink
+        <Link
           to="/login"
           className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
         >
           login
-        </NavLink>
+        </Link>
       </p>
     </div>
   )

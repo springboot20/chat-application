@@ -1,9 +1,8 @@
 import { Button } from '../buttons/Buttons';
 import { SearchInput as MessageInput } from '../panels/SearchInput';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane } from '@fortawesome/fontawesome-free-regular';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { PaperClipIcon } from '@heroicons/react/24/outline';
+import { PaperClipIcon ,PaperPlaneIcon} from '@heroicons/react/24/outline';
 
 export const MessageInputNavigation: React.FC<{
   setAttachmentFiles: React.Dispatch<React.SetStateAction<File[] | undefined>>;
@@ -15,6 +14,7 @@ export const MessageInputNavigation: React.FC<{
           hidden
           multiple
           type='file'
+          id="files"
           max={5}
           onChange={(event) => {
             if (event.target.files) {
@@ -22,8 +22,8 @@ export const MessageInputNavigation: React.FC<{
             }
           }}
         />
-        <label htmlFor=''>
-          <PaperClipIcon className='w-10 h-10 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-300 transition' />
+        <label htmlFor='files'>
+          <PaperClipIcon className='cursor-pointer w-10 h-10 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition' />
         </label>
         <div className='relative w-full outline-gray-400 outline outline-2 rounded-2xl h-16 p-3 overflow-hidden'>
           <MessageInput
@@ -31,9 +31,9 @@ export const MessageInputNavigation: React.FC<{
             placeholder='type in your message...'
           />
           <Button className=''>
-            <FontAwesomeIcon
-              icon={faPaperPlane as IconProp}
-              className='h-10 absolute right-5 text-violet-500 top-1/2 -translate-y-1/2'
+            <PaperPlaneIcon
+            aria-hidden={true}
+              className='h-24 absolute right-5 text-violet-500 top-1/2 -translate-y-1/2'
             />
           </Button>
         </div>

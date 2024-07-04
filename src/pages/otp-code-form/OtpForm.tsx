@@ -2,7 +2,22 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/buttons/Buttons'
 import { UserCircleIcon } from '@heroicons/react/24/outline'
 
-export const OtpForm = () => {
+export const OtpForm: React.FC<{ initialExpiresIn: number }> = ({
+  initialExpiresIn,
+}) => {
+  const [expiresIn, setExpiresIn] = useState<number>(initialExpiresIn ?? 0)
+
+  useEffect(() => {
+    if (expiresIn > 0) {
+      const expireTime = setInterval(() => {
+        setExpiresIn((prev) => prev - 1)
+      }, 1000)
+      return () => {
+        clearInterval(expireTime)
+      }
+    }
+  }, [expiresIn])
+
   const length = 6
   const [otp, setOTP] = useState<string[]>([])
   const [values, setValues] = useState<string[]>(
@@ -54,6 +69,15 @@ export const OtpForm = () => {
     }
   }
 
+  const formatTime = (time: number): string => {
+    const minutes = Math.floor(time / 60)
+    const seconds = time % 60
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
+      2,
+      '0',
+    )}`
+  }
+
   return (
     <div className="flex flex-col justify-center items-center h-screen p-3 md:p-0">
       <div className="sm:mx-auto sm:w-full sm:max-w-xl">
@@ -87,9 +111,19 @@ export const OtpForm = () => {
               </fieldset>
             ))}
           </div>
+
+          <div className="mt-2 text-gray-700">
+            {expiresIn > 0 ? (
+              <span>Expires in : {formatTime(expiresIn)} seconds</span>
+            ) : (
+              <span className="text-red-500 text-right block"> {formatTime(expiresIn)} expires</span>
+            )}
+          </div>
+
           <Button
             type="submit"
-            className="block w-full mt-5 bg-indigo-500 text-white text-sm font-semibold rounded-md transform hover:-translate-y-1.5 transition shadow-md hover:bg-indigo-400 active:bg-indigo-500 focus:ring-outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 tracking-wider sm:mt-4 sm:py-2.5"
+            disabled={expiresIn === 0}
+            className="block w-full mt-5 bg-indigo-500 text-white text-sm font-semibold rounded-md transform hover:-translate-y-1.5 transition shadow-md hover:bg-indigo-400 active:bg-indigo-500 focus:ring-outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 tracking-wider sm:mt-4 sm:py-2.5 disabled:bg-indigo-400 disabled:hover:translate-y-0"
           >
             Verify
           </Button>

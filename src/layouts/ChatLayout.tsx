@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-// import { MessageItem } from '../components/panels/MessageItem';
 import { NavigationLayout } from './NavigationLayout'
 import { Disclosure } from '@headlessui/react'
 import { NotificationPanel } from '../components/panels/NotificationPanel'
@@ -14,6 +13,7 @@ import { Button } from '../components/buttons/Buttons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPhone } from '@fortawesome/free-solid-svg-icons'
 import { SearchInput } from '../components/panels/SearchInput'
+import ChatBackground from "../assets/chat-app-bg.jpg"
 
 export const ChatLayout = () => {
   const [openChat, setOpenChat] = useState(false)
@@ -30,7 +30,7 @@ export const ChatLayout = () => {
             <NavigationLayout setOpen={setOpenChat} />
             <main className="w-full left-32 lg:w-[calc(100%-43rem)] sticky lg:left-[43rem] min-h-screen right-0">
               <div className="w-full relative flex flex-col justify-between h-full">
-                <header className="fixed top-0 right-0 left-32 lg:left-[43rem] h-28 bg-white dark:bg-gray-800 border-b-[1.5px] border-b-gray-600/30 -z-10">
+                <header className="fixed top-0 right-0 left-32 lg:left-[43rem] h-32 bg-white dark:bg-gray-800 border-b-[1.5px] border-b-gray-600/30 -z-10">
                   <div className="flex justify-between items-center p-4 h-full">
                     <div className="flex items-start space-x-4">
                       <span className="flex items-center justify-center p-2 h-16 w-16 rounded-lg dark:bg-white shadow-md cursor-pointer">
@@ -65,10 +65,14 @@ export const ChatLayout = () => {
                     </div>
                   </div>
                 </header>
-                <div className="p-8 overflow-y-auto flex flex-col-reverse gap-6 w-full">
-                  
+                <div className="relative gap-6 w-full h-full">
+                  <img src={ChatBackground} alt="chat-background" className="absolute inset-0 h-full w-full object-cover object-center -z-20 opacity-60"/>
+                  <div className="relative overflow-y-auto flex flex-row-reverse">
+                      <span className="block h-20 w-20 p-4 bg-white shadow rounded-md"></span>
+                      <span className="block h-20 w-20 p-4 bg-white shadow rounded-md"></span>
+                  </div>
                 </div>
-                <div className="sticky top-full p-4 flex justify-between items-center w-full gap-2 left-32 lg:left-[43rem] h-28 bg-white dark:bg-gray-800 z-10">
+                <div className="sticky top-full p-4 flex justify-between items-center w-full gap-2 left-32 lg:left-[43rem] h-28 bg-white dark:bg-gray-800 z-10 border-t-[1.5px] border-b-[1.5px]  border-gray-600/30">
                   <div className="p-4 h-full w-full flex items-center space-x-7">
                     <input
                       hidden
@@ -93,7 +97,7 @@ export const ChatLayout = () => {
                       />
                     </div>
                     <Button className="p-4 rounded-full bg-dark hover:bg-secondary disabled:opacity-50">
-                      <PaperAirplaneIcon className="h-6 right-5 text-violet-500" />
+                      <PaperAirplaneIcon className="h-10 right-5 text-indigo-500" strokeWidth={1} />
                     </Button>
                   </div>
                 </div>
