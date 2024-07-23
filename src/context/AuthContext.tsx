@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useState } from 'react';
-import { AuthContextTypes } from '../types/context.type';
-import { UserType } from '../types/user.type';
-import { requestHandler } from '../utils';
-import { logOut, login, register } from '../api';
-import { Loader } from '../components/Loader';
-import { LocalStorage } from '../utils';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useContext, useState } from "react";
+import { AuthContextTypes } from "../types/context.type";
+import { UserType } from "../types/user.type";
+import { requestHandler } from "../utils";
+import { logOut, login, register } from "../api";
+import { Loader } from "../components/Loader";
+import { LocalStorage } from "../utils";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext<AuthContextTypes>({
   user: null,
@@ -15,13 +15,19 @@ const AuthContext = createContext<AuthContextTypes>({
   logout: async () => {},
 });
 
-export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-  const registerUser = async (data: { username: string; email: string; password: string }) => {
+  const registerUser = async (data: {
+    username: string;
+    email: string;
+    password: string;
+  }) => {
     await requestHandler({
       api: async () => await register(data),
       setLoading: setIsLoading,
@@ -30,7 +36,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setUser(data.user);
 
         console.log(data);
-        navigate('/login');
+        navigate("/login");
       },
       onError: (error, toast) => {
         toast(error);
@@ -48,11 +54,11 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setUser(data.user);
         setToken(data.tokens.accessToken);
 
-        LocalStorage.set('token', data.tokens.accessToken);
-        LocalStorage.set('user', data.user);
+        LocalStorage.set("token", data.tokens.accessToken);
+        LocalStorage.set("user", data.user);
         console.log(data.user);
 
-        navigate('/chat');
+        navigate("/chat");
         toast(message);
       },
       onError: (error, toast) => {
@@ -77,8 +83,10 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, registerUser, loginUser, logout }}>
-      {children}
+    <AuthContext.Provider
+      value={{ token, user, registerUser, loginUser, logout }}
+    >
+      {isLoading ? <Loader /> : children}
     </AuthContext.Provider>
   );
 };
