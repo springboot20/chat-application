@@ -28,7 +28,6 @@ function App() {
         element={
           <PrivateRoutes>
             <ChatLayout />
-            ww{' '}
           </PrivateRoutes>
         }
       />
