@@ -1,13 +1,13 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 import { AuthContextTypes } from "../types/context.type";
 import { UserType } from "../types/user.type";
 import { requestHandler } from "../utils";
 import { logOut, login, register } from "../api";
-import { Loader } from "../components/Loader";
 import { LocalStorage } from "../utils";
 import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext<AuthContextTypes>({
+  isLoading: true,
   user: null,
   token: null,
   registerUser: async () => {},
@@ -82,13 +82,19 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  return (
-    <AuthContext.Provider
-      value={{ token, user, registerUser, loginUser, logout }}
-    >
-      {isLoading ? <Loader /> : children}
-    </AuthContext.Provider>
+  const values = useMemo(
+    () => ({
+      token,
+      user,
+      registerUser,
+      loginUser,
+      logout,
+      isLoading,
+    }),
+    [token, user, registerUser, loginUser, logout, isLoading]
   );
+
+  return <AuthContext.Provider value={values}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);
