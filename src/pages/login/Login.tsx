@@ -2,35 +2,34 @@ import {
   EyeIcon,
   EyeSlashIcon,
   UserCircleIcon,
-} from '@heroicons/react/24/outline'
-import { Button } from '../../components/buttons/Buttons'
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+} from "@heroicons/react/24/outline";
+import { Button } from "../../components/buttons/Buttons";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export const Login = () => {
-  const { loginUser } = useAuth()
+  const { loginUser } = useAuth();
 
-  const [show, setShow] = useState<boolean>(false)
+  const [show, setShow] = useState<boolean>(false);
 
   const [value, setValue] = useState({
-    email: '',
-    password: '',
-  })
+    email: "",
+    password: "",
+  });
 
-  const handleChange = (name: string) => (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setValue({
-      ...value,
-      [name]: event.target.value,
-    })
-  }
+  const handleChange =
+    (name: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      setValue({
+        ...value,
+        [name]: event.target.value,
+      });
+    };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    await loginUser(value)
-  }
+    event.preventDefault();
+    await loginUser(value);
+  };
 
   return (
     <div className="flex flex-col justify-center items-center min-h-screen p-3">
@@ -53,7 +52,7 @@ export const Login = () => {
               <input
                 type="email"
                 value={value.email}
-                onChange={handleChange('email')}
+                onChange={handleChange("email")}
                 placeholder="enter your email..."
                 className="block w-full px-3 rounded-md border-0 py-2.5 sm:py-4 md:py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
@@ -69,10 +68,10 @@ export const Login = () => {
             </label>
             <div className="mt-2 relative">
               <input
-                type={show ? 'text' : 'password'}
+                type={show ? "text" : "password"}
                 placeholder="enter your password..."
                 value={value.password}
-                onChange={handleChange('password')}
+                onChange={handleChange("password")}
                 className="block w-full px-3 rounded-md border-0 py-2.5 sm:py-4 md:py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
               <button
@@ -102,7 +101,7 @@ export const Login = () => {
               </span>
             </div>
             <Link
-              to={'/forgot'}
+              to={"/forgot"}
               className="text-sm text-indigo-600 font-medium"
             >
               forgot password?
@@ -111,7 +110,7 @@ export const Login = () => {
           <Button
             type="submit"
             className="block w-full mt-3 bg-indigo-500 text-white text-sm sm:text-base font-semibold rounded-md transform hover:-translate-y-1.5 transition shadow-md hover:bg-indigo-400 active:bg-indigo-500 focus:ring-outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 tracking-wider sm:mt-4 md:py-2.5"
-            style={{ textTransform: 'uppercase' }}
+            style={{ textTransform: "uppercase" }}
           >
             Sign in
           </Button>
@@ -119,12 +118,12 @@ export const Login = () => {
       </div>
       <div className="mx-auto mt-3">
         <p className="text-center text-sm font-normal">
-          Don't have an account?{' '}
+          Don't have an account?{" "}
           <Link to="/register" className="text-[#4632A8]">
             SignUp
           </Link>
         </p>
       </div>
     </div>
-  )
-}
+  );
+};
