@@ -82,7 +82,7 @@ export const MessagePanel: React.FC<{
             <SearchInput
               ref={inputRef}
               placeholder="Search messages"
-              className="flex-1 h-full bg-transparent"
+              className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none"
             />
           </div>
 

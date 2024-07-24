@@ -37,8 +37,8 @@ export const ChatLayout = () => {
               <div className="w-full flex flex-col justify-between h-full">
                 <header
                   className={classNames(
-                    "fixed top-0 right-0 p-[0.9rem] bg-white dark:bg-gray-800 border-b-[1.5px] border-b-gray-600/30 z-10 transition-all",
-                    open ? "left-[35rem]" : "left-0"
+                    "fixed top-0 right-0 p-[0.9rem] left-0 bg-white dark:bg-gray-800 border-b-[1.5px] border-b-gray-600/30 z-10 transition-all",
+                    open ? "lg:left-[35rem]" : ""
                   )}
                 >
                   <div className="flex justify-between items-center h-full">
