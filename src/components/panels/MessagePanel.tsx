@@ -1,14 +1,25 @@
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { SearchInput } from "./SearchInput";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCaretDown, faClose } from "@fortawesome/free-solid-svg-icons";
 import { Disclosure } from "@headlessui/react";
 import { Loading } from "../Loading";
+import { useRef } from "react";
 
 export const MessagePanel: React.FC<{
   open: boolean;
   setOpenChat: React.Dispatch<React.SetStateAction<boolean>>;
 }> = ({ open, setOpenChat }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFocus = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+
+      alert(inputRef.current)
+    }
+  };
+
   return (
     <Disclosure.Panel
       className={`fixed w-[35rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 lg:z-10 transform ${
@@ -46,7 +57,7 @@ export const MessagePanel: React.FC<{
           <button
             type="button"
             className="block p-3 rounded-full bg-[#615EF0]"
-            onClick={() => setOpenChat(prev=> !prev)}
+            onClick={() => setOpenChat((prev) => !prev)}
           >
             <span className="sr-only">plus icon</span>
             <PlusIcon
@@ -55,15 +66,29 @@ export const MessagePanel: React.FC<{
             />
           </button>
         </div>
-        <div className="w-full p-4">
-          <SearchInput
-            placeholder="Search messages"
-            className="h-14 bg-gray-100/60 outline-gray-400 dark:bg-white rounded-lg shadow-md outline outline-2"
-          />
-        </div>
+        <div className="px-3 w-full">
+          <div className="w-full rounded-md border border-gray-400 flex items-center h-16 bg-gray-100/60">
+            <button
+              type="button"
+              className="px-4 py-2 flex items-center justify-center"
+              onClick={handleFocus}
+            >
+              <MagnifyingGlassIcon
+                className="h-7 text-gray-700"
+                aria-hidden={true}
+              />
+            </button>
 
-        <div className="">
-          <Loading />
+            <SearchInput
+              ref={inputRef}
+              placeholder="Search messages"
+              className="flex-1 h-full bg-transparent"
+            />
+          </div>
+
+          <div className="w-full mx-auto flex items-center justify-center mt-5">
+            <Loading />
+          </div>
         </div>
       </div>
     </Disclosure.Panel>
