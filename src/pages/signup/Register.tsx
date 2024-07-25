@@ -180,7 +180,7 @@ export const Register = () => {
                 <img
                   src={URL.createObjectURL(selectedFile)}
                   alt="uploads"
-                  className="h-10 w-10 shadow-lg mb-3 ring-2 ring-offset-2 ring-indigo-500 rounded-full"
+                  className="h-10 w-10 object-cover shadow-lg mb-3 ring-2 ring-offset-2 ring-indigo-500 rounded-full"
                 />
               ) : (
                 <UserCircleIcon
@@ -219,7 +219,7 @@ export const Register = () => {
                   <img
                     src={URL.createObjectURL(selectedFile)}
                     alt="upload"
-                    className="h-32 w-32 shadow-lg mb-3 ring-2 ring-offset-2 ring-indigo-500 rounded-full mx-auto"
+                    className="h-32 w-32 object-cover shadow-lg mb-3 ring-2 ring-offset-2 ring-indigo-500 rounded-full mx-auto"
                   />
                 ) : (
                   <PhotoIcon className="mx-auto h-11 w-11 text-gray-500 dark:text-gray-50" />
