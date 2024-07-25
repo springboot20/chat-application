@@ -97,7 +97,7 @@ export const Register = () => {
   return (
     <div className="flex flex-col justify-center items-center min-h-screen p-3">
       <div className="mx-auto w-full max-w-md">
-        <UserCircleIcon className="sm:mx-auto h-12 w-auto text-indigo-600" />
+        <UserCircleIcon className="mx-auto h-12 w-auto text-indigo-600" />
         <h2 className="mt-2 text-3xl text-center font-semibold text-gray-800 dark:text-gray-50">
           Sign up to create an account
         </h2>
