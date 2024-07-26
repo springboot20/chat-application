@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { ThemeContextInterface } from '../types/theme.type';
+import { ThemeContextInterface } from '../types/theme';
 import { LocalStorage } from '../utils';
 
 const ThemeContext = createContext<ThemeContextInterface>({} as ThemeContextInterface);

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { AuthContextTypes } from "../types/context.type";
-import { UserType } from "../types/user.type";
+import { AuthContextTypes } from "../types/context";
+import { UserType } from "../types/user";
 import { requestHandler } from "../utils";
 import { logOut, login, register } from "../api";
 import { LocalStorage } from "../utils";

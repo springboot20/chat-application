@@ -1,10 +1,13 @@
-import { Button } from '../buttons/Buttons'
-import { PaperClipIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline'
-import EmojiPicker from 'emoji-picker-react'
+import { Button } from "../buttons/Buttons";
+import { PaperClipIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import EmojiPicker from "emoji-picker-react";
+import React from "react";
 
 export const MessageInputNavigation: React.FC<{
-  setAttachmentFiles: React.Dispatch<React.SetStateAction<File[] | undefined>>
-}> = ({ setAttachmentFiles }) => {
+  sendMessage: () => void;
+  handleMessageInput: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setAttachmentFiles: React.Dispatch<React.SetStateAction<File[] | undefined>>;
+}> = ({ setAttachmentFiles, handleMessageInput, sendMessage }) => {
   return (
     <div className="h-full z-10 p-4 flex items-center justify-between mx-auto max-w-8xl">
       <input
@@ -15,7 +18,7 @@ export const MessageInputNavigation: React.FC<{
         max={5}
         onChange={(event) => {
           if (event.target.files) {
-            setAttachmentFiles([...event.target.files])
+            setAttachmentFiles([...event.target.files]);
           }
         }}
       />
@@ -26,15 +29,26 @@ export const MessageInputNavigation: React.FC<{
       <input
         id="message-input"
         type="text"
+        onChange={handleMessageInput}
         className="relative block px-4 py-3.5 focus:outline-none hover:border-indigo-400 rounded-md border-gray-600/30 border-2 w-full"
         placeholder="Type a message..."
       />
-      <Button className="shadow-none">
+      <Button
+        className="shadow-none"
+        onClick={sendMessage}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+
+          if (e.key == "Enter") {
+            sendMessage();
+          }
+        }}
+      >
         <PaperAirplaneIcon
           aria-hidden={true}
           className="h-12 text-violet-500"
         />
       </Button>
     </div>
-  )
-}
+  );
+};

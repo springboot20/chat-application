@@ -7,6 +7,6 @@ export const PrivateRoutes: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { user, token } = useAuth();
 
-  if (!user?._id || !token) return <Navigate to="/login" replace />;
+  if (!(!user?._id || !token)) return <Navigate to="/login" replace />;
   return children;
 };

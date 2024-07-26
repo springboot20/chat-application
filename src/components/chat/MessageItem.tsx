@@ -1,10 +1,10 @@
-import { ChatMessageType } from '../../types/chat.type'
+import { ChatMessageInterface } from '../../types/chat'
 import { classNames } from '../../utils'
 
 export const MessageItem: React.FC<{
   isOwnedMessage?: boolean
   isGroupChatMessage?: boolean
-  message: ChatMessageType
+  message: ChatMessageInterface
 }> = ({ isOwnedMessage, isGroupChatMessage, message }) => {
   return (
     <div

@@ -45,7 +45,7 @@ export const chatAppService = async ({
     }
   );
 
-  return chatAppApiClient({...options})
+  return chatAppApiClient({ ...options });
 };
 
 export const register = (data: {
@@ -58,3 +58,60 @@ export const login = (data: { email: string; password: string }) =>
   chatAppApiClient.post("/auth/users/login", data);
 
 export const logOut = () => chatAppApiClient.post("/auth/users/logout");
+
+// chats
+export const getAllChats = () => chatAppApiClient.get("/chat-app/chats/");
+
+export const createChat = (receiverId: string) =>
+  chatAppApiClient.post(`/chat-app/chats/create-chat/${receiverId}`);
+
+export const createGroupChat = (data: {
+  name: string;
+  participants: string[];
+}) => chatAppApiClient.post("/chat-app/group-chat", data);
+
+export const getGroupChat = (chatId: string) =>
+  chatAppApiClient.get(`/chat-app/group-chat/${chatId}`);
+
+export const updateGroupChatDetails = (
+  data: { name: string },
+  chatId: string
+) => chatAppApiClient.patch(`/chat-app/chats/group/${chatId}`, data);
+
+export const deleteGroupChatDetails = (chatId: string) =>
+  chatAppApiClient.delete(`/chat-app/chats/group/${chatId}`);
+
+export const addParticipantToGroupChat = (
+  chatId: string,
+  participantId: string
+) => chatAppApiClient.post(`/chat-app/chats/group/${chatId}/${participantId}`);
+
+export const removeParticipantFromGroupChat = (
+  chatId: string,
+  participantId: string
+) => chatAppApiClient.post(`/chat-app/chats/group/${chatId}/${participantId}`);
+
+export const leaveChatGroup = (chatId: string) =>
+  chatAppApiClient.delete(`/chat-app/chats/leave/group-chat/${chatId}`);
+
+export const deleteOneOneChatMessage = (chatId: string) =>
+  chatAppApiClient.delete(`/chat-app/chats/delete-one-on-one/${chatId}`);
+
+export const getMessages = (chatId: string) =>
+  chatAppApiClient.get(`/chat-app/chats/${chatId}`);
+
+export const createMessage = (
+  chatId: string,
+  data: { content: string; attachments: File[] | undefined }
+) => {
+  const formData = new FormData();
+  if (data.content) {
+    formData.append("content", data.content);
+  }
+
+  data.attachments?.map((file) => {
+    formData.append("attachment", file);
+  });
+
+  return chatAppApiClient.post(`/chat-app/chats/${chatId}`);
+};

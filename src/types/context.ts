@@ -1,11 +1,15 @@
-import { UserType } from './user.type';
-import socketio from 'socket.io-client';
+import { UserType } from "./user";
+import socketio from "socket.io-client";
 
 export interface AuthContextTypes {
-  isLoading:boolean;
+  isLoading: boolean;
   user: UserType | null;
   token: string | null;
-  registerUser: (data: { username: string; email: string; password: string }) => Promise<void>;
+  registerUser: (data: {
+    username: string;
+    email: string;
+    password: string;
+  }) => Promise<void>;
   loginUser: (data: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
 }

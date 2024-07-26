@@ -6,16 +6,16 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthContextProvider } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { ThemeContextProvider } from './context/ThemeContext.tsx';
+// import { ThemeContextProvider } from './context/ThemeContext.tsx';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthContextProvider>
-        <ThemeContextProvider>
+        {/* <ThemeContextProvider> */}
           <ToastContainer />
           <App />
-        </ThemeContextProvider>
+        {/* </ThemeContextProvider> */}
       </AuthContextProvider>
     </BrowserRouter>
   </React.StrictMode>

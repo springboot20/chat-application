@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { ChatLayout } from './layouts/ChatLayout'
+import { Chat } from './pages/Chat'
 import { Login } from './pages/login/Login'
 import { useAuth } from './context/AuthContext'
 import { Register } from './pages/signup/Register'
@@ -27,7 +27,7 @@ function App() {
         path="/chat"
         element={
           <PrivateRoutes>
-            <ChatLayout />
+            <Chat />
           </PrivateRoutes>
         }
       />

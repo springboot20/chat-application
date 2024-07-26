@@ -102,6 +102,7 @@ export const OtpForm: React.FC<{ initialExpiresIn: number }> = ({
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   pattern="\d{1}"
+                  disabled={expiresIn === 0}
                   onChange={(event) => handleChange(event.target.value, index)}
                   onKeyUp={(event) => handleKeyDown(event, index)}
                   ref={(el) => el && (inputRefs.current[index] = el)}

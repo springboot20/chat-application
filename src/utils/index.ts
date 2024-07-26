@@ -1,8 +1,10 @@
-import { ApiRequestHandlerProps } from '../types/api.type';
-import { toast } from 'react-toastify';
+import { ApiRequestHandlerProps } from "../types/api";
+import { toast } from "react-toastify";
+import { ChatListItemInterface } from "../types/chat";
+import { UserType } from "../types/user";
 
 export const classNames = (...className: string[]) => {
-  return className.filter(Boolean).join(' ');
+  return className.filter(Boolean).join(" ");
 };
 
 export const requestHandler = async ({
@@ -22,15 +24,18 @@ export const requestHandler = async ({
   } catch (error: any) {
     if ([401, 403].includes(error?.response?.data.statusCode)) {
       LocalStorage.clear();
-      if (isBrowser) window.location.href = './';
+      if (isBrowser) window.location.href = "./";
     }
-    onError(error?.response?.data?.message ?? 'something went wrong', toast.error);
+    onError(
+      error?.response?.data?.message ?? "something went wrong",
+      toast.error
+    );
   } finally {
     setLoading && setLoading(false);
   }
 };
 
-export const isBrowser = typeof window !== 'undefined';
+export const isBrowser = typeof window !== "undefined";
 
 export class LocalStorage {
   static get(key: string) {
@@ -60,3 +65,35 @@ export class LocalStorage {
     localStorage.clear();
   }
 }
+
+export const getMessageObjectMetaData = (
+  chat: ChatListItemInterface,
+  user: UserType
+) => {
+  const lastMessage = chat.lastMessage?.content
+    ? chat.lastMessage.content
+    : chat.lastMessage
+    ? `${chat.lastMessage?.attachments.length} attachment ${
+        chat.lastMessage.attachments.length > 1 ? "s" : ""
+      }`
+    : "No message yet";
+
+  if (chat.isGroupChat) {
+    return {
+      title: chat.name,
+      lastMessage: chat.lastMessage
+        ? `${chat.lastMessage.sender.username} : ${lastMessage}`
+        : lastMessage,
+      description: `${chat.participants.length} members in the group`,
+    };
+  } else {
+    let participant = chat.participants.find((p) => p?._id !== user._id);
+
+    return {
+      lastMessage,
+      title: participant?.username,
+      description: participant?.email,
+      avatar: participant?.avatar.url,
+    };
+  }
+};

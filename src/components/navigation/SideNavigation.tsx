@@ -2,7 +2,7 @@ import { CogIcon } from '@heroicons/react/24/outline'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons'
 import { Disclosure } from '@headlessui/react'
-import { PanelProps } from '../../types/panels.type'
+import { PanelProps } from '../../types/panels'
 import { Settings } from '../../pages/settings/Settings'
 import { useState } from 'react'
 
