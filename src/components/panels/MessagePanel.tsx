@@ -5,11 +5,21 @@ import { faCaretDown, faClose } from "@fortawesome/free-solid-svg-icons";
 import { Disclosure } from "@headlessui/react";
 import { Loading } from "../Loading";
 import { useRef } from "react";
+import { ChatListItemInterface, ChatMessageInterface } from "../../types/chat";
+import { ChatItem } from "../chat/ChatItem";
+import { LocalStorage } from "../../utils";
 
 export const MessagePanel: React.FC<{
   open: boolean;
+  loadingChats: boolean
+  chats: ChatListItemInterface[]
+  setMessage: React.Dispatch<React.SetStateAction<string>>
+  setChats: React.Dispatch<React.SetStateAction<ChatListItemInterface[]>>
+  unreadMessages: ChatMessageInterface[]
+  currentChat: React.MutableRefObject<ChatListItemInterface | null>
   setOpenChat: React.Dispatch<React.SetStateAction<boolean>>;
-}> = ({ open, setOpenChat }) => {
+  getAllChatMessages: () => void
+}> = ({ open, setOpenChat, setChats, chats, setMessage, loadingChats, getAllChatMessages, unreadMessages, currentChat }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFocus = () => {
@@ -22,9 +32,8 @@ export const MessagePanel: React.FC<{
 
   return (
     <Disclosure.Panel
-      className={`fixed w-[35rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-20 transform ${
-        open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      }`}
+      className={`fixed w-[35rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-20 transform ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
     >
       <div className="flex flex-col items-center gap-8 h-full">
         <Disclosure.Button
@@ -85,10 +94,38 @@ export const MessagePanel: React.FC<{
               className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none"
             />
           </div>
+          {
+            loadingChats ? <div className="w-full mx-auto flex items-center justify-center mt-5">
+              <Loading />
+            </div> : ([...chats].map(chat => (
+              <ChatItem
+                key={chat._id}
+                onClick={(chat) => {
+                  if (
+                    currentChat.current?._id &&
+                    currentChat.current?._id === chat._id
+                  )
+                    return;
+                  LocalStorage.set("currentChat", chat);
+                  currentChat.current = chat;
+                  setMessage("");
+                  getAllChatMessages();
+                }}
+                chat={chat}
+                isActive={chat._id === currentChat.current?._id}
+                onChatMessageDelete={(chatId: string) => {
+                  setChats((prev) =>
+                    prev.filter((chat) => chat._id !== chatId)
+                  );
+                  if (currentChat.current?._id === chatId) {
+                    currentChat.current = null;
+                    LocalStorage.remove("currentChat");
+                  }
+                }}
+                unreadMessageCount={unreadMessages.filter(c => c._id === chat._id).length} />
+            )))
+          }
 
-          <div className="w-full mx-auto flex items-center justify-center mt-5">
-            <Loading />
-          </div>
         </div>
       </div>
     </Disclosure.Panel>

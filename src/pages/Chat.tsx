@@ -10,12 +10,23 @@ import { useSocketContext } from "../context/SocketContext.tsx";
 import { createMessage, getAllChats, getMessages } from "../api/index.ts";
 import { toast } from "react-toastify";
 
+
+const CONNECTED_EVENT = "connected";
+const DISCONNECT_EVENT = "disconnect";
+const JOIN_CHAT_EVENT = "joinChat";
+const NEW_CHAT_EVENT = "newChat";
+const TYPING_EVENT = "typing";
+const STOP_TYPING_EVENT = "stopTyping";
+const MESSAGE_RECEIVED_EVENT = "messageReceived";
+const LEAVE_CHAT_EVENT = "leaveChat";
+const UPDATE_GROUP_NAME_EVENT = "updateGroupName";
+
 export const Chat = () => {
   const [openChat, setOpenChat] = useState(false);
 
   const { socket } = useSocketContext();
 
-  const typingTimeOutRef = useRef(null);
+  const typingTimeOutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   const [isTyping, setIsTyping] = useState<boolean>(false);
@@ -36,6 +47,7 @@ export const Chat = () => {
   const [unreadMessages, setUnReadMessages] = useState<ChatMessageInterface[]>(
     []
   );
+
 
   const getChats = () => {
     requestHandler({
@@ -65,6 +77,9 @@ export const Chat = () => {
   const sendMessage = () => {
     if (!currentChat.current?._id === !socket) return;
 
+    // Emit a STOP_TYPING_EVENT to inform other users/participants that typing has stopped
+    socket!.emit(STOP_TYPING_EVENT, currentChat.current?._id);
+
     requestHandler({
       api: async () =>
         await createMessage(currentChat?.current?._id ?? "", {
@@ -93,7 +108,7 @@ export const Chat = () => {
       setUserTyping(true);
     }
 
-    if (typingTimeOutRef.current) {
+    if (typingTimeOutRef.current !== null) {
       clearTimeout(typingTimeOutRef.current);
     }
 
@@ -146,9 +161,70 @@ export const Chat = () => {
     if (currentChatFromStorge) {
       currentChat.current = currentChatFromStorge;
 
-      getAllChatMessages();  
+      getAllChatMessages();
     }
+
+    // Cleanup the timeout when the component unmounts
+    return () => {
+      if (typingTimeOutRef.current) {
+        clearTimeout(typingTimeOutRef.current);
+      }
+    }
+
   }, []);
+
+  const onConnect = () => {
+    setIsConnected(true);
+  };
+
+  const onDisconnect = () => {
+    setIsConnected(false);
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+
+  
+    socket.on(CONNECTED_EVENT, onConnect);
+
+    socket.on(DISCONNECT_EVENT, onDisconnect);
+
+    // socket.on(TYPING_EVENT, handleOnSocketTyping);
+
+    // socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
+
+    socket.on(MESSAGE_RECEIVED_EVENT, handleMessageReceived);
+
+    // socket.on(NEW_CHAT_EVENT, onNewChat);
+    
+    // socket.on(LEAVE_CHAT_EVENT, onChatLeave);
+    
+    // socket.on(UPDATE_GROUP_NAME_EVENT, onGroupNameChange);
+
+    
+    return () => {
+      
+      socket.off(CONNECTED_EVENT, onConnect);
+      socket.off(DISCONNECT_EVENT, onDisconnect);
+      // socket.off(TYPING_EVENT, handleOnSocketTyping);
+      // socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
+      socket.off(MESSAGE_RECEIVED_EVENT, handleMessageReceived);
+      // socket.off(NEW_CHAT_EVENT, onNewChat);
+      // socket.off(LEAVE_CHAT_EVENT, onChatLeave);
+      // socket.off(UPDATE_GROUP_NAME_EVENT, onGroupNameChange);
+    };
+
+    // Note:
+    // The `chats` array is used in the `onMessageReceived` function.
+    // We need the latest state value of `chats`. If we don't pass `chats` in the dependency array,
+    // the `onMessageReceived` will consider the initial value of the `chats` array, which is empty.
+    // This will not cause infinite renders because the functions in the socket are getting mounted and not executed.
+    // So, even if some socket callbacks are updating the `chats` state, it's not
+    // updating on each `useEffect` call but on each socket call.
+  }, [socket, chats]);
+
+
+  console.log(messages)
 
   return (
     <Disclosure as={"div"}>
@@ -161,7 +237,16 @@ export const Chat = () => {
               open ? "lg:justify-between" : ""
             )}
           >
-            <MessagePanel open={open} setOpenChat={setOpenChat} />
+            <MessagePanel
+              setMessage={setMessage}
+              setChats={setChats}
+              getAllChatMessages={getAllChatMessages}
+              unreadMessages={unreadMessages}
+              chats={chats}
+              currentChat={currentChat}
+              loadingChats={LoadingChats}
+              open={open}
+              setOpenChat={setOpenChat} />
             <main
               className={classNames(
                 "w-full sticky min-h-screen right-0 overflow-hidden transition-all",
@@ -220,6 +305,8 @@ export const Chat = () => {
                     setAttachmentFiles={setAttachmentFiles}
                     handleMessageInput={handleMessageInput}
                     sendMessage={sendMessage}
+                    message={message}
+                    attachedFiles={attachmentFiles}
                   />
                 </div>
               </div>

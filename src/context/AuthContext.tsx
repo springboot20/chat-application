@@ -56,7 +56,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
     await requestHandler({
       api: async () => await login(data),
       setLoading: setIsLoading,
-      onSuccess: (res, message, toast) => {
+      onSuccess:async (res, message, toast) => {
         const { data } = res;
 
         setUser(data.user);
@@ -67,7 +67,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
         console.log(data.user);
 
-        navigate("/chat");
+        await Promise.resolve(setTimeout(() => navigate('/chat'), 1200))
         toast(message);
       },
       onError: (error, toast) => {
@@ -114,7 +114,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
       logout,
       isLoading,
     }),
-    []
+    [token, user, isLoading]
   );
 
   useEffect(() => {
