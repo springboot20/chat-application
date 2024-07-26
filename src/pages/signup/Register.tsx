@@ -97,7 +97,7 @@ export const Register = () => {
   return (
     <div className="flex flex-col justify-center items-center min-h-screen p-3">
       <div className="mx-auto w-full max-w-md">
-        <UserCircleIcon className="sm:mx-auto h-12 w-auto text-indigo-600" />
+        <UserCircleIcon className="mx-auto h-12 w-auto text-indigo-600" />
         <h2 className="mt-2 text-3xl text-center font-semibold text-gray-800 dark:text-gray-50">
           Sign up to create an account
         </h2>
@@ -180,7 +180,7 @@ export const Register = () => {
                 <img
                   src={URL.createObjectURL(selectedFile)}
                   alt="uploads"
-                  className="h-10 w-10 shadow-lg mb-3 ring-2 ring-offset-2 ring-indigo-500 rounded-full"
+                  className="h-10 w-10 object-cover shadow-lg mb-3 ring-2 ring-offset-2 ring-indigo-500 rounded-full"
                 />
               ) : (
                 <UserCircleIcon
@@ -219,7 +219,7 @@ export const Register = () => {
                   <img
                     src={URL.createObjectURL(selectedFile)}
                     alt="upload"
-                    className="h-32 w-32 shadow-lg mb-3 ring-2 ring-offset-2 ring-indigo-500 rounded-full mx-auto"
+                    className="h-32 w-32 object-cover shadow-lg mb-3 ring-2 ring-offset-2 ring-indigo-500 rounded-full mx-auto"
                   />
                 ) : (
                   <PhotoIcon className="mx-auto h-11 w-11 text-gray-500 dark:text-gray-50" />

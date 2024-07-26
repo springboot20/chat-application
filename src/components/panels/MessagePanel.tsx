@@ -22,7 +22,7 @@ export const MessagePanel: React.FC<{
 
   return (
     <Disclosure.Panel
-      className={`fixed w-[35rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 lg:z-10 transform ${
+      className={`fixed w-[35rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-20 transform ${
         open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       }`}
     >
