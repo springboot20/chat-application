@@ -146,7 +146,7 @@ export const Chat = () => {
     if (currentChatFromStorge) {
       currentChat.current = currentChatFromStorge;
 
-      getAllChatMessages();
+      getAllChatMessages();  
     }
   }, []);
 

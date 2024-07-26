@@ -1,5 +1,4 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosInstance } from "axios";
-import { LocalStorage } from "../utils";
 import { toast } from "react-toastify";
 
 export const chatAppApiClient: AxiosInstance = axios.create({
@@ -17,8 +16,6 @@ export const chatAppService = async ({
 }: ChatAppServiceProps) => {
   chatAppApiClient.interceptors.response.use(
     (config: AxiosResponse) => {
-      const token = LocalStorage.get("token");
-      config.headers.Authorization = `Bearer ${token}`;
 
       if (config.status.toString().startsWith("2")) {
         showSuccessNotification ? toast.success(config.data.message) : "";
@@ -108,7 +105,7 @@ export const createMessage = (
   if (data.content) {
     formData.append("content", data.content);
   }
-
+  
   data.attachments?.map((file) => {
     formData.append("attachment", file);
   });

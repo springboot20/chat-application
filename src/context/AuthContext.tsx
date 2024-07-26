@@ -1,8 +1,14 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
 import { AuthContextTypes } from "../types/context";
 import { UserType } from "../types/user";
 import { requestHandler } from "../utils";
-import { logOut, login, register } from "../api";
+import { chatAppApiClient, logOut, login, register } from "../api";
 import { LocalStorage } from "../utils";
 import { useNavigate } from "react-router-dom";
 
@@ -10,15 +16,15 @@ const AuthContext = createContext<AuthContextTypes>({
   isLoading: true,
   user: null,
   token: null,
-  registerUser: async () => {},
-  loginUser: async () => {},
-  logout: async () => {},
+  registerUser: async () => { },
+  loginUser: async () => { },
+  logout: async () => { },
 });
 
 export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(LocalStorage.get('token'));
   const [user, setUser] = useState<UserType | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
@@ -35,8 +41,9 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
         const { data } = res;
         setUser(data.user);
 
-        console.log(data);
+        LocalStorage.set('user', data.user)
         navigate("/login");
+        return res
       },
       onError: (error, toast) => {
         toast(error);
@@ -56,6 +63,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
         LocalStorage.set("token", data.tokens.accessToken);
         LocalStorage.set("user", data.user);
+
         console.log(data.user);
 
         navigate("/chat");
@@ -74,6 +82,9 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
       onSuccess: (__, message, toast) => {
         setUser(null);
         setToken(null);
+
+        LocalStorage.remove('token')
+
         toast(message);
       },
       onError: (error, toast) => {
@@ -81,6 +92,17 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
       },
     });
   };
+
+  const setAuthorizationHeader = () => {
+    if (token) {
+      chatAppApiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    } else {
+      delete chatAppApiClient.defaults.headers.common['Authorization']
+      LocalStorage.remove('token')
+    }
+  }
+
+  setAuthorizationHeader()
 
   const values = useMemo(
     () => ({
@@ -91,8 +113,22 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
       logout,
       isLoading,
     }),
-    [token, user, registerUser, loginUser, logout, isLoading]
+    []
   );
+
+  useEffect(() => {
+    // Example: Load user from local storage or API
+    const storedUser = LocalStorage.get("user") as UserType;
+    const storedToken = LocalStorage.get("token") as string;
+
+    console.log({ storedUser, storedToken })
+
+    if (storedUser && storedToken) {
+      setUser(storedUser);
+      setToken(storedToken);
+    }
+    setIsLoading(false);
+  }, []);
 
   return <AuthContext.Provider value={values}>{children}</AuthContext.Provider>;
 };

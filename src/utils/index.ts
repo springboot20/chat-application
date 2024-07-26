@@ -18,7 +18,8 @@ export const requestHandler = async ({
   try {
     const response = await api();
     const { data } = response;
-    if (data?.success) {
+
+    if (data?.success && response.status.toString().startsWith('2')) {
       onSuccess(data, data.message, toast.success);
     }
   } catch (error: any) {
