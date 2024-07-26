@@ -25,7 +25,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [token, setToken] = useState<string | null>(LocalStorage.get('token'));
-  const [user, setUser] = useState<UserType | null>(null);
+  const [user, setUser] = useState<UserType | null>(LocalStorage.get('user'));
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 

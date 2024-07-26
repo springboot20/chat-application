@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig, AxiosResponse, AxiosInstance } from "axios";
 import { toast } from "react-toastify";
 
 export const chatAppApiClient: AxiosInstance = axios.create({
-  baseURL: "http://localhost:4040/api/v1",
+  baseURL: "https://chat-api-jade.vercel.app/",
   timeout: 12000,
 });
 

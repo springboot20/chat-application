@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { Chat } from './pages/Chat'
 import { Login } from './pages/login/Login'
 import { useAuth } from './context/AuthContext'
@@ -7,23 +7,23 @@ import { Forgot } from './pages/forgot-password/Forgot'
 import { PrivateRoutes } from './routes/PrivateRoute'
 import { PublicRoutes } from './routes/PublicRoutes'
 import { OtpForm } from './pages/otp-code-form/OtpForm'
-import { useEffect } from 'react'
 
 function App() {
   const { user, token } = useAuth()
 
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (token && user?._id) {
-      navigate('/chat');
-    } else {
-      navigate('/login');
-    }
-  }, [token, user, navigate]);
-
   return (
     <Routes>
+      <Route
+        path="/"
+        element={
+          token && user?._id ? (
+            <Navigate to="/chat" />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+
       <Route
         path="/chat"
         element={
