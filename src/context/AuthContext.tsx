@@ -33,6 +33,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
     username: string;
     email: string;
     password: string;
+    avatar: File
   }) => {
     await requestHandler({
       api: async () => await register(data),

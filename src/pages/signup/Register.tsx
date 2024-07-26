@@ -69,7 +69,9 @@ export const Register = () => {
     }
 
     formData.append('avatar', selectedFile as Blob)
-    await registerUser(value)
+    await registerUser({ avatar: selectedFile!, ...value })
+
+    console.log({ avatar: selectedFile!, ...value })
   }
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
@@ -94,6 +96,8 @@ export const Register = () => {
     setIsDropping(true)
   }
 
+  console.log(value)
+
   return (
     <div className="flex flex-col justify-center items-center min-h-screen p-3">
       <div className="mx-auto w-full max-w-md">
@@ -115,7 +119,7 @@ export const Register = () => {
               <input
                 type="text"
                 name="username"
-                onChange={(event) => handleChange(event.target.name)}
+                onChange={handleChange("username")}
                 placeholder="enter your username..."
                 className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
@@ -133,7 +137,7 @@ export const Register = () => {
                 type="email"
                 placeholder="enter your email..."
                 name="email"
-                onChange={(event) => handleChange(event.target.name)}
+                onChange={handleChange('email')}
                 className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
             </div>
@@ -150,7 +154,7 @@ export const Register = () => {
               <input
                 type={show ? 'text' : 'password'}
                 name="password"
-                onChange={(event) => handleChange(event.target.name)}
+                onChange={handleChange("password")}
                 placeholder="enter your password..."
                 className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
@@ -208,7 +212,7 @@ export const Register = () => {
               Upload photo
             </label>
             <div
-              className={classNames("border-dashed px-6 py-9 mt-2 border-2 rounded-md flex justify-center", isDropping ? "border-indigo-400" : "border-gray-400" )}
+              className={classNames("border-dashed px-6 py-9 mt-2 border-2 rounded-md flex justify-center", isDropping ? "border-indigo-400" : "border-gray-400")}
               onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}

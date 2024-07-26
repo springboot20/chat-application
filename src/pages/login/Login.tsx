@@ -29,7 +29,7 @@ export const Login = () => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     await loginUser(value);
-    
+
   };
 
   return (
