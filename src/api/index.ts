@@ -1,6 +1,8 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosInstance } from "axios";
 import { toast } from "react-toastify";
 
+console.log(import.meta.env.CHAT_APP_BACKEND_URL)
+
 export const chatAppApiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.CHAT_APP_BACKEND_URL,
   timeout: 12000,
