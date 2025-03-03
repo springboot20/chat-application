@@ -85,7 +85,7 @@ const SideNavigation = ({ open }: PanelProps) => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-gray-800 w-28`}
+      className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-gray-800 w-20`}
     >
       <div
         className={`relative h-full flex justify-between p-5 flex-col items-center`}

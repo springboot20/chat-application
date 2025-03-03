@@ -9,7 +9,11 @@ export default {
       xs: '480px',
       ...defaultTheme.screens,
     },
-    extend: {},
+    extend: {
+      fontFamily:{
+        nunito:['Nunito', "sans-serif"]
+      }
+    },
   },
   plugins: [],
 };

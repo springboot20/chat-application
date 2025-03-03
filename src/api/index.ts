@@ -1,13 +1,15 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosInstance } from "axios";
 import { toast } from "react-toastify";
 
-console.log(import.meta.env.CHAT_APP_BACKEND_URL)
+console.log(import.meta.env.CHAT_APP_BACKEND_URL);
 
 export const chatAppApiClient: AxiosInstance = axios.create({
-  // baseURL: 'https://chat-api-jade.vercel.app/api/v1',
-  baseURL:"http://localhost:4040/api/v1",
+  baseURL:
+    import.meta.env.MODE === "production"
+      ? import.meta.env.VITE_CHAT_APP_BACKEND_URL
+      : import.meta.env.VITE_CHAT_APP_FRONTEND_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -21,7 +23,6 @@ export const chatAppService = async ({
 }: ChatAppServiceProps) => {
   chatAppApiClient.interceptors.response.use(
     (config: AxiosResponse) => {
-
       if (config.status.toString().startsWith("2")) {
         showSuccessNotification ? toast.success(config.data.message) : "";
       }
@@ -31,8 +32,7 @@ export const chatAppService = async ({
     (error) => {
       if (axios.isAxiosError(error)) {
         const errorMsg = (error.response?.data as { error?: string })?.error;
-        const errorWithMsg = (error.response?.data as { message?: string })
-          ?.message;
+        const errorWithMsg = (error.response?.data as { message?: string })?.message;
 
         if (errorMsg) {
           toast.error(errorMsg);
@@ -50,11 +50,8 @@ export const chatAppService = async ({
   return chatAppApiClient({ ...options });
 };
 
-export const register = (data: {
-  username: string;
-  password: string;
-  email: string;
-}) => chatAppApiClient.post("/auth/users/register", data);
+export const register = (data: { username: string; password: string; email: string }) =>
+  chatAppApiClient.post("/auth/users/register", data);
 
 export const login = (data: { email: string; password: string }) =>
   chatAppApiClient.post("/auth/users/login", data);
@@ -67,31 +64,25 @@ export const getAllChats = () => chatAppApiClient.get("/chat-app/chats/");
 export const createChat = (receiverId: string) =>
   chatAppApiClient.post(`/chat-app/chats/create-chat/${receiverId}`);
 
-export const createGroupChat = (data: {
-  name: string;
-  participants: string[];
-}) => chatAppApiClient.post("/chat-app/group-chat", data);
+export const getAvailableUser = () => chatAppApiClient.get("/chat-app/chats/available-users");
+
+export const createGroupChat = (data: { name: string; participants: string[] }) =>
+  chatAppApiClient.post("/chat-app/group-chat", data);
 
 export const getGroupChat = (chatId: string) =>
   chatAppApiClient.get(`/chat-app/group-chat/${chatId}`);
 
-export const updateGroupChatDetails = (
-  data: { name: string },
-  chatId: string
-) => chatAppApiClient.patch(`/chat-app/chats/group/${chatId}`, data);
+export const updateGroupChatDetails = (data: { name: string }, chatId: string) =>
+  chatAppApiClient.patch(`/chat-app/chats/group/${chatId}`, data);
 
 export const deleteGroupChatDetails = (chatId: string) =>
   chatAppApiClient.delete(`/chat-app/chats/group/${chatId}`);
 
-export const addParticipantToGroupChat = (
-  chatId: string,
-  participantId: string
-) => chatAppApiClient.post(`/chat-app/chats/group/${chatId}/${participantId}`);
+export const addParticipantToGroupChat = (chatId: string, participantId: string) =>
+  chatAppApiClient.post(`/chat-app/chats/group/${chatId}/${participantId}`);
 
-export const removeParticipantFromGroupChat = (
-  chatId: string,
-  participantId: string
-) => chatAppApiClient.post(`/chat-app/chats/group/${chatId}/${participantId}`);
+export const removeParticipantFromGroupChat = (chatId: string, participantId: string) =>
+  chatAppApiClient.post(`/chat-app/chats/group/${chatId}/${participantId}`);
 
 export const leaveChatGroup = (chatId: string) =>
   chatAppApiClient.delete(`/chat-app/chats/leave/group-chat/${chatId}`);
@@ -99,8 +90,7 @@ export const leaveChatGroup = (chatId: string) =>
 export const deleteOneOneChatMessage = (chatId: string) =>
   chatAppApiClient.delete(`/chat-app/chats/delete-one-on-one/${chatId}`);
 
-export const getMessages = (chatId: string) =>
-  chatAppApiClient.get(`/chat-app/chats/${chatId}`);
+export const getMessages = (chatId: string) => chatAppApiClient.get(`/chat-app/chats/${chatId}`);
 
 export const createMessage = (
   chatId: string,
@@ -110,7 +100,7 @@ export const createMessage = (
   if (data.content) {
     formData.append("content", data.content);
   }
-  
+
   data.attachments?.map((file) => {
     formData.append("attachment", file);
   });

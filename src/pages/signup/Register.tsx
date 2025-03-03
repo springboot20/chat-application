@@ -69,7 +69,7 @@ export const Register = () => {
     }
 
     formData.append('avatar', selectedFile as Blob)
-    await registerUser({ avatar: selectedFile!, ...value })
+    await registerUser({ ...value })
 
     console.log({ avatar: selectedFile!, ...value })
   }

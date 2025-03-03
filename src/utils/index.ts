@@ -19,7 +19,7 @@ export const requestHandler = async ({
     const response = await api();
     const { data } = response;
 
-    if (data?.success && response.status.toString().startsWith('2')) {
+    if (data?.success && response.status.toString().startsWith("2")) {
       onSuccess(data, data.message, toast.success);
     }
   } catch (error: any) {
@@ -72,7 +72,7 @@ export const getMessageObjectMetaData = (
   user: UserType
 ) => {
   const lastMessage = chat.lastMessage?.content
-    ? chat.lastMessage.content
+    ? chat.lastMessage?.content
     : chat.lastMessage
     ? `${chat.lastMessage?.attachments.length} attachment ${
         chat.lastMessage.attachments.length > 1 ? "s" : ""
@@ -83,12 +83,12 @@ export const getMessageObjectMetaData = (
     return {
       title: chat.name,
       lastMessage: chat.lastMessage
-        ? `${chat.lastMessage.sender.username} : ${lastMessage}`
+        ? `${chat.lastMessage?.sender?.username} : ${lastMessage}`
         : lastMessage,
       description: `${chat.participants.length} members in the group`,
     };
   } else {
-    let participant = chat.participants.find((p) => p?._id !== user._id);
+    const participant = chat.participants?.find((p) => p?._id !== user._id);
 
     return {
       lastMessage,

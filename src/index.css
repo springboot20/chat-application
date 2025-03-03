@@ -2,7 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Nunito", sans-serif;
+  src: url("./assets/fonts/Nunito-ExtraBold.ttf");
+}
+
+@font-face {
+  font-family: "Nunito", sans-serif;
+  src: url("./assets/fonts/Nunito-Bold.ttf");
+}
+
+@font-face {
+  font-family: "Nunito", sans-serif;
+  src: url("./assets/fonts/Nunito-SemiBold.ttf");
+}
+
+@font-face {
+  font-family: "Nunito", sans-serif;
+  src: url("./assets/fonts/Nunito-Regular.ttf");
+}
+
+@font-face {
+  font-family: "Nunito", sans-serif;
+  src: url("./assets/fonts/Nunito-Medium.ttf");
+}
+
+@font-face {
+  font-family: "Nunito", sans-serif;
+  src: url("./assets/fonts/Nunito-Light.ttf");
+}
+
+@font-face {
+  font-family: "Nunito", sans-serif;
+  src: url("./assets/fonts/Nunito-ExtraLight.ttf");
+}
+
 @layer base {
+  *,
+  *::after,
+  *::before {
+    @apply font-nunito antialiased;
+  }
+
   body {
     @apply bg-[#f2f2f2];
   }

@@ -9,7 +9,6 @@ export interface AuthContextTypes {
     username: string;
     email: string;
     password: string;
-    avatar:File
   }) => Promise<void>;
   loginUser: (data: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;

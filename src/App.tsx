@@ -1,35 +1,29 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
-import { Chat } from './pages/Chat'
-import { Login } from './pages/login/Login'
-import { useAuth } from './context/AuthContext'
-import { Register } from './pages/signup/Register'
-import { Forgot } from './pages/forgot-password/Forgot'
-import { PrivateRoutes } from './routes/PrivateRoute'
-import { PublicRoutes } from './routes/PublicRoutes'
-import { OtpForm } from './pages/otp-code-form/OtpForm'
+import {  Route, Routes } from "react-router-dom";
+import { Chat } from "./pages/Chat";
+import { Login } from "./pages/login/Login";
+import { useAuth } from "./context/AuthContext";
+import { Register } from "./pages/signup/Register";
+import { Forgot } from "./pages/forgot-password/Forgot";
+// import { PrivateRoutes } from "./routes/PrivateRoute";
+import { PublicRoutes } from "./routes/PublicRoutes";
+import { OtpForm } from "./pages/otp-code-form/OtpForm";
 
 function App() {
-  const { user, token } = useAuth()
+  // const { user, token } = useAuth();
 
   return (
     <Routes>
-      <Route
+      {/* <Route
         path="/"
-        element={
-          token && user?._id ? (
-            <Navigate to="/chat" />
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      />
+        element={token && user?._id ? <Navigate to="/chat" /> : <Navigate to="/login" />}
+      /> */}
 
       <Route
         path="/chat"
         element={
-          <PrivateRoutes>
-            <Chat />
-          </PrivateRoutes>
+          <Chat />
+          // <PrivateRoutes>
+          // </PrivateRoutes>
         }
       />
       <Route
@@ -65,7 +59,7 @@ function App() {
         }
       />
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -10,7 +10,7 @@ export const SearchInput = forwardRef<
       {...props}
       ref={ref}
       className={classNames(
-        "w-full px-4 py-3 font-medium text-lg text-gray-800",
+        "w-full px-2 py-3 font-medium text-base text-gray-800",
         props.className ?? ""
       )}
     />

@@ -10,6 +10,8 @@ const SocketContext = createContext<SocketContextType>({
 const getSocket = () => {
   const token = LocalStorage.get("token");
 
+  console.log(token)
+
   return socketio(import.meta.env.CHAT_APP_SOCKET_URL, {
     auth: { token },
     timeout: 3000,

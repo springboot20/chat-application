@@ -33,7 +33,6 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
     username: string;
     email: string;
     password: string;
-    avatar: File
   }) => {
     await requestHandler({
       api: async () => await register(data),
@@ -121,8 +120,6 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
     // Example: Load user from local storage or API
     const storedUser = LocalStorage.get("user") as UserType;
     const storedToken = LocalStorage.get("token") as string;
-
-    console.log({ storedUser, storedToken })
 
     if (storedUser && storedToken) {
       setUser(storedUser);
