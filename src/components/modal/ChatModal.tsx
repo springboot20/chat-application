@@ -3,11 +3,10 @@ import { Button } from "../buttons/Buttons";
 import { Dialog, Switch, Transition } from "@headlessui/react";
 import { UserGroupIcon, XCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { SelectModalInput } from "./Select";
-import { ChatListItemInterface } from "../../types/chat";
-import { classNames, requestHandler } from "../../utils";
-import { createGroupChat } from "../../api";
+import { classNames } from "../../utils";
 import { toast } from "react-toastify";
 import {
+  useCreateGroupChatMutation,
   useCreateUserChatMutation,
   useGetAvailableUsersQuery,
 } from "../../features/chats/chat.slice";
@@ -23,6 +22,7 @@ export const ChatModal: React.FC<{
   const [groupName, setGroupName] = useState<string>("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [isGroupChat, setIsGroupChat] = useState<boolean>(false);
+  const [createNewGroupChat] = useCreateGroupChatMutation();
 
   const { data: availableUsers, refetch: refetchUsers } = useGetAvailableUsersQuery();
   const [_createNewChat] = useCreateUserChatMutation();
@@ -49,7 +49,7 @@ export const ChatModal: React.FC<{
     }
   };
 
-  const createNewGroupChat = () => {
+  const _createNewGroupChat = async () => {
     if (!groupName) {
       toast.warning("Group name is required");
       return;
@@ -60,17 +60,16 @@ export const ChatModal: React.FC<{
       return;
     }
 
-    // requestHandler({
-    //   api: async () => await createGroupChat({ name: groupName, participants }),
-    //   setLoading: setCreatingChat,
-    //   onSuccess: (res) => {
-    //     onSuccess(res.data);
-    //     handleClose();
-    //   },
-    //   onError: (error, toast) => {
-    //     toast(error);
-    //   },
-    // });
+    try {
+      const response = await createNewGroupChat({ name: groupName, participants }).unwrap();
+      const { message } = response;
+      toast(message, { type: "success" });
+      handleClose();
+    } catch (error: any) {
+      const { message } = error?.data;
+
+      toast(message, { type: "error" });
+    }
   };
 
   const handleClose = () => {
@@ -253,7 +252,7 @@ export const ChatModal: React.FC<{
                     </Button>
                     <Button
                       disabled={creatingChat}
-                      onClick={isGroupChat ? createNewGroupChat : createNewChat}
+                      onClick={isGroupChat ? _createNewGroupChat : createNewChat}
                       className="w-[40%] bg-violet-500 text-white text-xl font-semibold rounded-lg"
                     >
                       Create
