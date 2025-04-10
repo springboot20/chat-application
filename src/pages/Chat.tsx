@@ -15,6 +15,7 @@ import {
   NEW_CHAT_EVENT,
   STOP_TYPING_EVENT,
   TYPING_EVENT,
+  LEAVE_CHAT_EVENT
 } from "../enums/index.ts";
 import { useChat } from "../hooks/useChat.ts";
 import { useTyping } from "../hooks/useTyping.ts";
@@ -34,7 +35,7 @@ export const Chat = () => {
   const [logout] = useLogoutMutation();
 
   const { socket } = useSocketContext();
-  const { onNewChat } = useChat();
+  const { onNewChat, onChatLeave } = useChat();
   const { isOnline } = useNetwork();
 
   const {
@@ -72,12 +73,14 @@ export const Chat = () => {
       onMessageReceive(data);
     });
     socket?.on(NEW_CHAT_EVENT, onNewChat);
+    socket?.on(LEAVE_CHAT_EVENT, onChatLeave);
 
     return () => {
       socket?.off(TYPING_EVENT, handleStartTyping);
       socket?.off(STOP_TYPING_EVENT, handleStopTyping);
       socket?.off(MESSAGE_RECEIVED_EVENT, onMessageReceive);
       socket?.off(NEW_CHAT_EVENT, onNewChat);
+      socket?.off(LEAVE_CHAT_EVENT, onChatLeave);
     };
   }, [socket]);
 

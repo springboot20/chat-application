@@ -12,14 +12,14 @@ const SocketContext = createContext<SocketContextType>({
 });
 
 const getSocket = () => {
-  const token = LocalStorage.get("token");
+  const tokens = LocalStorage.get("tokens");
 
   const env = import.meta.env;
   const url =
     env.MODE === "production" ? env.VITE_CHAT_APP_SOCKET_URL : env.VITE_CHAT_APP_SOCKET_LOCAL_URL;
- 
+
   return socketio(url, {
-    auth: { token },
+    auth: { tokens },
     // withCredentials: true,
   });
 };

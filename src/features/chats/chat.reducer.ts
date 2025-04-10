@@ -36,6 +36,18 @@ const ChatSlice = createSlice({
       state.chats = [chat, ...state.chats];
     },
 
+    onChatLeave: (state, action: PayloadAction<{ chat: ChatListItemInterface }>) => {
+      const { chat } = action.payload;
+
+      if (chat?._id === state.currentChat?._id) {
+        state.currentChat = null;
+
+        LocalStorage.remove("current-chat");
+      }
+
+      state.chats = state.chats?.filter((ch) => ch?._id !== chat?._id);
+    },
+
     newMessage: (state, action) => {
       const { data } = action.payload;
 
@@ -130,17 +142,21 @@ const ChatSlice = createSlice({
         const { data } = action.payload;
 
         state.chats = state.chats.filter((chat) => chat?._id !== data?._id);
-        state.currentChat = null;
         state.chatMessages = [];
 
         LocalStorage.set("chats", state.chats);
         LocalStorage.set("chatmessages", state.chatMessages);
-        LocalStorage.set("current-chat", state.currentChat);
       }
     );
   },
 });
 
 export const chatReducer = ChatSlice.reducer;
-export const { updateChatLastMessage, newChat, newMessage, setCurrentChat, setUnreadMessages } =
-  ChatSlice.actions;
+export const {
+  updateChatLastMessage,
+  newChat,
+  onChatLeave,
+  newMessage,
+  setCurrentChat,
+  setUnreadMessages,
+} = ChatSlice.actions;
