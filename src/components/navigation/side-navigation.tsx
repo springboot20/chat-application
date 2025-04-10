@@ -1,16 +1,12 @@
-import { CogIcon } from '@heroicons/react/24/outline'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons'
-import { Disclosure } from '@headlessui/react'
-import { PanelProps } from '../../types/panels'
-import { Settings } from '../../pages/settings/Settings'
-import { useState } from 'react'
+import { CogIcon } from "@heroicons/react/24/outline";
+import { Settings } from "../../pages/settings/Settings";
+import { useState } from "react";
 
 const navLinks = {
   links: [
     {
-      name: '',
-      to: '',
+      name: "",
+      to: "",
       icon: (
         <svg
           width="24"
@@ -78,18 +74,16 @@ const navLinks = {
       ),
     },
   ],
-}
+};
 
-const SideNavigation = ({ open }: PanelProps) => {
-  const [openSettings, setOpenSettings] = useState(false)
+const SideNavigation = () => {
+  const [openSettings, setOpenSettings] = useState(false);
 
   return (
     <nav
-      className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-gray-800 w-20`}
+      className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-gray-800 w-20 z-10`}
     >
-      <div
-        className={`relative h-full flex justify-between p-5 flex-col items-center`}
-      >
+      <div className={`relative h-full flex justify-between p-5 flex-col items-center`}>
         <div className="flex flex-col justify-between items-center">
           <div className="flex flex-col items-center space-y-12">
             <div className="flex items-center">
@@ -113,35 +107,13 @@ const SideNavigation = ({ open }: PanelProps) => {
               <ul className="space-y-6">
                 {navLinks.links.map((link, index) => {
                   return (
-                    <li
-                      key={index}
-                      className="flex items-center rounded-md p-3"
-                    >
+                    <li key={index} className="flex items-center rounded-md p-3">
                       {link.icon}
                     </li>
-                  )
+                  );
                 })}
               </ul>
             </div>
-          </div>
-
-          <div className="md:hidden">
-            <Disclosure.Button className="cursor-pointer absolute top-4 -right-7 z-10 inline-flex items-center justify-center rounded-full p-2 bg-[#615EF0] dark:text-white text-white hover:dark:bg-[#615EF0]/70 focus:ring-2 focus:ring-inset focus:ring-white">
-              <span className="sr-only">Open main menu</span>
-              {open ? (
-                <FontAwesomeIcon
-                  icon={faAngleRight}
-                  className="block h-8 w-8 stroke-2"
-                  aria-hidden="true"
-                />
-              ) : (
-                <FontAwesomeIcon
-                  icon={faAngleLeft}
-                  className="block h-8 w-8 stroke-2"
-                  aria-hidden="true"
-                />
-              )}
-            </Disclosure.Button>
           </div>
         </div>
         <div className="">
@@ -152,23 +124,17 @@ const SideNavigation = ({ open }: PanelProps) => {
               className="inline-flex items-center justify-center p-3 rounded-full text-gray-600 dark:text-white hover:bg-[#615EF0]/70 hover:text-white transition focus:ring-2 focus:ring-inset focus:ring-white"
             >
               <span className="sr-only">Settings</span>
-              <CogIcon
-                className="block h-12 w-12 stroke-2"
-                aria-hidden="true"
-              />
+              <CogIcon className="block h-8 w-8 stroke-2" aria-hidden="true" />
             </button>
           </div>
 
           {openSettings ? (
-            <Settings
-              open={openSettings}
-              onClose={() => setOpenSettings(!openSettings)}
-            />
+            <Settings open={openSettings} onClose={() => setOpenSettings(!openSettings)} />
           ) : null}
         </div>
       </div>
     </nav>
-  )
-}
+  );
+};
 
-export default SideNavigation
+export default SideNavigation;

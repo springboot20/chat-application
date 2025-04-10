@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  useEffect,
-} from "react";
+import React, { createContext, useContext, useMemo, useState, useEffect } from "react";
 import { AuthContextTypes } from "../types/context";
 import { UserType } from "../types/user";
 import { requestHandler } from "../utils";
@@ -16,24 +10,22 @@ const AuthContext = createContext<AuthContextTypes>({
   isLoading: true,
   user: null,
   token: null,
-  registerUser: async () => { },
-  loginUser: async () => { },
-  logout: async () => { },
+  isAuthenticated: false,
+  registerUser: async () => {},
+  loginUser: async () => {},
+  logout: async () => {},
 });
 
-export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [token, setToken] = useState<string | null>(LocalStorage.get('token'));
-  const [user, setUser] = useState<UserType | null>(LocalStorage.get('user'));
+export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [token, setToken] = useState<string | null>(LocalStorage.get("token"));
+  const [user, setUser] = useState<UserType | null>(LocalStorage.get("user"));
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    LocalStorage.get("authenticated") ?? false
+  );
   const navigate = useNavigate();
 
-  const registerUser = async (data: {
-    username: string;
-    email: string;
-    password: string;
-  }) => {
+  const registerUser = async (data: { username: string; email: string; password: string }) => {
     await requestHandler({
       api: async () => await register(data),
       setLoading: setIsLoading,
@@ -41,9 +33,9 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
         const { data } = res;
         setUser(data.user);
 
-        LocalStorage.set('user', data.user)
+        LocalStorage.set("user", data.user);
         navigate("/login");
-        return res
+        return res;
       },
       onError: (error, toast) => {
         toast(error);
@@ -55,7 +47,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
     await requestHandler({
       api: async () => await login(data),
       setLoading: setIsLoading,
-      onSuccess:async (res, message, toast) => {
+      onSuccess: async (res, message, toast) => {
         const { data } = res;
 
         setUser(data.user);
@@ -63,10 +55,13 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
         LocalStorage.set("token", data.tokens.accessToken);
         LocalStorage.set("user", data.user);
+        LocalStorage.set("authenticated", true);
 
         console.log(data.user);
 
-        await Promise.resolve(setTimeout(() => navigate('/chat'), 1200))
+        setIsAuthenticated(true);
+
+        await Promise.resolve(setTimeout(() => navigate("/chat"), 1200));
         toast(message);
       },
       onError: (error, toast) => {
@@ -83,7 +78,10 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
         setUser(null);
         setToken(null);
 
-        LocalStorage.remove('token')
+        setIsAuthenticated(false);
+
+        LocalStorage.remove("token");
+        LocalStorage.set("authenticated", false);
 
         toast(message);
       },
@@ -95,14 +93,14 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setAuthorizationHeader = () => {
     if (token) {
-      chatAppApiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      chatAppApiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
-      delete chatAppApiClient.defaults.headers.common['Authorization']
-      LocalStorage.remove('token')
+      delete chatAppApiClient.defaults.headers.common["Authorization"];
+      LocalStorage.remove("token");
     }
-  }
+  };
 
-  setAuthorizationHeader()
+  setAuthorizationHeader();
 
   const values = useMemo(
     () => ({
@@ -112,6 +110,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
       loginUser,
       logout,
       isLoading,
+      isAuthenticated,
     }),
     [token, user, isLoading]
   );
@@ -120,10 +119,12 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({
     // Example: Load user from local storage or API
     const storedUser = LocalStorage.get("user") as UserType;
     const storedToken = LocalStorage.get("token") as string;
+    const isAuthenticated = LocalStorage.get("authenticated") as boolean;
 
     if (storedUser && storedToken) {
       setUser(storedUser);
       setToken(storedToken);
+      setIsAuthenticated(isAuthenticated);
     }
     setIsLoading(false);
   }, []);

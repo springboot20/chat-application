@@ -1,0 +1,224 @@
+import { Disclosure } from "@headlessui/react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCaretDown, faClose } from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useRef, useState } from "react";
+import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { ChatModal } from "../modal/ChatModal.tsx";
+import { SearchInput } from "../panels/SearchInput.tsx";
+import { ChatItem } from "../chat/ChatItem.tsx";
+import { Loading } from "../Loading.tsx";
+import { useChat } from "../../hooks/useChat.ts";
+import { getMessageObjectMetaData, LocalStorage } from "../../utils/index.ts";
+import { useMessage } from "../../hooks/useMessage.ts";
+import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks.ts";
+import { RootState } from "../../app/store.ts";
+import { setCurrentChat } from "../../features/chats/chat.reducer.ts";
+
+export const MessageNavigation: React.FC<{
+  open: boolean;
+}> = ({ open }) => {
+  const { user } = useAppSelector((state: RootState) => state.auth);
+  const { currentChat } = useAppSelector((state: RootState) => state.chat);
+  const { unreadMessages, setMessage, getAllMessages, refetchMessages } = useMessage();
+  const { chats, isLoadingChats } = useChat();
+
+  const [localSearchQuery, setLocalSearchQuery] = useState<string>("");
+  const [openChat, setOpenChat] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    refetchMessages();
+  }, [refetchMessages]);
+
+  return (
+    <>
+      <ChatModal open={openChat} onSuccess={() => {}} onClose={() => setOpenChat(false)} />
+      <div
+        className={`fixed left-20 w-[25rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 translate-x-0 hidden lg:block
+  `}
+      >
+        <div className="flex flex-col items-center gap-8 h-full">
+          <Disclosure.Button
+            className={"absolute right-0 bottom-9 h-14 w-14 rounded-full lg:hidden"}
+          >
+            <span className="sr-only">Close panel</span>
+            <FontAwesomeIcon
+              icon={faClose}
+              className="h-7 w-7 stroke-[4] text-gray-500 dark:text-white"
+              aria-hidden={true}
+            />
+          </Disclosure.Button>
+
+          <div className="flex justify-between items-center w-full p-3 border-b-[1.5px] border-b-gray-600/30">
+            <div className="flex items-center">
+              <span className="text-xl block text-gray-600 font-medium dark:text-white">
+                Messages
+              </span>
+              <button className={"h-14 w-14 rounded-full"}>
+                <span className="sr-only">Open Messages</span>
+                <FontAwesomeIcon
+                  icon={faCaretDown}
+                  className="h-7 w-7 stroke-[4] text-gray-500 dark:text-white"
+                  aria-hidden={true}
+                />
+              </button>
+            </div>
+            <button
+              type="button"
+              className="block p-3 rounded-full bg-[#615EF0]"
+              onClick={() => setOpenChat((prev) => !prev)}
+            >
+              <span className="sr-only">plus icon</span>
+              <PlusIcon className="h-5 stroke-[4] text-white" aria-hidden={true} />
+            </button>
+          </div>
+          <div className="px-3 w-full">
+            <div className="w-full rounded-md border border-gray-400 flex items-center h-12 bg-gray-100/60">
+              <button type="button" className="px-2 py-2 flex items-center justify-center">
+                <MagnifyingGlassIcon className="h-7 text-gray-700" aria-hidden={true} />
+              </button>
+
+              <SearchInput
+                ref={inputRef}
+                placeholder="Search messages"
+                onChange={(e) => setLocalSearchQuery(e.target.value.toLowerCase())}
+                value={localSearchQuery}
+                className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none"
+              />
+            </div>
+            {isLoadingChats ? (
+              <div className="w-full mx-auto flex items-center justify-center mt-5">
+                <Loading />
+              </div>
+            ) : (
+              <div className="mt-3 flex flex-col">
+                {[...(chats || [])]
+                  ?.filter((chat) =>
+                    localSearchQuery
+                      ? getMessageObjectMetaData(chat, user!)
+                          .title?.toLowerCase()
+                          .includes(localSearchQuery)
+                      : true
+                  )
+                  .map((chat) => (
+                    <ChatItem
+                      key={chat?._id}
+                      chat={chat}
+                      isActive={chat?._id === currentChat?._id}
+                      onClick={(chat) => {
+                        if (currentChat?._id && currentChat?._id === chat?._id) return;
+
+                        dispatch(setCurrentChat({ chat }));
+                        setMessage("");
+
+                        getAllMessages();
+                      }}
+                      onChatDelete={(chatId) => {
+                        // setChats((prev) => prev.filter((chat) => chat._id !== chatId));
+                        if (currentChat?._id === chatId) {
+                          dispatch(setCurrentChat({ chat: null }));
+                          LocalStorage.remove("current-chat");
+                        }
+                      }}
+                      unreadCount={
+                        (unreadMessages || [])?.filter((c) => c.chatId === chat._id).length
+                      }
+                    />
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <Disclosure.Panel
+        className={`fixed w-full sm:w-[25rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 translate-x-0 lg:hidden
+    ${open ? "translate-x-0 left-0" : "-translate-x-full"}
+  `}
+      >
+        <div className="flex flex-col items-center gap-8 h-full">
+          <div className="flex justify-between items-center w-full p-4 border-b-[1.5px] border-b-gray-600/30">
+            <div className="flex items-center">
+              <span className="text-xl block text-gray-600 font-medium dark:text-white">
+                Messages
+              </span>
+              <button className={"h-10 w-10 rounded-full"}>
+                <span className="sr-only">Open Messages</span>
+                <FontAwesomeIcon
+                  icon={faCaretDown}
+                  className="h-7 w-7 text-gray-500 dark:text-white"
+                  aria-hidden={true}
+                  strokeWidth={2.5}
+                />
+              </button>
+            </div>
+            <button
+              type="button"
+              className="block p-3 rounded-full bg-[#615EF0]"
+              onClick={() => setOpenChat((prev) => !prev)}
+            >
+              <span className="sr-only">plus icon</span>
+              <PlusIcon className="h-5 stroke-[4] text-white" aria-hidden={true} />
+            </button>
+          </div>
+          <div className="px-3 w-full">
+            <div className="w-full rounded-md border border-gray-400 flex items-center h-12 bg-gray-100/60">
+              <button type="button" className="px-2 py-2 flex items-center justify-center">
+                <MagnifyingGlassIcon className="h-7 text-gray-700" aria-hidden={true} />
+              </button>
+
+              <SearchInput
+                ref={inputRef}
+                placeholder="Search messages"
+                onChange={(e) => setLocalSearchQuery(e.target.value.toLowerCase())}
+                value={localSearchQuery}
+                className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none"
+              />
+            </div>
+            {isLoadingChats ? (
+              <div className="w-full mx-auto flex items-center justify-center mt-5">
+                <Loading />
+              </div>
+            ) : (
+              [...(chats || [])]
+                ?.filter((chat) =>
+                  localSearchQuery
+                    ? getMessageObjectMetaData(chat, user!)
+                        .title?.toLowerCase()
+                        .includes(localSearchQuery)
+                    : true
+                )
+                .map((chat) => (
+                  <ChatItem
+                    key={chat?._id}
+                    chat={chat}
+                    isActive={chat?._id === currentChat?._id}
+                    onClick={(chat) => {
+                      if (currentChat?._id && currentChat?._id === chat?._id) return;
+
+                      dispatch(setCurrentChat({ chat }));
+
+                      setMessage("");
+                      getAllMessages();
+                    }}
+                    onChatDelete={(chatId) => {
+                      console.log(chatId);
+                      // setChats((prev) => prev.filter((chat) => chat._id !== chatId));
+
+                      if (currentChat?._id === chatId) {
+                        setCurrentChat({ chat: null });
+                        LocalStorage.remove("current-chat");
+                      }
+                    }}
+                    unreadCount={(unreadMessages || [])?.filter((c) => c._id === chat._id).length}
+                  />
+                ))
+            )}
+          </div>
+        </div>
+      </Disclosure.Panel>
+    </>
+  );
+};

@@ -1,12 +1,11 @@
 import React from "react";
-import { useAuth } from "../context/AuthContext";
 import { Navigate } from "react-router-dom";
+import { useAppSelector } from "../redux/redux.hooks";
+import { RootState } from "../app/store";
 
-export const PublicRoutes: React.FC<{ children: React.ReactNode }> = React.memo(
-  ({ children }) => {
-    const { user, token } = useAuth();
+export const PublicRoutes: React.FC<{ children: React.ReactNode }> = React.memo(({ children }) => {
+  const { tokens, isAuthenticated } = useAppSelector((state: RootState) => state.auth);
 
-    if (user?._id && token) return <Navigate to="/chat" replace />;
-    return children;
-  }
-);
+  if (tokens && isAuthenticated) return <Navigate to="/chat" replace />;
+  return children;
+});

@@ -1,12 +1,12 @@
 import React from "react";
-import { useAuth } from "../context/AuthContext";
 import { Navigate } from "react-router-dom";
+import { useAppSelector } from "../redux/redux.hooks";
+import { RootState } from "../app/store";
 
-export const PrivateRoutes: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const { user, token } = useAuth();
+export const PrivateRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated } = useAppSelector((state: RootState) => state.auth);
 
-  if (!user?._id || !token) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+
   return children;
 };

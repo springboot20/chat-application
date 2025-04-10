@@ -1,29 +1,30 @@
-import {  Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { Chat } from "./pages/Chat";
 import { Login } from "./pages/login/Login";
-import { useAuth } from "./context/AuthContext";
 import { Register } from "./pages/signup/Register";
 import { Forgot } from "./pages/forgot-password/Forgot";
-// import { PrivateRoutes } from "./routes/PrivateRoute";
+import { PrivateRoutes } from "./routes/PrivateRoute";
 import { PublicRoutes } from "./routes/PublicRoutes";
 import { OtpForm } from "./pages/otp-code-form/OtpForm";
+import { useAppSelector } from "./redux/redux.hooks";
+import { RootState } from "./app/store";
 
 function App() {
-  // const { user, token } = useAuth();
+  const { isAuthenticated } = useAppSelector((state: RootState) => state.auth);
 
   return (
     <Routes>
-      {/* <Route
+      <Route
         path="/"
-        element={token && user?._id ? <Navigate to="/chat" /> : <Navigate to="/login" />}
-      /> */}
+        element={isAuthenticated ? <Navigate to="/chat" /> : <Navigate to="/login" />}
+      />
 
       <Route
         path="/chat"
         element={
-          <Chat />
-          // <PrivateRoutes>
-          // </PrivateRoutes>
+          <PrivateRoutes>
+            <Chat />
+          </PrivateRoutes>
         }
       />
       <Route

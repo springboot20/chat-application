@@ -1,102 +1,101 @@
-import {
-  EyeIcon,
-  EyeSlashIcon,
-  PhotoIcon,
-  UserCircleIcon,
-} from '@heroicons/react/24/outline'
-import { Button } from '../../components/buttons/Buttons'
-import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import { classNames } from '../../utils'
+import { EyeIcon, EyeSlashIcon, PhotoIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { Button } from "../../components/buttons/Buttons";
+import { useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { classNames } from "../../utils";
+import { useRegisterMutation } from "../../features/auth/auth.slice";
+import { toast } from "react-toastify";
 
 export const Register = () => {
-  const { registerUser } = useAuth()
+  const navigate = useNavigate();
+  const [register] = useRegisterMutation();
+  const [show, setShow] = useState<boolean>(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [show, setShow] = useState<boolean>(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
-
-  const [isDropping, setIsDropping] = useState<boolean>(false)
+  const [isDropping, setIsDropping] = useState<boolean>(false);
 
   const [value, setValue] = useState({
-    username: '',
-    email: '',
-    password: '',
-  })
+    username: "",
+    email: "",
+    password: "",
+  });
 
-  const handleChange = (name: string) => (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleChange = (name: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setValue({
       ...value,
       [name]: event.target.value,
-    })
-  }
+    });
+  };
 
   const fileExtensions: string[][] = [
-    ['.png', '.jpeg'],
-    ['.jpg', '.svg'],
-  ]
+    [".png", ".jpeg"],
+    [".jpg", ".svg"],
+  ];
 
-  const formData = new FormData()
+  const formData = new FormData();
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
-      setSelectedFile(event.target.files[0])
+      setSelectedFile(event.target.files[0]);
     }
-  }
+  };
 
-  console.log(selectedFile)
+  console.log(selectedFile);
 
   const isFileExtValid = (file: string) => {
-    return fileExtensions.some((ext) => ext.includes(file))
-  }
+    return fileExtensions.some((ext) => ext.includes(file));
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+    event.preventDefault();
 
     if (selectedFile) {
-      const fileExt = selectedFile.name.split('.').pop()
+      const fileExt = selectedFile.name.split(".").pop();
       if (fileExt) {
-        const extExists = isFileExtValid(`.${fileExt}`)
-        console.log(extExists)
+        const extExists = isFileExtValid(`.${fileExt}`);
+        console.log(extExists);
 
         if (!extExists) {
-          alert('Invalid file extension')
-          return
+          alert("Invalid file extension");
+          return;
         }
       }
     }
 
-    formData.append('avatar', selectedFile as Blob)
-    await registerUser({ ...value })
+    formData.append("avatar", selectedFile as Blob);
 
-    console.log({ avatar: selectedFile!, ...value })
-  }
+    try {
+      const response = await register({ ...value }).unwrap();
+      await Promise.resolve(setTimeout(() => navigate("/login"), 1200));
+      toast(response?.data?.message, { type: "success" });
+    } catch (error: any) {
+      toast(error?.data?.message, { type: "error" });
+    }
+  };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDropping(false)
+    event.preventDefault();
+    setIsDropping(false);
     if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-      setSelectedFile(event.dataTransfer.files[0])
-      event.dataTransfer.clearData()
+      setSelectedFile(event.dataTransfer.files[0]);
+      event.dataTransfer.clearData();
     }
-  }
+  };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-  }
+    event.preventDefault();
+  };
 
   const handleDragLeave = () => {
-    setIsDropping(false)
-  }
+    setIsDropping(false);
+  };
 
   const handleDragEnter = (e: React.DragEvent<HTMLInputElement>) => {
-    e.preventDefault()
-    setIsDropping(true)
-  }
+    e.preventDefault();
+    setIsDropping(true);
+  };
 
-  console.log(value)
+  console.log(value);
 
   return (
     <div className="flex flex-col justify-center items-center min-h-screen p-3">
@@ -137,7 +136,7 @@ export const Register = () => {
                 type="email"
                 placeholder="enter your email..."
                 name="email"
-                onChange={handleChange('email')}
+                onChange={handleChange("email")}
                 className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
             </div>
@@ -152,7 +151,7 @@ export const Register = () => {
             </label>
             <div className="mt-2 relative">
               <input
-                type={show ? 'text' : 'password'}
+                type={show ? "text" : "password"}
                 name="password"
                 onChange={handleChange("password")}
                 placeholder="enter your password..."
@@ -187,15 +186,12 @@ export const Register = () => {
                   className="h-10 w-10 object-cover shadow-lg mb-3 ring-2 ring-offset-2 ring-indigo-500 rounded-full"
                 />
               ) : (
-                <UserCircleIcon
-                  className="h-12 w-12 text-gray-300"
-                  aria-hidden="true"
-                />
+                <UserCircleIcon className="h-12 w-12 text-gray-300" aria-hidden="true" />
               )}
               <button
                 type="button"
                 onClick={() => {
-                  if (fileInputRef.current) fileInputRef.current.click()
+                  if (fileInputRef.current) fileInputRef.current.click();
                 }}
                 className="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
               >
@@ -212,7 +208,10 @@ export const Register = () => {
               Upload photo
             </label>
             <div
-              className={classNames("border-dashed px-6 py-9 mt-2 border-2 rounded-md flex justify-center", isDropping ? "border-indigo-400" : "border-gray-400")}
+              className={classNames(
+                "border-dashed px-6 py-9 mt-2 border-2 rounded-md flex justify-center",
+                isDropping ? "border-indigo-400" : "border-gray-400"
+              )}
               onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -262,14 +261,11 @@ export const Register = () => {
       </div>
 
       <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-50">
-        Already have an account?{' '}
-        <Link
-          to="/login"
-          className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
-        >
+        Already have an account?{" "}
+        <Link to="/login" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
           login
         </Link>
       </p>
     </div>
-  )
-}
+  );
+};

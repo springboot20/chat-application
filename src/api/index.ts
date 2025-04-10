@@ -1,13 +1,11 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosInstance } from "axios";
 import { toast } from "react-toastify";
 
-console.log(import.meta.env.CHAT_APP_BACKEND_URL);
-
 export const chatAppApiClient: AxiosInstance = axios.create({
   baseURL:
     import.meta.env.MODE === "production"
       ? import.meta.env.VITE_CHAT_APP_BACKEND_URL
-      : import.meta.env.VITE_CHAT_APP_FRONTEND_URL,
+      : import.meta.env.VITE_CHAT_APP_BACKEND_LOCAL_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -59,30 +57,30 @@ export const login = (data: { email: string; password: string }) =>
 export const logOut = () => chatAppApiClient.post("/auth/users/logout");
 
 // chats
-export const getAllChats = () => chatAppApiClient.get("/chat-app/chats/");
+export const getUserChats = () => chatAppApiClient.get("/chat-app/chats/");
 
-export const createChat = (receiverId: string) =>
+export const createUserChat = (receiverId: string) =>
   chatAppApiClient.post(`/chat-app/chats/create-chat/${receiverId}`);
 
-export const getAvailableUser = () => chatAppApiClient.get("/chat-app/chats/available-users");
+export const getAvailableUsers = () => chatAppApiClient.get("/chat-app/chats/available-users");
 
 export const createGroupChat = (data: { name: string; participants: string[] }) =>
-  chatAppApiClient.post("/chat-app/group-chat", data);
+  chatAppApiClient.post("/chat-app/chats/group-chat", data);
 
 export const getGroupChat = (chatId: string) =>
-  chatAppApiClient.get(`/chat-app/group-chat/${chatId}`);
+  chatAppApiClient.get(`/chat-app/chats/group-chat/${chatId}`);
 
 export const updateGroupChatDetails = (data: { name: string }, chatId: string) =>
-  chatAppApiClient.patch(`/chat-app/chats/group/${chatId}`, data);
+  chatAppApiClient.patch(`/chat-app/chats/group-chat/${chatId}`, data);
 
 export const deleteGroupChatDetails = (chatId: string) =>
-  chatAppApiClient.delete(`/chat-app/chats/group/${chatId}`);
+  chatAppApiClient.delete(`/chat-app/chats/group-chat/${chatId}`);
 
 export const addParticipantToGroupChat = (chatId: string, participantId: string) =>
-  chatAppApiClient.post(`/chat-app/chats/group/${chatId}/${participantId}`);
+  chatAppApiClient.post(`/chat-app/chats/group-chat/${chatId}/${participantId}`);
 
 export const removeParticipantFromGroupChat = (chatId: string, participantId: string) =>
-  chatAppApiClient.post(`/chat-app/chats/group/${chatId}/${participantId}`);
+  chatAppApiClient.post(`/chat-app/chats/group-chat/${chatId}/${participantId}`);
 
 export const leaveChatGroup = (chatId: string) =>
   chatAppApiClient.delete(`/chat-app/chats/leave/group-chat/${chatId}`);
@@ -90,9 +88,9 @@ export const leaveChatGroup = (chatId: string) =>
 export const deleteOneOneChatMessage = (chatId: string) =>
   chatAppApiClient.delete(`/chat-app/chats/delete-one-on-one/${chatId}`);
 
-export const getMessages = (chatId: string) => chatAppApiClient.get(`/chat-app/chats/${chatId}`);
+export const getChatMessages = (chatId: string) => chatAppApiClient.get(`/chat-app/messages/${chatId}`);
 
-export const createMessage = (
+export const sendMessage = (
   chatId: string,
   data: { content: string; attachments: File[] | undefined }
 ) => {
@@ -102,8 +100,8 @@ export const createMessage = (
   }
 
   data.attachments?.map((file) => {
-    formData.append("attachment", file);
+    formData.append("attachments", file);
   });
 
-  return chatAppApiClient.post(`/chat-app/chats/${chatId}`);
+  return chatAppApiClient.post(`/chat-app/messages/${chatId}`, data);
 };

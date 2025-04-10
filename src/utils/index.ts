@@ -1,7 +1,7 @@
 import { ApiRequestHandlerProps } from "../types/api";
 import { toast } from "react-toastify";
 import { ChatListItemInterface } from "../types/chat";
-import { UserType } from "../types/user";
+import { User } from "../types/auth";
 
 export const classNames = (...className: string[]) => {
   return className.filter(Boolean).join(" ");
@@ -69,7 +69,7 @@ export class LocalStorage {
 
 export const getMessageObjectMetaData = (
   chat: ChatListItemInterface,
-  user: UserType
+  user: User
 ) => {
   const lastMessage = chat.lastMessage?.content
     ? chat.lastMessage?.content
@@ -94,7 +94,7 @@ export const getMessageObjectMetaData = (
       lastMessage,
       title: participant?.username,
       description: participant?.email,
-      avatar: participant?.avatar.url,
+      // avatar: participant?.avatar.url || undefined,
     };
   }
 };

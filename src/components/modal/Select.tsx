@@ -9,8 +9,7 @@ export const SelectModalInput: React.FC<{
     | {
         value: string;
         label: string;
-      }[]
-    | undefined;
+      }[];
   onChange: (value: { value: string; label: string }) => void;
   placeholder: string;
 }> = ({ options, value, onChange, placeholder }) => {
@@ -26,7 +25,7 @@ export const SelectModalInput: React.FC<{
       className="w-full"
       as="div"
       onChange={(val) => onChange(val)}
-      value={options?.find((opt) => opt.value === value)}
+      value={options?.find((opt) => opt.value === value) || options?.[0]}
     >
       <div className="relative mt-4">
         <Combobox.Button className="w-full">
@@ -44,14 +43,14 @@ export const SelectModalInput: React.FC<{
           <ChevronUpDownIcon className="h-8 w-8 text-gray-700" aria-hidden="true" />
         </Combobox.Button>
 
-        {localOptions?.length > 0 && (
+        {(localOptions || [])?.length > 0 && (
           <Combobox.Options className="outline outline-[1px] outline-zinc-400 bg-white absolute z-10 mt-2 p-2 max-h-60 w-full overflow-auto rounded-2xl dark:bg-gray-800 text-base shadow-lg ring-opacity-5 focus:outline-none sm:text-sm">
             {localOptions?.length === 0 && query !== "" ? (
               <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-white">
                 Nothing found.
               </div>
             ) : (
-              localOptions?.map((opt) => {
+              (localOptions || [])?.map((opt) => {
                 return (
                   <Combobox.Option
                     key={opt.value}

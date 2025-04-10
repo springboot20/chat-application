@@ -4,63 +4,58 @@ import { Dialog, Switch, Transition } from "@headlessui/react";
 import { UserGroupIcon, XCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { SelectModalInput } from "./Select";
 import { ChatListItemInterface } from "../../types/chat";
-import { UserType } from "../../types/user";
 import { classNames, requestHandler } from "../../utils";
-import { createChat, createGroupChat, getAvailableUser } from "../../api";
+import { createGroupChat } from "../../api";
 import { toast } from "react-toastify";
+import {
+  useCreateUserChatMutation,
+  useGetAvailableUsersQuery,
+} from "../../features/chats/chat.slice";
+import { User } from "../../types/auth";
 
 export const ChatModal: React.FC<{
   open: boolean;
   onClose: () => void;
   onSuccess: (chat: ChatListItemInterface) => void;
 }> = ({ onClose, open, onSuccess }) => {
-  const [userId, setUserId] = useState<string>();
+  const [userId, setUserId] = useState<string | null>(null);
   const [creatingChat, setCreatingChat] = useState<boolean>(false);
   const [groupName, setGroupName] = useState<string>("");
-  const [users, setUsers] = useState<UserType[] | undefined>([]);
   const [participants, setParticipants] = useState<string[]>([]);
   const [isGroupChat, setIsGroupChat] = useState<boolean>(false);
 
-  const getAllUsers = () => {
-    requestHandler({
-      api: async () => await getAvailableUser(),
-      setLoading: null,
-      onSuccess: (res) => {
-        const { data } = res;
+  const { data: availableUsers, refetch: refetchUsers } = useGetAvailableUsersQuery();
+  const [_createNewChat] = useCreateUserChatMutation();
+  const users = availableUsers?.data as User[];
 
-        setUsers(data || []);
-      },
-      onError(error, toast) {
-        toast(error);
-      },
-    });
-  };
-
-  const createNewChat = () => {
+  const createNewChat = async () => {
     if (!userId) return toast.error("Plase select a user");
 
-    requestHandler({
-      api: async () => await createChat(userId),
-      setLoading: setCreatingChat,
-      onSuccess: (res) => {
-        if (res.statusCode === 200) {
-          toast.warning("Chat with selected user already exists");
-          return;
-        }
+    setCreatingChat(true);
 
-        onSuccess(res.data);
-        handleClose();
-      },
-      onError(error, toast) {
-        toast(error);
-      },
-    });
+    try {
+      const response = await _createNewChat(userId).unwrap();
+      const { message } = response;
+      toast(message, { type: "success" });
+    } catch (error: any) {
+      const { message } = error.data;
+      toast(message, { type: "error" });
+      handleClose();
+    } finally {
+      setCreatingChat(false);
+    }
   };
 
   const createNewGroupChat = () => {
-    if (!groupName) return toast.warning("Group name is required");
-    if (!participants.length || participants.length < 2)
-      return toast.warning("There must be at least 2 group participant");
+    if (!groupName) {
+      toast.warning("Group name is required");
+      return;
+    }
+
+    if (!participants.length || participants.length < 2) {
+      toast.warning("There must be at least 2 group participant");
+      return;
+    }
 
     requestHandler({
       api: async () => await createGroupChat({ name: groupName, participants }),
@@ -76,25 +71,21 @@ export const ChatModal: React.FC<{
   };
 
   const handleClose = () => {
-    setUsers([]);
     setGroupName("");
     setParticipants([]);
-    setUserId("");
+    setUserId(null);
     setIsGroupChat(false);
     onClose();
   };
 
   useEffect(() => {
-    if (!open) return;
-    getAllUsers();
-  }, [open]);
-
-  console.log(users);
+    if (open && !users?.length) refetchUsers();
+  }, [open, refetchUsers, users]);
 
   return (
     <>
       <Transition.Root show={open} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={handleClose}>
+        <Dialog as="div" className="relative z-10" onClose={() => handleClose()}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -199,12 +190,14 @@ export const ChatModal: React.FC<{
                         };
                       })}
                       onChange={({ value }) => {
-                        if (isGroupChat && !participants.includes(value)) {
+                        if (isGroupChat) {
                           // if user is creating a group chat track the participants in an array
-                          setParticipants([...participants, value]);
+                          setParticipants((prev) =>
+                            prev.includes(value) ? prev : [...prev, value]
+                          );
                         } else {
-                          setUserId(value);
                           // if user is creating normal chat just get a single user
+                          setUserId(value);
                         }
                       }}
                     />
@@ -212,7 +205,9 @@ export const ChatModal: React.FC<{
                   {isGroupChat ? (
                     <div className="my-5">
                       <span
-                        className={classNames("font-medium text-white inline-flex items-center")}
+                        className={classNames(
+                          "font-medium text-gray-500 dark:text-white inline-flex items-center"
+                        )}
                       >
                         <UserGroupIcon className="h-5 w-5 mr-2" /> Selected participants
                       </span>{" "}
@@ -225,10 +220,10 @@ export const ChatModal: React.FC<{
                                 className="inline-flex bg-secondary rounded-full p-2 border-[1px] border-zinc-400 items-center gap-2"
                                 key={participant._id}
                               >
-                                <img
+                                {/* <img
                                   className="h-6 w-6 rounded-full object-cover"
                                   src={participant.avatar.url}
-                                />
+                                /> */}
                                 <p className="text-white">{participant.username}</p>
                                 <XCircleIcon
                                   role="button"
