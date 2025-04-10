@@ -1,7 +1,7 @@
 import { ChatListItemInterface, ChatMessageInterface } from "../types/chat";
 import { useAppDispatch } from "../redux/redux.hooks";
 import { useGetUserChatsQuery } from "../features/chats/chat.slice";
-import { newChat,onChatLeave ,updateChatLastMessage } from "../features/chats/chat.reducer";
+import { newChat, onChatLeave, updateChatLastMessage } from "../features/chats/chat.reducer";
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
@@ -18,7 +18,7 @@ export const useChat = () => {
     dispatch(newChat({ chat }));
   };
 
-  const onChatLeave = (chat: ChatListItemInterface) => {
+  const _onChatLeave = (chat: ChatListItemInterface) => {
     console.log(chat);
 
     dispatch(onChatLeave({ chat }));
@@ -28,7 +28,7 @@ export const useChat = () => {
     isLoadingChats,
     chats,
     onNewChat,
-    onChatLeave,
+    _onChatLeave,
     _updateChatLastMessage,
     refetch,
   };

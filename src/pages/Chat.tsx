@@ -35,7 +35,7 @@ export const Chat = () => {
   const [logout] = useLogoutMutation();
 
   const { socket } = useSocketContext();
-  const { onNewChat, onChatLeave } = useChat();
+  const { onNewChat, _onChatLeave } = useChat();
   const { isOnline } = useNetwork();
 
   const {
@@ -73,14 +73,14 @@ export const Chat = () => {
       onMessageReceive(data);
     });
     socket?.on(NEW_CHAT_EVENT, onNewChat);
-    socket?.on(LEAVE_CHAT_EVENT, onChatLeave);
+    socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
 
     return () => {
       socket?.off(TYPING_EVENT, handleStartTyping);
       socket?.off(STOP_TYPING_EVENT, handleStopTyping);
       socket?.off(MESSAGE_RECEIVED_EVENT, onMessageReceive);
       socket?.off(NEW_CHAT_EVENT, onNewChat);
-      socket?.off(LEAVE_CHAT_EVENT, onChatLeave);
+      socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);
     };
   }, [socket]);
 
