@@ -40,7 +40,6 @@ export const Chat = () => {
   const {
     message,
     getAllMessages,
-    refetchMessages,
     loadingMessages,
     messages,
     setAttachmentFiles,
@@ -48,25 +47,20 @@ export const Chat = () => {
     sendChatMessage,
     attachmentFiles,
     onMessageReceive,
+    bottomRef,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
 
   useEffect(() => {
     // Run getChats only once when component mounts or socket changes
-    if (currentChat._id) {
-      socket?.emit(JOIN_CHAT_EVENT, currentChat._id);
+    if (currentChat?._id) {
+      socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
       getAllMessages();
     }
 
     console.log(currentChat);
   }, [currentChat, socket]);
-
-  useEffect(() => {
-    console.log("Messages updated:", messages);
-
-    refetchMessages();
-  }, [messages, refetchMessages]);
 
   useEffect(() => {
     if (!socket) return;
@@ -285,16 +279,16 @@ export const Chat = () => {
                       </div>
                     </header>
 
-                    <div className="relative left-20 lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-auto mt-20 w-[calc(100%-5rem)]">
-                      <div className="flex flex-col flex-grow p-4 overflow-auto gap-10">
+                    <div className="relative left-20 lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto mt-20 w-[calc(100%-5rem)] pb-28">
+                      <div className="flex flex-col flex-grow p-4 overflow-y-auto gap-10">
                         {loadingMessages ? (
-                          <div className="flex justify-center items-center h-[calc(100%-88px)]">
+                          <div className="flex justify-center items-center min-h-[calc(100%-5rem)]">
                             <Typing />
                           </div>
                         ) : (
                           <>
                             {isTyping && <Typing />}
-                            <div className="flex flex-col gap-6">
+                            <div ref={bottomRef} className="flex flex-col gap-6 h-full">
                               {messages && messages.length > 0 ? (
                                 messages.map((msg) => (
                                   <MessageItem
@@ -305,7 +299,7 @@ export const Chat = () => {
                                   />
                                 ))
                               ) : (
-                                <div className="flex justify-center items-center h-64">
+                                <div className="flex justify-center items-center h-full">
                                   <p className="text-gray-500">
                                     No messages yet. Start a conversation!
                                   </p>

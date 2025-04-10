@@ -20,7 +20,9 @@ export const MessageNavigation: React.FC<{
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
   const { unreadMessages, setMessage, getAllMessages, refetchMessages } = useMessage();
-  const { chats, isLoadingChats } = useChat();
+  const { chats, isLoadingChats, refetch } = useChat();
+
+  const [itemDeleted, setItemDeleted] = useState<boolean>(false);
 
   const [localSearchQuery, setLocalSearchQuery] = useState<string>("");
   const [openChat, setOpenChat] = useState(false);
@@ -30,11 +32,18 @@ export const MessageNavigation: React.FC<{
 
   useEffect(() => {
     refetchMessages();
-  }, [refetchMessages]);
+    if (itemDeleted) refetch();
+  }, [refetchMessages, refetch, itemDeleted]);
 
   return (
     <>
-      <ChatModal open={openChat} onSuccess={() => {}} onClose={() => setOpenChat(false)} />
+      <ChatModal
+        open={openChat}
+        onSuccess={() => {
+          refetch();
+        }}
+        onClose={() => setOpenChat(false)}
+      />
       <div
         className={`fixed left-20 w-[25rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 translate-x-0 hidden lg:block
   `}
@@ -117,6 +126,8 @@ export const MessageNavigation: React.FC<{
                       }}
                       onChatDelete={(chatId) => {
                         // setChats((prev) => prev.filter((chat) => chat._id !== chatId));
+
+                        setItemDeleted(true);
                         if (currentChat?._id === chatId) {
                           dispatch(setCurrentChat({ chat: null }));
                           LocalStorage.remove("current-chat");
@@ -206,7 +217,7 @@ export const MessageNavigation: React.FC<{
                     onChatDelete={(chatId) => {
                       console.log(chatId);
                       // setChats((prev) => prev.filter((chat) => chat._id !== chatId));
-
+                      setItemDeleted(true);
                       if (currentChat?._id === chatId) {
                         setCurrentChat({ chat: null });
                         LocalStorage.remove("current-chat");

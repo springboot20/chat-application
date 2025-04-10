@@ -16,7 +16,7 @@ import { User } from "../../types/auth";
 export const ChatModal: React.FC<{
   open: boolean;
   onClose: () => void;
-  onSuccess: (chat: ChatListItemInterface) => void;
+  onSuccess: () => void;
 }> = ({ onClose, open, onSuccess }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [creatingChat, setCreatingChat] = useState<boolean>(false);
@@ -37,6 +37,9 @@ export const ChatModal: React.FC<{
       const response = await _createNewChat(userId).unwrap();
       const { message } = response;
       toast(message, { type: "success" });
+
+      onSuccess();
+      handleClose();
     } catch (error: any) {
       const { message } = error.data;
       toast(message, { type: "error" });
@@ -57,17 +60,17 @@ export const ChatModal: React.FC<{
       return;
     }
 
-    requestHandler({
-      api: async () => await createGroupChat({ name: groupName, participants }),
-      setLoading: setCreatingChat,
-      onSuccess: (res) => {
-        onSuccess(res.data);
-        handleClose();
-      },
-      onError: (error, toast) => {
-        toast(error);
-      },
-    });
+    // requestHandler({
+    //   api: async () => await createGroupChat({ name: groupName, participants }),
+    //   setLoading: setCreatingChat,
+    //   onSuccess: (res) => {
+    //     onSuccess(res.data);
+    //     handleClose();
+    //   },
+    //   onError: (error, toast) => {
+    //     toast(error);
+    //   },
+    // });
   };
 
   const handleClose = () => {

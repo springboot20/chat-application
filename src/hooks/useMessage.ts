@@ -1,5 +1,5 @@
 import { useAppDispatch } from "./../redux/redux.hooks";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSocketContext } from "../context/SocketContext.tsx";
 import { useChat } from "./useChat.ts";
 import { useTyping } from "./useTyping.ts";
@@ -14,8 +14,14 @@ export const useMessage = () => {
   // const { chatId } = useParams();
 
   const { _updateChatLastMessage } = useChat();
-  const { currentChat, unreadMessages } = useAppSelector((state: RootState) => state.chat);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const {
+    currentChat,
+    unreadMessages,
+    chatMessages: reduxChatMessages,
+  } = useAppSelector((state: RootState) => state.chat);
   const dispatch = useAppDispatch();
+  const currentUserId = useAppSelector((state: RootState) => state.auth.user?._id);
   const {
     data,
     isLoading: loadingMessages,
@@ -74,23 +80,19 @@ export const useMessage = () => {
     // Filter unread messages
     dispatch(setUnreadMessages({ chatId: currentChat?._id }));
 
-    setMessages(data?.data);
+    if (data?.data) {
+      setMessages(data.data);
+    }
   };
 
   const onMessageReceive = (data: any) => {
     dispatch(newMessage({ data }));
 
-    // Move the chat to the top of the list
-    // setChats((prevChats) => {
-    //   const updatedChats = [...prevChats];
-    //   const chatIndex = updatedChats.findIndex((chat) => chat._id === data.chat._id);
-    //   if (chatIndex > 0) {
-    //     const chatToMove = updatedChats[chatIndex];
-    //     updatedChats.splice(chatIndex, 1);
-    //     updatedChats.unshift(chatToMove);
-    //   }
-    //   return updatedChats;
-    // });
+    setMessages((prevMessages) => [...prevMessages, data]);
+  };
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const sendChatMessage = async () => {
@@ -99,6 +101,24 @@ export const useMessage = () => {
     socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
 
     dispatch(setUnreadMessages({ chatId: currentChat?._id }));
+
+    // Create a temporary message object to show immediately
+    const tempMessage: Partial<ChatMessageInterface> = {
+      content: message,
+      sender: { _id: currentUserId } as any,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      chatId: currentChat?._id,
+      _id: `temp-${Date.now()}`, // Temporary ID until we get the real one from server
+      // For attachments, you might want to show a preview or loading state
+    };
+
+    // Add temp message to local state immediately
+    setMessages((prevMessages) => [...prevMessages, tempMessage as ChatMessageInterface]);
+
+    // Clear input fields
+    setMessage("");
+    setAttachmentFiles([]);
 
     await sendMessage({
       chatId: currentChat?._id as string,
@@ -109,14 +129,40 @@ export const useMessage = () => {
     })
       .unwrap()
       .then((response) => {
-        setMessage("");
-        setAttachmentFiles([]);
+        // Replace temp message with real message from the server
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) => (msg._id === tempMessage._id ? response.data : msg))
+        );
+
         _updateChatLastMessage(currentChat?._id || "", response.data);
       })
       .catch((error: any) => {
         console.error(error);
+        // Remove temp message if sending failed
+        setMessages((prevMessages) => prevMessages.filter((msg) => msg._id !== tempMessage._id));
+        toast("Failed to send message", { type: "error" });
       });
+
+    scrollToBottom();
   };
+
+  // Sync local messages state with redux store whenever reduxChatMessages changes
+  useEffect(() => {
+    if (reduxChatMessages && reduxChatMessages.length > 0) {
+      setMessages(reduxChatMessages);
+    }
+  }, [reduxChatMessages]);
+
+  // Also sync with data from the query when it changes
+  useEffect(() => {
+    if (data?.data) {
+      setMessages(data.data);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   return {
     sendChatMessage,
@@ -131,5 +177,6 @@ export const useMessage = () => {
     attachmentFiles,
     onMessageReceive,
     refetchMessages,
+    bottomRef,
   };
 };

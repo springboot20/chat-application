@@ -9,7 +9,7 @@ interface InitialState {
   chats: ChatListItemInterface[];
   chatMessages: ChatMessageInterface[];
   unreadMessages: ChatMessageInterface[];
-  currentChat: ChatListItemInterface;
+  currentChat: ChatListItemInterface | null;
   users: User[];
 }
 
@@ -63,7 +63,7 @@ const ChatSlice = createSlice({
     setUnreadMessages: (state, action: PayloadAction<{ chatId: string }>) => {
       const { chatId } = action.payload;
 
-      state.unreadMessages = state.chatMessages.filter((msg) => msg?.chatId !== chatId);
+      state.unreadMessages = state.chatMessages?.filter((msg) => msg?.chatId !== chatId);
     },
 
     updateChatLastMessage: (state, action: PayloadAction<ChatMessageUpdateInterface>) => {
@@ -103,7 +103,7 @@ const ChatSlice = createSlice({
 
       state.chatMessages = [...state.chatMessages, data];
 
-      LocalStorage.set("chatmessages", data);
+      LocalStorage.set("chatmessages", state.chatMessages);
     });
 
     builder.addMatcher(ChatApiSlice.endpoints.getAvailableUsers.matchFulfilled, (state, action) => {
@@ -111,8 +111,33 @@ const ChatSlice = createSlice({
 
       state.users = data;
 
-      LocalStorage.set("chatmessages", data);
+      LocalStorage.set("chatmessages", state.chatMessages);
     });
+
+    builder.addMatcher(ChatApiSlice.endpoints.createUserChat.matchFulfilled, (state, action) => {
+      const { data } = action.payload;
+
+      console.log(data);
+
+      state.chats = [data, ...state.chats];
+
+      LocalStorage.set("chatmessages", state.chats);
+    });
+
+    builder.addMatcher(
+      ChatApiSlice.endpoints.deleteOneOneChatMessage.matchFulfilled,
+      (state, action) => {
+        const { data } = action.payload;
+
+        state.chats = state.chats.filter((chat) => chat?._id !== data?._id);
+        state.currentChat = null;
+        state.chatMessages = [];
+
+        LocalStorage.set("chats", state.chats);
+        LocalStorage.set("chatmessages", state.chatMessages);
+        LocalStorage.set("current-chat", state.currentChat);
+      }
+    );
   },
 });
 
