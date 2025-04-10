@@ -35,6 +35,7 @@ export const ChatItem: React.FC<{
   // };
 
   console.log(openGroupInfo);
+  console.log(getMessageObjectMetaData(chat, user!).lastMessage)
 
   const deleteChat = async () => {
     await deleteOneOneChatMessage(chat?._id)
@@ -96,8 +97,6 @@ export const ChatItem: React.FC<{
                       const ok = confirm("Are you sure you want to delete this chat?");
                       if (ok) {
                         deleteChat();
-
-                        
                       }
                     }}
                     role="button"

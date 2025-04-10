@@ -81,6 +81,8 @@ const ChatSlice = createSlice({
     updateChatLastMessage: (state, action: PayloadAction<ChatMessageUpdateInterface>) => {
       const { chatToUpdateId, message } = action.payload;
 
+      console.log(chatToUpdateId);
+
       const chatIndex = state.chats.findIndex((chat) => chat?._id === chatToUpdateId);
 
       if (chatIndex !== -1) {
@@ -90,6 +92,11 @@ const ChatSlice = createSlice({
           lastMessage: message,
           updatedAt: message?.updatedAt,
         };
+
+        LocalStorage.set("chats", state.chats);
+        LocalStorage.set("current-chat", state.chats[chatIndex]);
+
+        console.log(state.chats[chatIndex])
       }
     },
   },
@@ -112,9 +119,8 @@ const ChatSlice = createSlice({
 
     builder.addMatcher(ChatApiSlice.endpoints.sendMessage.matchFulfilled, (state, action) => {
       const { data } = action.payload;
-
+      // Add the new message to chatMessages
       state.chatMessages = [...state.chatMessages, data];
-
       LocalStorage.set("chatmessages", state.chatMessages);
     });
 
@@ -133,7 +139,7 @@ const ChatSlice = createSlice({
 
       state.chats = [data, ...state.chats];
 
-      LocalStorage.set("chatmessages", state.chats);
+      LocalStorage.set("chats", state.chats);
     });
 
     builder.addMatcher(

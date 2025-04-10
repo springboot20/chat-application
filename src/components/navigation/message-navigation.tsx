@@ -13,6 +13,7 @@ import { useMessage } from "../../hooks/useMessage.ts";
 import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks.ts";
 import { RootState } from "../../app/store.ts";
 import { setCurrentChat } from "../../features/chats/chat.reducer.ts";
+import { ChatListItemInterface } from "../../types/chat.ts";
 
 export const MessageNavigation: React.FC<{
   open: boolean;
@@ -32,8 +33,38 @@ export const MessageNavigation: React.FC<{
 
   useEffect(() => {
     refetchMessages();
-    if (itemDeleted) refetch();
+    if (itemDeleted) {
+      refetch();
+      setItemDeleted(false);
+    }
   }, [refetchMessages, refetch, itemDeleted]);
+
+  const handleChatSelect = (chat: ChatListItemInterface) => {
+    if (currentChat?._id && currentChat?._id === chat?._id) return;
+
+    dispatch(setCurrentChat({ chat }));
+    setMessage("");
+    getAllMessages();
+  };
+
+  const handleChatDelete = (chatId: string) => {
+    setItemDeleted(true);
+    if (currentChat?._id === chatId) {
+      dispatch(setCurrentChat({ chat: null }));
+      LocalStorage.remove("current-chat");
+    }
+  };
+
+  // Consistent logic for calculating unread messages
+  const getUnreadCount = (chatId: string) => {
+    return (unreadMessages || [])?.filter((msg) => msg?.chatId === chatId).length;
+  };
+
+  const filteredChats = [...(chats || [])]?.filter((chat) =>
+    localSearchQuery
+      ? getMessageObjectMetaData(chat, user!).title?.toLowerCase().includes(localSearchQuery)
+      : true
+  );
 
   return (
     <>
@@ -103,41 +134,16 @@ export const MessageNavigation: React.FC<{
               </div>
             ) : (
               <div className="mt-3 flex flex-col">
-                {[...(chats || [])]
-                  ?.filter((chat) =>
-                    localSearchQuery
-                      ? getMessageObjectMetaData(chat, user!)
-                          .title?.toLowerCase()
-                          .includes(localSearchQuery)
-                      : true
-                  )
-                  .map((chat) => (
-                    <ChatItem
-                      key={chat?._id}
-                      chat={chat}
-                      isActive={chat?._id === currentChat?._id}
-                      onClick={(chat) => {
-                        if (currentChat?._id && currentChat?._id === chat?._id) return;
-
-                        dispatch(setCurrentChat({ chat }));
-                        setMessage("");
-
-                        getAllMessages();
-                      }}
-                      onChatDelete={(chatId) => {
-                        // setChats((prev) => prev.filter((chat) => chat._id !== chatId));
-
-                        setItemDeleted(true);
-                        if (currentChat?._id === chatId) {
-                          dispatch(setCurrentChat({ chat: null }));
-                          LocalStorage.remove("current-chat");
-                        }
-                      }}
-                      unreadCount={
-                        (unreadMessages || [])?.filter((c) => c.chatId === chat._id).length
-                      }
-                    />
-                  ))}
+                {filteredChats.map((chat) => (
+                  <ChatItem
+                    key={chat?._id}
+                    chat={chat?._id === currentChat?._id ? currentChat : chat}
+                    isActive={chat?._id === currentChat?._id}
+                    onClick={handleChatSelect}
+                    onChatDelete={handleChatDelete}
+                    unreadCount={getUnreadCount(chat._id)}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -193,39 +199,16 @@ export const MessageNavigation: React.FC<{
                 <Loading />
               </div>
             ) : (
-              [...(chats || [])]
-                ?.filter((chat) =>
-                  localSearchQuery
-                    ? getMessageObjectMetaData(chat, user!)
-                        .title?.toLowerCase()
-                        .includes(localSearchQuery)
-                    : true
-                )
-                .map((chat) => (
-                  <ChatItem
-                    key={chat?._id}
-                    chat={chat}
-                    isActive={chat?._id === currentChat?._id}
-                    onClick={(chat) => {
-                      if (currentChat?._id && currentChat?._id === chat?._id) return;
-
-                      dispatch(setCurrentChat({ chat }));
-
-                      setMessage("");
-                      getAllMessages();
-                    }}
-                    onChatDelete={(chatId) => {
-                      console.log(chatId);
-                      // setChats((prev) => prev.filter((chat) => chat._id !== chatId));
-                      setItemDeleted(true);
-                      if (currentChat?._id === chatId) {
-                        setCurrentChat({ chat: null });
-                        LocalStorage.remove("current-chat");
-                      }
-                    }}
-                    unreadCount={(unreadMessages || [])?.filter((c) => c._id === chat._id).length}
-                  />
-                ))
+              filteredChats.map((chat) => (
+                <ChatItem
+                  key={chat?._id}
+                  chat={chat}
+                  isActive={chat?._id === currentChat?._id}
+                  onClick={handleChatSelect}
+                  onChatDelete={handleChatDelete}
+                  unreadCount={getUnreadCount(chat._id)}
+                />
+              ))
             )}
           </div>
         </div>

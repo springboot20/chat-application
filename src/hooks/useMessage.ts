@@ -1,19 +1,20 @@
 import { useAppDispatch } from "./../redux/redux.hooks";
 import { useEffect, useRef, useState } from "react";
 import { useSocketContext } from "../context/SocketContext.tsx";
-import { useChat } from "./useChat.ts";
 import { useTyping } from "./useTyping.ts";
 import { JOIN_CHAT_EVENT, STOP_TYPING_EVENT, TYPING_EVENT } from "../enums/index.ts";
 import { toast } from "react-toastify";
 import { RootState } from "../app/store.ts";
 import { useAppSelector } from "../redux/redux.hooks.ts";
 import { useGetChatMessagesQuery, useSendMessageMutation } from "../features/chats/chat.slice.ts";
-import { newMessage, setUnreadMessages } from "../features/chats/chat.reducer.ts";
+import {
+  newMessage,
+  setUnreadMessages,
+  updateChatLastMessage,
+} from "../features/chats/chat.reducer.ts";
 import { ChatMessageInterface } from "../types/chat.ts";
-export const useMessage = () => {
-  // const { chatId } = useParams();
 
-  const { _updateChatLastMessage } = useChat();
+export const useMessage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const {
     currentChat,
@@ -31,7 +32,6 @@ export const useMessage = () => {
 
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<ChatMessageInterface[]>([] as ChatMessageInterface[]);
-
   const { socket, connected } = useSocketContext();
   const { typingTimeOutRef, setIsTyping, isTyping } = useTyping();
   const [attachmentFiles, setAttachmentFiles] = useState<File[] | undefined>([]);
@@ -134,7 +134,9 @@ export const useMessage = () => {
           prevMessages.map((msg) => (msg._id === tempMessage._id ? response.data : msg))
         );
 
-        _updateChatLastMessage(currentChat?._id || "", response.data);
+        dispatch(
+          updateChatLastMessage({ chatToUpdateId: currentChat?._id, message: response?.data })
+        );
       })
       .catch((error: any) => {
         console.error(error);
