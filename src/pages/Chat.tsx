@@ -15,7 +15,7 @@ import {
   NEW_CHAT_EVENT,
   STOP_TYPING_EVENT,
   TYPING_EVENT,
-  LEAVE_CHAT_EVENT
+  LEAVE_CHAT_EVENT,
 } from "../enums/index.ts";
 import { useChat } from "../hooks/useChat.ts";
 import { useTyping } from "../hooks/useTyping.ts";
@@ -35,7 +35,7 @@ export const Chat = () => {
   const [logout] = useLogoutMutation();
 
   const { socket } = useSocketContext();
-  const { onNewChat, _onChatLeave } = useChat();
+  const { onNewChat, _onChatLeave, chats } = useChat();
   const { isOnline } = useNetwork();
 
   const {
@@ -59,8 +59,6 @@ export const Chat = () => {
       socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
       getAllMessages();
     }
-
-    console.log(currentChat);
   }, [currentChat, socket]);
 
   useEffect(() => {
@@ -82,7 +80,10 @@ export const Chat = () => {
       socket?.off(NEW_CHAT_EVENT, onNewChat);
       socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);
     };
-  }, [socket]);
+  }, [socket, chats, currentChat]);
+
+
+  console.log(messages)
 
   return (
     <Disclosure as={"div"}>
@@ -137,7 +138,7 @@ export const Chat = () => {
                         <div className="flex items-center gap-3">
                           {isAuthenticated ? (
                             <>
-                              <Menu as="div" className="relative">
+                              <Menu as="div" className="relative z-30">
                                 <div>
                                   <Menu.Button className="flex dark:text-white text-gray-900">
                                     <span className="sr-only">Open auth menu</span>
@@ -155,7 +156,7 @@ export const Chat = () => {
                                   leaveFrom="transform opacity-100 scale-100"
                                   leaveTo="transform opacity-0 scale-95"
                                 >
-                                  <Menu.Items className="absolute right-0 z-10 mt-4 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                  <Menu.Items className="absolute right-0 z-30 mt-4 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                                     <Menu.Item>
                                       {({ active }) => (
                                         <button
@@ -283,7 +284,7 @@ export const Chat = () => {
                     </header>
 
                     <div className="relative left-20 lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto mt-20 w-[calc(100%-5rem)] pb-28">
-                      <div className="flex flex-col flex-grow p-4 overflow-y-auto gap-10">
+                      <div className="flex flex-col flex-grow px-5 overflow-y-auto gap-10">
                         {loadingMessages ? (
                           <div className="flex justify-center items-center min-h-[calc(100%-5rem)]">
                             <Typing />
@@ -293,14 +294,17 @@ export const Chat = () => {
                             {isTyping && <Typing />}
                             <div ref={bottomRef} className="flex flex-col gap-6 h-full">
                               {messages && messages.length > 0 ? (
-                                messages.map((msg) => (
-                                  <MessageItem
-                                    key={msg._id}
-                                    isOwnedMessage={msg.sender?._id === user?._id}
-                                    isGroupChatMessage={currentChat?.isGroupChat}
-                                    message={msg}
-                                  />
-                                ))
+                                messages
+                                  ?.map((msg, index) => {
+                                    return (
+                                      <MessageItem
+                                        key={index}
+                                        isOwnedMessage={msg.sender?._id === user?._id}
+                                        isGroupChatMessage={currentChat?.isGroupChat}
+                                        message={msg}
+                                      />
+                                    );
+                                  })
                               ) : (
                                 <div className="flex justify-center items-center h-full">
                                   <p className="text-gray-500">

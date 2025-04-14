@@ -6,11 +6,23 @@ import { Forgot } from "./pages/forgot-password/Forgot";
 import { PrivateRoutes } from "./routes/PrivateRoute";
 import { PublicRoutes } from "./routes/PublicRoutes";
 import { OtpForm } from "./pages/otp-code-form/OtpForm";
-import { useAppSelector } from "./redux/redux.hooks";
+import { useAppDispatch, useAppSelector } from "./redux/redux.hooks";
 import { RootState } from "./app/store";
+import { LocalStorage } from "./utils";
+import { authenticationExpires } from "./features/auth/auth.reducer";
+import { useEffect } from "react";
 
 function App() {
   const { isAuthenticated } = useAppSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    const tokens = LocalStorage.get("tokens");
+
+    if (tokens) {
+      dispatch(authenticationExpires(tokens.accessToken));
+    }
+  }, [dispatch]);
 
   return (
     <Routes>

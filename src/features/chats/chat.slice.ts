@@ -63,16 +63,10 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     }),
 
     createGroupChat: builder.mutation<Response, GroupChatInterface>({
-      query: (data) => {
-        const form = new FormData();
-
-        Object.entries(data).forEach(([key, value]) => {
-          form.append(key, value);
-        });
-
+      query: ({ name, participants }) => {
         return {
           url: "/chat-app/chats/group-chat",
-          body: form,
+          body: { name, participants },
           method: "POST",
         };
       },

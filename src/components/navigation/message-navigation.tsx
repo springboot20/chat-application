@@ -8,11 +8,11 @@ import { SearchInput } from "../panels/SearchInput.tsx";
 import { ChatItem } from "../chat/ChatItem.tsx";
 import { Loading } from "../Loading.tsx";
 import { useChat } from "../../hooks/useChat.ts";
-import { getMessageObjectMetaData, LocalStorage } from "../../utils/index.ts";
+import { getMessageObjectMetaData } from "../../utils/index.ts";
 import { useMessage } from "../../hooks/useMessage.ts";
 import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks.ts";
 import { RootState } from "../../app/store.ts";
-import { setCurrentChat } from "../../features/chats/chat.reducer.ts";
+import { setCurrentChat, onChatDelete } from "../../features/chats/chat.reducer.ts";
 import { ChatListItemInterface } from "../../types/chat.ts";
 
 export const MessageNavigation: React.FC<{
@@ -33,11 +33,28 @@ export const MessageNavigation: React.FC<{
 
   useEffect(() => {
     refetchMessages();
+    refetch(); // Refetch chats to get updated lastMessage
+
     if (itemDeleted) {
-      refetch();
       setItemDeleted(false);
     }
-  }, [refetchMessages, refetch, itemDeleted]);
+  }, [refetchMessages, refetch, itemDeleted, unreadMessages.length]);
+
+  // In MessageNavigation.tsx or similar component
+  useEffect(() => {
+    // Check if the current chat still exists in the chats list
+    if (currentChat && chats?.length > 0) {
+      const chatStillExists = chats?.some(
+        (chat: ChatListItemInterface) => chat._id === currentChat._id
+      );
+
+      if (!chatStillExists) {
+        // Current chat was deleted, reset the view
+        dispatch(setCurrentChat({ chat: null }));
+        setMessage("");
+      }
+    }
+  }, [chats, currentChat, dispatch]);
 
   const handleChatSelect = (chat: ChatListItemInterface) => {
     if (currentChat?._id && currentChat?._id === chat?._id) return;
@@ -49,15 +66,12 @@ export const MessageNavigation: React.FC<{
 
   const handleChatDelete = (chatId: string) => {
     setItemDeleted(true);
-    if (currentChat?._id === chatId) {
-      dispatch(setCurrentChat({ chat: null }));
-      LocalStorage.remove("current-chat");
-    }
+    dispatch(onChatDelete({ chatId }));
   };
 
   // Consistent logic for calculating unread messages
   const getUnreadCount = (chatId: string) => {
-    return (unreadMessages || [])?.filter((msg) => msg?.chatId === chatId).length;
+    return (unreadMessages || [])?.filter((msg) => msg?.chat === chatId).length;
   };
 
   const filteredChats = [...(chats || [])]?.filter((chat) =>
@@ -65,6 +79,8 @@ export const MessageNavigation: React.FC<{
       ? getMessageObjectMetaData(chat, user!).title?.toLowerCase().includes(localSearchQuery)
       : true
   );
+
+  console.log(getUnreadCount(currentChat?._id!));
 
   return (
     <>

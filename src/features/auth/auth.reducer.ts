@@ -1,7 +1,8 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { InitialState, Token, User } from "../../types/auth";
 import { LocalStorage } from "../../utils";
 import { AuthApiSlice } from "./auth.slice";
+import { jwtDecode } from "jwt-decode";
 
 const AuthStorage = {
   get: (key: string) => LocalStorage.get(key),
@@ -42,7 +43,30 @@ const clearAuthState = (state: InitialState) => {
 const AuthSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {},
+  reducers: {
+    authenticationExpires: (state, action: PayloadAction<string>) => {
+      try {
+        if (!action.payload) {
+          state.isAuthenticated = false;
+          return;
+        }
+
+        const decodedToken = jwtDecode<{ exp: number }>(action.payload);
+        const expirationTime = decodedToken?.exp;
+
+        if (!expirationTime || Date.now() >= expirationTime * 1000) {
+          state.isAuthenticated = false;
+        } else {
+          state.isAuthenticated = true;
+        }
+
+        AuthStorage.set("authentified", state.isAuthenticated);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        state.isAuthenticated = false;
+      }
+    },
+  },
   extraReducers: (builder) => {
     /**
      * Register builder casing
@@ -69,4 +93,4 @@ const AuthSlice = createSlice({
 });
 
 export const authReducer = AuthSlice.reducer;
-// export const {} = AuthSlice.reducer;
+export const { authenticationExpires } = AuthSlice.actions;

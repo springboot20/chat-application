@@ -60,8 +60,10 @@ export const ChatModal: React.FC<{
       return;
     }
 
+    const values = { name: groupName, participants };
+
     try {
-      const response = await createNewGroupChat({ name: groupName, participants }).unwrap();
+      const response = await createNewGroupChat(values).unwrap();
       const { message } = response;
       toast(message, { type: "success" });
       handleClose();

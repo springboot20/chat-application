@@ -1,21 +1,22 @@
 import { useMemo, useState, useRef } from "react";
-import { useChat } from "./useChat";
+import { useAppSelector } from "../redux/redux.hooks";
+import { RootState } from "../app/store";
 
 export const useTyping = () => {
-  const { currentChat } = useChat();
+  const { currentChat } = useAppSelector((state: RootState) => state.chat);
 
   const typingTimeOutRef = useRef<NodeJS.Timeout | null>(null);
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [userTyping, setUserTyping] = useState<boolean>(false);
 
   const handleStartTyping = (chatId: string) => {
-    if (chatId !== currentChat.current?._id) return;
+    if (chatId !== currentChat?._id) return;
 
     setIsTyping(true);
   };
 
   const handleStopTyping = (chatId: string) => {
-    if (chatId !== currentChat.current?._id) return;
+    if (chatId !== currentChat?._id) return;
 
     setIsTyping(false);
   };

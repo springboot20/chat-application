@@ -8,7 +8,7 @@ import { RootState } from "../app/store.ts";
 import { useAppSelector } from "../redux/redux.hooks.ts";
 import { useGetChatMessagesQuery, useSendMessageMutation } from "../features/chats/chat.slice.ts";
 import {
-  newMessage,
+  onMessageReceived,
   setUnreadMessages,
   updateChatLastMessage,
 } from "../features/chats/chat.reducer.ts";
@@ -22,9 +22,8 @@ export const useMessage = () => {
     chatMessages: reduxChatMessages,
   } = useAppSelector((state: RootState) => state.chat);
   const dispatch = useAppDispatch();
-  const currentUserId = useAppSelector((state: RootState) => state.auth.user?._id);
   const {
-    data,
+    data: response,
     isLoading: loadingMessages,
     refetch: refetchMessages,
   } = useGetChatMessagesQuery(currentChat?._id ?? "");
@@ -80,19 +79,26 @@ export const useMessage = () => {
     // Filter unread messages
     dispatch(setUnreadMessages({ chatId: currentChat?._id }));
 
-    if (data?.data) {
-      setMessages(data.data);
-    }
+    setMessages(response?.data);
   };
 
   const onMessageReceive = (data: any) => {
-    dispatch(newMessage({ data }));
+    // Always dispatch the received message to the Redux store
+    dispatch(onMessageReceived({ data }));
 
-    setMessages((prevMessages) => [...prevMessages, data]);
+    // Update the last message of the chat
+    dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
+
+    // Only add to local state if it's for the current chat
+    if (data.chat === currentChat?._id) {
+      setMessages((prevMessages) => [...prevMessages, data]);
+    }
   };
 
   const scrollToBottom = () => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
   };
 
   const sendChatMessage = async () => {
@@ -100,21 +106,7 @@ export const useMessage = () => {
 
     socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
 
-    dispatch(setUnreadMessages({ chatId: currentChat?._id }));
-
-    // Create a temporary message object to show immediately
-    const tempMessage: Partial<ChatMessageInterface> = {
-      content: message,
-      sender: { _id: currentUserId } as any,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      chatId: currentChat?._id,
-      _id: `temp-${Date.now()}`, // Temporary ID until we get the real one from server
-      // For attachments, you might want to show a preview or loading state
-    };
-
-    // Add temp message to local state immediately
-    setMessages((prevMessages) => [...prevMessages, tempMessage as ChatMessageInterface]);
+    // dispatch(setUnreadMessages({ chatId: currentChat?._id }));
 
     // Clear input fields
     setMessage("");
@@ -129,19 +121,19 @@ export const useMessage = () => {
     })
       .unwrap()
       .then((response) => {
-        // Replace temp message with real message from the server
-        setMessages((prevMessages) =>
-          prevMessages.map((msg) => (msg._id === tempMessage._id ? response.data : msg))
-        );
+        // Update local messages state
+        setMessages((prevMessages) => [...prevMessages, response?.data]);
 
+        // Explicitly dispatch to update the chat's last message
         dispatch(
-          updateChatLastMessage({ chatToUpdateId: currentChat?._id, message: response?.data })
+          updateChatLastMessage({
+            chatToUpdateId: currentChat?._id!,
+            message: response?.data,
+          })
         );
       })
       .catch((error: any) => {
         console.error(error);
-        // Remove temp message if sending failed
-        setMessages((prevMessages) => prevMessages.filter((msg) => msg._id !== tempMessage._id));
         toast("Failed to send message", { type: "error" });
       });
 
@@ -157,10 +149,10 @@ export const useMessage = () => {
 
   // Also sync with data from the query when it changes
   useEffect(() => {
-    if (data?.data) {
-      setMessages(data.data);
+    if (response?.data) {
+      setMessages(response.data);
     }
-  }, [data]);
+  }, [response]);
 
   useEffect(() => {
     scrollToBottom();

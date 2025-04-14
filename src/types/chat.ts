@@ -9,7 +9,7 @@ export interface ChatMessageInterface {
     localPath: string;
     _id: string;
   }>;
-  chatId: string;
+  chat: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -8,5 +8,7 @@ export const PrivateRoutes: React.FC<{ children: React.ReactNode }> = ({ childre
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
+  console.log(isAuthenticated);
+
   return children;
 };

@@ -2,6 +2,7 @@ import { ChatListItemInterface, ChatMessageInterface } from "../types/chat";
 import { useAppDispatch } from "../redux/redux.hooks";
 import { useGetUserChatsQuery } from "../features/chats/chat.slice";
 import { newChat, onChatLeave, updateChatLastMessage } from "../features/chats/chat.reducer";
+import { toast } from "react-toastify";
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
@@ -22,6 +23,10 @@ export const useChat = () => {
     console.log(chat);
 
     dispatch(onChatLeave({ chat }));
+
+    toast("A chat you were participating in has been deleted", {
+      type: "info"
+    });
   };
 
   return {
