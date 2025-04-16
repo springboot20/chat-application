@@ -1,7 +1,7 @@
 import { Disclosure } from "@headlessui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCaretDown, faClose } from "@fortawesome/free-solid-svg-icons";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { ChatModal } from "../modal/ChatModal.tsx";
 import { SearchInput } from "../panels/SearchInput.tsx";
@@ -20,7 +20,7 @@ export const MessageNavigation: React.FC<{
 }> = ({ open }) => {
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
-  const { unreadMessages, setMessage, getAllMessages, refetchMessages } = useMessage();
+  const { unreadMessages, setMessage, getAllMessages } = useMessage();
   const { chats, isLoadingChats, refetch } = useChat();
 
   const [itemDeleted, setItemDeleted] = useState<boolean>(false);
@@ -32,29 +32,11 @@ export const MessageNavigation: React.FC<{
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    refetchMessages();
-    refetch(); // Refetch chats to get updated lastMessage
-
     if (itemDeleted) {
+      refetch();
       setItemDeleted(false);
     }
-  }, [refetchMessages, refetch, itemDeleted, unreadMessages.length]);
-
-  // In MessageNavigation.tsx or similar component
-  useEffect(() => {
-    // Check if the current chat still exists in the chats list
-    if (currentChat && chats?.length > 0) {
-      const chatStillExists = chats?.some(
-        (chat: ChatListItemInterface) => chat._id === currentChat._id
-      );
-
-      if (!chatStillExists) {
-        // Current chat was deleted, reset the view
-        dispatch(setCurrentChat({ chat: null }));
-        setMessage("");
-      }
-    }
-  }, [chats, currentChat, dispatch]);
+  }, [refetch, itemDeleted]);
 
   const handleChatSelect = (chat: ChatListItemInterface) => {
     if (currentChat?._id && currentChat?._id === chat?._id) return;
@@ -79,8 +61,6 @@ export const MessageNavigation: React.FC<{
       ? getMessageObjectMetaData(chat, user!).title?.toLowerCase().includes(localSearchQuery)
       : true
   );
-
-  console.log(getUnreadCount(currentChat?._id!));
 
   return (
     <>
@@ -132,7 +112,11 @@ export const MessageNavigation: React.FC<{
           </div>
           <div className="px-3 w-full">
             <div className="w-full rounded-md border border-gray-400 flex items-center h-12 bg-gray-100/60">
-              <button type="button" className="px-2 py-2 flex items-center justify-center">
+              <button
+                title="search icon"
+                type="button"
+                className="px-2 py-2 flex items-center justify-center"
+              >
                 <MagnifyingGlassIcon className="h-7 text-gray-700" aria-hidden={true} />
               </button>
 
@@ -150,16 +134,18 @@ export const MessageNavigation: React.FC<{
               </div>
             ) : (
               <div className="mt-3 flex flex-col">
-                {filteredChats.map((chat) => (
-                  <ChatItem
-                    key={chat?._id}
-                    chat={chat?._id === currentChat?._id ? currentChat : chat}
-                    isActive={chat?._id === currentChat?._id}
-                    onClick={handleChatSelect}
-                    onChatDelete={handleChatDelete}
-                    unreadCount={getUnreadCount(chat._id)}
-                  />
-                ))}
+                {React.Children.toArray(
+                  filteredChats.map((chat) => (
+                    <ChatItem
+                      key={chat?._id}
+                      chat={chat?._id === currentChat?._id ? currentChat : chat}
+                      isActive={chat?._id === currentChat?._id}
+                      onClick={handleChatSelect}
+                      onChatDelete={handleChatDelete}
+                      unreadCount={getUnreadCount(chat._id)}
+                    />
+                  ))
+                )}
               </div>
             )}
           </div>
@@ -198,7 +184,11 @@ export const MessageNavigation: React.FC<{
           </div>
           <div className="px-3 w-full">
             <div className="w-full rounded-md border border-gray-400 flex items-center h-12 bg-gray-100/60">
-              <button type="button" className="px-2 py-2 flex items-center justify-center">
+              <button
+                title="search icon"
+                type="button"
+                className="px-2 py-2 flex items-center justify-center"
+              >
                 <MagnifyingGlassIcon className="h-7 text-gray-700" aria-hidden={true} />
               </button>
 
@@ -215,16 +205,20 @@ export const MessageNavigation: React.FC<{
                 <Loading />
               </div>
             ) : (
-              filteredChats.map((chat) => (
-                <ChatItem
-                  key={chat?._id}
-                  chat={chat}
-                  isActive={chat?._id === currentChat?._id}
-                  onClick={handleChatSelect}
-                  onChatDelete={handleChatDelete}
-                  unreadCount={getUnreadCount(chat._id)}
-                />
-              ))
+              <div className="mt-3 flex flex-col">
+                {React.Children.toArray(
+                  filteredChats.map((chat) => (
+                    <ChatItem
+                      key={chat?._id}
+                      chat={chat?._id === currentChat?._id ? currentChat : chat}
+                      isActive={chat?._id === currentChat?._id}
+                      onClick={handleChatSelect}
+                      onChatDelete={handleChatDelete}
+                      unreadCount={getUnreadCount(chat._id)}
+                    />
+                  ))
+                )}
+              </div>
             )}
           </div>
         </div>

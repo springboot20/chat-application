@@ -1,36 +1,23 @@
 import { useAppDispatch } from "./../redux/redux.hooks";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { useSocketContext } from "../context/SocketContext.tsx";
 import { useTyping } from "./useTyping.ts";
-import { JOIN_CHAT_EVENT, STOP_TYPING_EVENT, TYPING_EVENT } from "../enums/index.ts";
-import { toast } from "react-toastify";
+import { STOP_TYPING_EVENT, TYPING_EVENT, JOIN_CHAT_EVENT } from "../enums/index.ts";
 import { RootState } from "../app/store.ts";
 import { useAppSelector } from "../redux/redux.hooks.ts";
-import { useGetChatMessagesQuery, useSendMessageMutation } from "../features/chats/chat.slice.ts";
 import {
   onMessageReceived,
-  setUnreadMessages,
   updateChatLastMessage,
+  setUnreadMessages,
 } from "../features/chats/chat.reducer.ts";
-import { ChatMessageInterface } from "../types/chat.ts";
+import { toast } from "react-toastify";
 
 export const useMessage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const {
-    currentChat,
-    unreadMessages,
-    chatMessages: reduxChatMessages,
-  } = useAppSelector((state: RootState) => state.chat);
+  const { currentChat, unreadMessages } = useAppSelector((state: RootState) => state.chat);
   const dispatch = useAppDispatch();
-  const {
-    data: response,
-    isLoading: loadingMessages,
-    refetch: refetchMessages,
-  } = useGetChatMessagesQuery(currentChat?._id ?? "");
-  const [sendMessage] = useSendMessageMutation();
 
   const [message, setMessage] = useState<string>("");
-  const [messages, setMessages] = useState<ChatMessageInterface[]>([] as ChatMessageInterface[]);
   const { socket, connected } = useSocketContext();
   const { typingTimeOutRef, setIsTyping, isTyping } = useTyping();
   const [attachmentFiles, setAttachmentFiles] = useState<File[] | undefined>([]);
@@ -58,15 +45,15 @@ export const useMessage = () => {
     }, typingLength);
   };
 
-  const getAllMessages = async () => {
+  const getAllMessages = useCallback(async () => {
     // Early return checks
     if (!socket) {
-      console.log("No socket connection, cannot get messages");
+      console.log("No socket connection, cannot get reduxStateMessages");
       return;
     }
 
     if (!currentChat?._id) {
-      console.log("No chat selected, cannot get messages");
+      console.log("No chat selected, cannot get reduxStateMessages");
       setTimeout(() => {
         toast("No chat selected", { type: "warning" });
       }, 9000);
@@ -76,11 +63,9 @@ export const useMessage = () => {
     // Join the chat room
     socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
 
-    // Filter unread messages
+    // Filter unread reduxStateMessages
     dispatch(setUnreadMessages({ chatId: currentChat?._id }));
-
-    setMessages(response?.data);
-  };
+  }, [currentChat?._id, dispatch, socket]);
 
   const onMessageReceive = (data: any) => {
     // Always dispatch the received message to the Redux store
@@ -88,89 +73,25 @@ export const useMessage = () => {
 
     // Update the last message of the chat
     dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
-
-    // Only add to local state if it's for the current chat
-    if (data.chat === currentChat?._id) {
-      setMessages((prevMessages) => [...prevMessages, data]);
-    }
   };
 
-  const scrollToBottom = () => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  };
-
-  const sendChatMessage = async () => {
-    if (!currentChat?._id || !socket) return;
-
-    socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
-
-    // dispatch(setUnreadMessages({ chatId: currentChat?._id }));
-
-    // Clear input fields
-    setMessage("");
-    setAttachmentFiles([]);
-
-    await sendMessage({
-      chatId: currentChat?._id as string,
-      data: {
-        content: message,
-        attachments: attachmentFiles,
-      },
-    })
-      .unwrap()
-      .then((response) => {
-        // Update local messages state
-        setMessages((prevMessages) => [...prevMessages, response?.data]);
-
-        // Explicitly dispatch to update the chat's last message
-        dispatch(
-          updateChatLastMessage({
-            chatToUpdateId: currentChat?._id!,
-            message: response?.data,
-          })
-        );
-      })
-      .catch((error: any) => {
-        console.error(error);
-        toast("Failed to send message", { type: "error" });
-      });
-
-    scrollToBottom();
-  };
-
-  // Sync local messages state with redux store whenever reduxChatMessages changes
-  useEffect(() => {
-    if (reduxChatMessages && reduxChatMessages.length > 0) {
-      setMessages(reduxChatMessages);
-    }
-  }, [reduxChatMessages]);
-
-  // Also sync with data from the query when it changes
-  useEffect(() => {
-    if (response?.data) {
-      setMessages(response.data);
-    }
-  }, [response]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // const scrollToBottom = () => {
+  //   if (bottomRef.current) {
+  //     // Use block: "end" to ensure it aligns to the bottom
+  //     bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+  //   }
+  // };
 
   return {
-    sendChatMessage,
     handleOnMessageChange,
     setMessage,
     message,
-    messages,
-    loadingMessages,
     setAttachmentFiles,
     unreadMessages,
-    getAllMessages,
     attachmentFiles,
     onMessageReceive,
-    refetchMessages,
     bottomRef,
+    getAllMessages,
+    // scrollToBottom, // Expose the scrollToBottom function
   };
 };

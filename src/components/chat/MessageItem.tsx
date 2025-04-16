@@ -42,10 +42,7 @@ export const MessageItem: React.FC<{
           isOwnedMessage ? "order-1" : "order-2",
           isOwnedMessage
             ? "before:absolute before:content-[''] before:border-[#615EF0] before:-right-5 z-10 before:top-0 before:border-t-[15px] before:border-b-[15px] before:border-b-transparent before:border-l-[25px] before:border-r-[25px] before:border-r-transparent bg-[#615EF0] before:-right rounded-xl rounded-tr-none"
-            : " bg-green-500 before:absolute before:content-[''] before:-left-5 z-10 before:top-0 before:border-b-[25px] before:border-t-transparent before:border-b-transparent  before:border-r-[40px] before:border-green-500 rounded-xl rounded-tl-none"
-          // isOwnedMessage
-          //   ? "bg-[#615EF0] rounded-xl rounded-tr-none"
-          //   : "bg-green-500 rounded-xl rounded-tl-none"
+            : "bg-green-500 before:absolute before:content-[''] before:-left-5 z-10 before:top-0 before:border-b-[25px] before:border-t-transparent before:border-b-transparent  before:border-r-[40px] before:border-green-500 rounded-xl rounded-tl-none"
         )}
       >
         <div className="relative">

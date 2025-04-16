@@ -29,6 +29,8 @@ export const ChatItem: React.FC<{
   const toggleOptions = (id: string, evt: React.MouseEvent) => {
     evt.stopPropagation();
 
+    console.log(openGroupInfo);
+
     setOpenOptions((prev) => {
       return {
         ...prev,
@@ -38,14 +40,6 @@ export const ChatItem: React.FC<{
   };
 
   const [deleteOneOneChatMessage] = useDeleteOneOneChatMessageMutation();
-
-  // const handleMessageDelete = (chatId: string) => {
-  //   setChats((prev) => prev.filter((chat) => chat._id !== chatId));
-  //   if (currentChat.current?._id === chatId) {
-  //     currentChat.current = null;
-  //     LocalStorage.remove("currentChat");
-  //   }
-  // };
 
   const deleteChat = async () => {
     await deleteOneOneChatMessage(chat?._id)
@@ -66,8 +60,8 @@ export const ChatItem: React.FC<{
       <div
         role="button"
         className={classNames(
-          "bg-gray-200 group flex items-start cursor-pointer hover:bg-gray-100 px-1 py-2.5  justify-between",
-          isActive ? "bg-gray-300 border-[1.5px] border-zinc-300" : "",
+          "hover:bg-gray-200/50 group flex items-start cursor-pointer bg-gray-100 px-1 py-2.5 justify-between",
+          isActive ? "bg-gray-300/40 border-[1.5px] border-zinc-300" : "",
           unreadCount > 0 ? "border-2 border-green-500 bg-green-100" : ""
         )}
         onClick={() => onClick(chat)}
@@ -164,16 +158,25 @@ export const ChatItem: React.FC<{
                   )}
 
                   {chat.isGroupChat ? (
-                    <p
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenGroupInfo(true);
-                      }}
-                      role="button"
-                      className="p-4 w-full rounded-lg inline-flex items-center hover:bg-secondary"
-                    >
-                      <InformationCircleIcon className="h-4 w-4 mr-2" /> About group
-                    </p>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          title="delete notification"
+                          className={classNames(
+                            active ? "bg-gray-100" : "",
+                            "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenGroupInfo(true);
+                          }}
+                          role="button"
+                        >
+                          <InformationCircleIcon className="h-4 w-4 mr-2" /> About group
+                        </button>
+                      )}
+                    </Menu.Item>
                   ) : (
                     <Menu.Item>
                       {({ active }) => (
@@ -203,31 +206,47 @@ export const ChatItem: React.FC<{
             <div className="flex justify items-center flex-shrink-0">
               {chat.isGroupChat ? (
                 <div className="w-12 relative h-12 flex-shrink-0 flex justify-start items-center flex-nowrap">
-                  {/* { chat.participants &&  chat.participants.slice(0, 3).map((p, index) => (
-                  <img
-                    src={p.avatar.url}
-                    className={classNames(
-                      "w-8 h-8 rounded-full border-[1.5px] border-gray-500 absolute",
-                      index === 0
-                        ? "left-0 z-30"
-                        : index == 1
-                        ? "left-2.5 z-20"
-                        : index === 2
-                        ? "left-3.5 z-20"
-                        : ""
-                    )}
-                    alt=""
-                    key={p?._id}
-                  />
-                ))} */}
+                  {React.Children.toArray(
+                    chat.participants &&
+                    chat.participants.slice(0, 3).map((_, index) => (
+                      // <img
+                      //   src={p.avatar.url}
+                      //   className={classNames(
+                      //     "w-8 h-8 rounded-full border-[1.5px] border-gray-500 absolute",
+                      //     index === 0
+                      //       ? "left-0 z-30"
+                      //       : index == 1
+                      //       ? "left-2.5 z-20"
+                      //       : index === 2
+                      //       ? "left-3.5 z-20"
+                      //       : ""
+                      //   )}
+                      //   alt=""
+                      //   key={p?._id}
+                      // />
+                      <div
+                        className={classNames(
+                          "w-8 h-8 rounded-full border-[1.5px] border-gray-500 absolute",
+                          index === 0
+                            ? "left-0 z-10 bg-green-500"
+                            : index == 1
+                            ? "left-1.5 z-20 bg-indigo-500"
+                            : index === 2
+                            ? "left-3.5 z-30 bg-violet-500"
+                            : ""
+                        )}
+                      ></div>
+                    ))
+                  )}
                 </div>
-              ) : // <img
-              //   src={getMessageObjectMetaData(chat, user!).avatar}
-              //   className="w-12 h-12 rounded-full"
-              //   alt="user image"
-              // />
-
-              null}
+              ) : (
+                // <img
+                //   src={getMessageObjectMetaData(chat, user!).avatar}
+                //   className="w-12 h-12 rounded-full"
+                //   alt="user image"
+                // />
+                <div className="w-12 h-12 rounded-full border"></div>
+              )}
             </div>
           </div>
 

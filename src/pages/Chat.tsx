@@ -1,6 +1,12 @@
 import React, { Fragment, useEffect } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, PaperAirplaneIcon, PaperClipIcon, UserIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon,
+  PaperAirplaneIcon,
+  PaperClipIcon,
+  UserIcon,
+  ArrowLeftIcon,
+} from "@heroicons/react/24/outline";
 import { classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
 // import EmojiPicker from "emoji-picker-react";
@@ -24,52 +30,93 @@ import { useMessage } from "../hooks/useMessage.ts";
 import Typing from "../components/Typing.tsx";
 import { MessageItem } from "../components/chat/MessageItem.tsx";
 import { useLogoutMutation } from "../features/auth/auth.slice.ts";
-import { useAppSelector } from "../redux/redux.hooks.ts";
+import { useAppDispatch, useAppSelector } from "../redux/redux.hooks.ts";
 import { RootState } from "../app/store.ts";
 import { toast } from "react-toastify";
+import { updateChatLastMessage, setCurrentChat } from "../features/chats/chat.reducer.ts";
+import { useGetChatMessagesQuery, useSendMessageMutation } from "../features/chats/chat.slice.ts";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
-  const { currentChat } = useAppSelector((state: RootState) => state.chat);
-
+  const { currentChat, chatMessages: reduxStateMessages } = useAppSelector(
+    (state: RootState) => state.chat
+  );
+  const dispatch = useAppDispatch();
   const [logout] = useLogoutMutation();
+  const [sendMessage] = useSendMessageMutation();
 
   const { socket } = useSocketContext();
   const { onNewChat, _onChatLeave, chats } = useChat();
   const { isOnline } = useNetwork();
 
   const {
+    data: _,
+    isLoading: loadingMessages,
+    refetch: refetchMessages,
+  } = useGetChatMessagesQuery(currentChat?._id ?? "", {
+    skip: !currentChat?._id,
+  });
+
+  const {
     message,
-    getAllMessages,
-    loadingMessages,
-    messages,
     setAttachmentFiles,
+    getAllMessages,
     handleOnMessageChange,
-    sendChatMessage,
     attachmentFiles,
     onMessageReceive,
     bottomRef,
+    setMessage,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
+
+  const sendChatMessage = async () => {
+    if (!currentChat?._id || !socket) return;
+
+    socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
+
+    // Clear input fields immediately for better UX
+    setMessage("");
+    setAttachmentFiles([]);
+
+    await sendMessage({
+      chatId: currentChat?._id as string,
+      data: {
+        content: message,
+        attachments: attachmentFiles,
+      },
+    })
+      .unwrap()
+      .then((response) => {
+        // Update the Redux store
+        dispatch(
+          updateChatLastMessage({
+            chatToUpdateId: currentChat._id!,
+            message: response.data,
+          })
+        );
+      })
+      .catch((error: any) => {
+        console.error(error);
+        toast("Failed to send message", { type: "error" });
+      });
+  };
 
   useEffect(() => {
     // Run getChats only once when component mounts or socket changes
     if (currentChat?._id) {
       socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
       getAllMessages();
+      refetchMessages()
     }
-  }, [currentChat, socket]);
+  }, [currentChat,refetchMessages, getAllMessages, socket]);
 
   useEffect(() => {
     if (!socket) return;
 
     socket?.on(TYPING_EVENT, handleStartTyping);
     socket?.on(STOP_TYPING_EVENT, handleStopTyping);
-    socket?.on(MESSAGE_RECEIVED_EVENT, (data) => {
-      console.log("data received", data);
-      onMessageReceive(data);
-    });
+    socket?.on(MESSAGE_RECEIVED_EVENT, onMessageReceive);
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
 
@@ -80,10 +127,15 @@ export const Chat = () => {
       socket?.off(NEW_CHAT_EVENT, onNewChat);
       socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);
     };
-  }, [socket, chats, currentChat]);
-
-
-  console.log(messages)
+  }, [
+    socket,
+    chats,
+    handleStartTyping,
+    handleStopTyping,
+    onMessageReceive,
+    onNewChat,
+    _onChatLeave,
+  ]);
 
   return (
     <Disclosure as={"div"}>
@@ -97,7 +149,7 @@ export const Chat = () => {
           >
             <div className="">
               <SideNavigation />
-              <MessageNavigation open={open} />
+              <MessageNavigation open={open}  />
             </div>
             <main
               className={classNames(
@@ -114,26 +166,39 @@ export const Chat = () => {
                       )}
                     >
                       <div className="flex justify-between items-center h-full">
-                        <div>
-                          <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                            Florencio Dorrance
-                          </h3>
-                          <p className="inline-flex items-center space-x-1.5">
-                            <span
-                              className={classNames(
-                                "h-3 w-3 rounded-full block",
-                                isOnline ? "bg-green-400 animate-ping" : "bg-red-500"
-                              )}
-                            ></span>
-                            <span
-                              className={classNames(
-                                "text-sm font-semibold",
-                                isOnline ? "text-green-600" : "text-red-400"
-                              )}
-                            >
-                              {isOnline ? "online" : "offline"}
-                            </span>
-                          </p>
+                        <div className="flex items-center gap-8">
+                          <button
+                            title="close chat"
+                            className="flex items-center justify-center"
+                            onClick={(event) => {
+                              event.stopPropagation();
+
+                              dispatch(setCurrentChat({ chat: null }));
+                            }}
+                          >
+                            <ArrowLeftIcon className="h-8 w-8" />
+                          </button>
+                          <div>
+                            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                              Florencio Dorrance
+                            </h3>
+                            <p className="inline-flex items-center space-x-1.5">
+                              <span
+                                className={classNames(
+                                  "h-3 w-3 rounded-full block",
+                                  isOnline ? "bg-green-400 animate-ping" : "bg-red-500"
+                                )}
+                              ></span>
+                              <span
+                                className={classNames(
+                                  "text-sm font-semibold",
+                                  isOnline ? "text-green-600" : "text-red-400"
+                                )}
+                              >
+                                {isOnline ? "online" : "offline"}
+                              </span>
+                            </p>
+                          </div>
                         </div>
                         <div className="flex items-center gap-3">
                           {isAuthenticated ? (
@@ -293,18 +358,18 @@ export const Chat = () => {
                           <>
                             {isTyping && <Typing />}
                             <div ref={bottomRef} className="flex flex-col gap-6 h-full">
-                              {messages && messages.length > 0 ? (
-                                messages
-                                  ?.map((msg, index) => {
+                              {reduxStateMessages && reduxStateMessages.length > 0 ? (
+                                React.Children.toArray(
+                                  reduxStateMessages?.map((msg) => {
                                     return (
                                       <MessageItem
-                                        key={index}
                                         isOwnedMessage={msg.sender?._id === user?._id}
                                         isGroupChatMessage={currentChat?.isGroupChat}
                                         message={msg}
                                       />
                                     );
                                   })
+                                )
                               ) : (
                                 <div className="flex justify-center items-center h-full">
                                   <p className="text-gray-500">
@@ -349,6 +414,7 @@ export const Chat = () => {
                             placeholder="Type a message..."
                           />
                           <button
+                            title="send message"
                             disabled={!message && attachmentFiles!.length <= 0}
                             className="shadow-none"
                             onClick={() => {

@@ -173,7 +173,7 @@ export const ChatModal: React.FC<{
                   {isGroupChat ? (
                     <div className="my-5">
                       <input
-                        className="block w-full rounded-xl outline outline-[1px] outline-zinc-400 border-0 py-4 px-5 bg-secondaryfont-light"
+                        className="block w-full rounded-xl outline outline-[1px] outline-zinc-400 border-0 py-4 px-5"
                         placeholder="Enter a group name"
                         value={groupName}
                         onChange={(e) => setGroupName(e.target.value)}
@@ -228,10 +228,10 @@ export const ChatModal: React.FC<{
                                   className="h-6 w-6 rounded-full object-cover"
                                   src={participant.avatar.url}
                                 /> */}
-                                <p className="text-white">{participant.username}</p>
+                                <p className="text-gray-500">{participant.username}</p>
                                 <XCircleIcon
                                   role="button"
-                                  className="w-6 h-6 hover:text-primary cursor-pointer"
+                                  className="w-6 h-6 hover:text-gray-600 text-gray-700 cursor-pointer"
                                   onClick={() => {
                                     setParticipants(
                                       participants.filter((p) => p !== participant._id)

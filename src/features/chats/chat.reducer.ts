@@ -14,11 +14,11 @@ interface InitialState {
 }
 
 const initialState: InitialState = {
-  chats: (LocalStorage.get("chats") as ChatListItemInterface[]) || [],
-  currentChat: (LocalStorage.get("current-chat") as ChatListItemInterface) || null,
+  chats: LocalStorage.get("chats") as ChatListItemInterface[],
+  currentChat: LocalStorage.get("current-chat") as ChatListItemInterface || null,
   users: [] as User[],
-  chatMessages: (LocalStorage.get("chatmessages") as ChatMessageInterface[]) || [],
-  unreadMessages: (LocalStorage.get("chatmessages") as ChatMessageInterface[]) || [],
+  chatMessages: LocalStorage.get("chatmessages") as ChatMessageInterface[],
+  unreadMessages: LocalStorage.get("chatmessages") as ChatMessageInterface[],
 };
 
 interface ChatMessageUpdateInterface {
@@ -42,23 +42,15 @@ const ChatSlice = createSlice({
     onChatLeave: (state, action: PayloadAction<{ chat: ChatListItemInterface }>) => {
       const { chat } = action.payload;
 
-      // Handle current chat being deleted
       if (chat?._id === state.currentChat?._id) {
         state.currentChat = null;
+
         LocalStorage.remove("current-chat");
       }
 
-      // Remove chat from the list
       state.chats = state.chats?.filter((ch) => ch?._id !== chat?._id);
 
-      // Clean up related messages
-      state.chatMessages = state.chatMessages.filter((msg) => msg.chat !== chat?._id);
-      state.unreadMessages = state.unreadMessages.filter((msg) => msg.chat !== chat?._id);
-
-      // Update localStorage
       LocalStorage.set("chats", state.chats);
-      LocalStorage.set("chatmessages", state.chatMessages);
-      LocalStorage.set("unreadMessages", state.unreadMessages);
     },
 
     onMessageReceived: (state, action) => {
@@ -79,9 +71,12 @@ const ChatSlice = createSlice({
 
     setCurrentChat: (state, action: PayloadAction<{ chat: ChatListItemInterface | null }>) => {
       const { chat } = action.payload;
-      state.currentChat = chat!;
+
+      state.currentChat = chat;
+      state.chatMessages = [];
 
       LocalStorage.set("current-chat", chat);
+      LocalStorage.set("chatmessages", state.chatMessages);
     },
 
     setUnreadMessages: (state, action: PayloadAction<{ chatId: string }>) => {
@@ -122,50 +117,43 @@ const ChatSlice = createSlice({
       }
     },
 
-    // In your chat.reducer.ts
     onChatDelete: (state, action: PayloadAction<{ chatId: string }>) => {
       const { chatId } = action.payload;
 
-      // Remove chat from list
       state.chats = state.chats.filter((chat) => chat?._id !== chatId);
+      state.chatMessages = [];
 
-      // Clear messages for this chat
-      state.chatMessages = state.chatMessages.filter((msg) => msg.chat !== chatId);
-      state.unreadMessages = state.unreadMessages.filter((msg) => msg.chat !== chatId);
-
-      // If current chat is deleted, reset current chat
       if (state.currentChat?._id === chatId) {
         state.currentChat = null;
         LocalStorage.remove("current-chat");
       }
 
-      // Update localStorage
       LocalStorage.set("chats", state.chats);
       LocalStorage.set("chatmessages", state.chatMessages);
-      LocalStorage.set("unreadMessages", state.unreadMessages);
     },
   },
   extraReducers: (builder) => {
     builder.addMatcher(ChatApiSlice.endpoints.getUserChats.matchFulfilled, (state, action) => {
       const { data } = action.payload;
-
       state.chats = data;
 
-      LocalStorage.set("chats", data);
+      LocalStorage.set("chats", state.chats);
     });
 
     builder.addMatcher(ChatApiSlice.endpoints.getChatMessages.matchFulfilled, (state, action) => {
       const { data } = action.payload;
-
+console.log(data)
       state.chatMessages = data;
 
-      LocalStorage.set("chatmessages", data);
+      LocalStorage.set("chatmessages", state.chatMessages);
     });
 
     builder.addMatcher(ChatApiSlice.endpoints.sendMessage.matchFulfilled, (state, action) => {
       const { data } = action.payload;
+
       // Add the new message to chatMessages
       state.chatMessages = [...state.chatMessages, data];
+
       LocalStorage.set("chatmessages", state.chatMessages);
     });
 
