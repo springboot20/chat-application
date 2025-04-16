@@ -29,6 +29,7 @@ export const useTyping = () => {
       isTyping,
       userTyping,
       setIsTyping,
+					setUserTyping
     }),
     [handleStartTyping, handleStopTyping, typingTimeOutRef, isTyping, userTyping, setIsTyping]
   );
