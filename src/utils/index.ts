@@ -74,8 +74,8 @@ export const getMessageObjectMetaData = (
   const lastMessage = chat.lastMessage?.content
     ? chat.lastMessage?.content
     : chat.lastMessage
-    ? `${chat.lastMessage?.attachments.length} attachment ${
-        chat.lastMessage.attachments.length > 1 ? "s" : ""
+    ? `${chat.lastMessage?.attachments?.length} attachment ${
+        chat.lastMessage.attachments?.length > 1 ? "s" : ""
       }`
     : "No message yet";
 
@@ -85,7 +85,7 @@ export const getMessageObjectMetaData = (
       lastMessage: chat.lastMessage
         ? `${chat.lastMessage?.sender?.username} : ${lastMessage}`
         : lastMessage,
-      description: `${chat.participants.length} members in the group`,
+      description: `${chat.participants?.length} members in the group`,
     };
   } else {
     const participant = chat.participants?.find((p) => p?._id !== user._id);

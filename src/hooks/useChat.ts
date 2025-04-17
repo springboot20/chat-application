@@ -10,7 +10,7 @@ export const useChat = () => {
   const { data, isLoading: isLoadingChats, refetch } = useGetUserChatsQuery();
 
   const chatsFromState = useAppSelector((state:RootState) => state.chat.chats);
-  const chats = chatsFromState.length > 0 ? chatsFromState : data?.data;
+  const chats = chatsFromState?.length > 0 ? chatsFromState : data?.data;
 
   const _updateChatLastMessage = (chatToUpdateId: string, message: ChatMessageInterface) => {
     dispatch(updateChatLastMessage({ chatToUpdateId, message }));
