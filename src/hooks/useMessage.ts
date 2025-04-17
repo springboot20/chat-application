@@ -10,7 +10,7 @@ import {
   updateChatLastMessage,
   setUnreadMessages,
 } from "../features/chats/chat.reducer.ts";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 
 export const useMessage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -52,19 +52,19 @@ export const useMessage = () => {
       return;
     }
 
-    if (!currentChat?._id) {
-      console.log("No chat selected, cannot get reduxStateMessages");
-      setTimeout(() => {
-        toast("No chat selected", { type: "warning" });
-      }, 9000);
-      return;
-    }
+    // if (!currentChat?._id) {
+    //   console.log("No chat selected, cannot get reduxStateMessages");
+    //   setTimeout(() => {
+    //     toast("No chat selected", { type: "warning" });
+    //   }, 9000);
+    //   return;
+    // }
 
     // Join the chat room
     socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
 
     // Filter unread reduxStateMessages
-    dispatch(setUnreadMessages({ chatId: currentChat?._id }));
+    dispatch(setUnreadMessages({ chatId: currentChat?._id! }));
   }, [currentChat?._id, dispatch, socket]);
 
   const onMessageReceive = (data: any) => {

@@ -10,7 +10,7 @@ interface Response {
 
 interface SendMessageInterface {
   chatId: string;
-  data: { content: string; attachments: File[] | undefined };
+  data: { [key: string]: any };
 }
 
 interface GroupChatInterface {
@@ -146,12 +146,21 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     sendMessage: builder.mutation<Response, SendMessageInterface>({
       query: ({ chatId, data }) => {
         const formData = new FormData();
-        if (data.content) {
-          formData.append("content", data.content);
-        }
 
-        data.attachments?.map((file) => {
-          formData.append("attachments", file);
+        Object.keys(data).forEach((key) => {
+          if (key === "attachments" && Array.isArray(data[key])) {
+            // Handle attachments array by appending each file individually
+            for (let i = 0; i < data[key].length; i++) {
+              console.log(data[key][i])
+              formData.append("attachments", data[key][i]);
+            }
+          } else if (typeof data[key] === "object" && !(data[key] instanceof File)) {
+            // Handle other objects by stringifying them
+            formData.append(key, JSON.stringify(data[key]));
+          } else {
+            // Handle primitive values and File objects
+            formData.append(key, data[key]);
+          }
         });
 
         return {
