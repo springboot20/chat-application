@@ -55,7 +55,7 @@ export const ChatModal: React.FC<{
       return;
     }
 
-    if (!participants.length || participants.length < 2) {
+    if (!participants?.length || participants?.length < 2) {
       toast.warning("There must be at least 2 group participant");
       return;
     }

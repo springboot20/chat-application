@@ -208,7 +208,7 @@ export const ChatItem: React.FC<{
                 <div className="w-12 relative h-12 flex-shrink-0 flex justify-start items-center flex-nowrap">
                   {React.Children.toArray(
                     chat.participants &&
-                    chat.participants.slice(0, 3).map((_, index) => (
+                    chat.participants?.slice(0, 3)?.map((_, index) => (
                       // <img
                       //   src={p.avatar.url}
                       //   className={classNames(
@@ -251,11 +251,11 @@ export const ChatItem: React.FC<{
           </div>
 
           <div className="flex flex-col items-start">
-            <p> {getMessageObjectMetaData(chat, user!).title}</p>
+            <p> {getMessageObjectMetaData(chat, user!)?.title}</p>
             <div className="flex items-center gap-1 text-gray-500">
-              {chat.lastMessage &&
-              chat.lastMessage.attachments &&
-              chat.lastMessage.attachments.length > 0 ? (
+              {chat?.lastMessage &&
+              chat?.lastMessage.attachments &&
+              chat?.lastMessage.attachments?.length > 0 ? (
                 <PaperClipIcon className="h-4 w-4" />
               ) : null}
               <small>{getMessageObjectMetaData(chat, user!).lastMessage}</small>
