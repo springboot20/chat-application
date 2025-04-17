@@ -22,7 +22,10 @@ const getInitialState = (): InitialState => ({
 
 const initialState: InitialState = getInitialState();
 
-const updateAuthState = (state: InitialState, { tokens, user, isAuthenticated }: {isAuthenticated:boolean, tokens: Token; user?: User }) => {
+const updateAuthState = (
+  state: InitialState,
+  { tokens, user, isAuthenticated }: { isAuthenticated: boolean; tokens: Token; user?: User }
+) => {
   state.tokens = tokens;
   state.user = user || null;
   state.isAuthenticated = isAuthenticated;
@@ -80,7 +83,11 @@ const AuthSlice = createSlice({
      */
     builder.addMatcher(AuthApiSlice.endpoints.login.matchFulfilled, (state, { payload }) => {
       console.log(payload);
-      updateAuthState(state, { tokens: payload.data.tokens, user: payload.data.user,  isAuthenticated: true });
+      updateAuthState(state, {
+        tokens: payload.data.tokens,
+        user: payload.data.user,
+        isAuthenticated: true,
+      });
     });
 
     /**

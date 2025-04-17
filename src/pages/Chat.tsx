@@ -358,7 +358,7 @@ export const Chat = () => {
                           <>
                             {isTyping && <Typing />}
                             <div ref={bottomRef} className="flex flex-col gap-6 h-full">
-                              {reduxStateMessages && reduxStateMessages.length > 0 ? (
+                              {reduxStateMessages && reduxStateMessages?.length > 0 ? (
                                 React.Children.toArray(
                                   reduxStateMessages?.map((msg) => {
                                     return (
