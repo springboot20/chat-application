@@ -27,11 +27,6 @@ function App() {
   return (
     <Routes>
       <Route
-        path="/"
-        element={isAuthenticated ? <Navigate to="/chat" /> : <Navigate to="/register" />}
-      />
-
-      <Route
         path="/chat"
         element={
           <PrivateRoutes>
