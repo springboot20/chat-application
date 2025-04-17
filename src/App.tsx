@@ -50,9 +50,7 @@ function App() {
       <Route
         path="/register"
         element={
-          <PublicRoutes>
             <Register />
-          </PublicRoutes>
         }
       />
       <Route
