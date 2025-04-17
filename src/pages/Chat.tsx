@@ -11,8 +11,6 @@ import {
 import { classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
 // import EmojiPicker from "emoji-picker-react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClose } from "@fortawesome/free-solid-svg-icons";
 import { MessageNavigation } from "../components/navigation/message-navigation.tsx";
 import SideNavigation from "../components/navigation/side-navigation.tsx";
 import { Link } from "react-router-dom";
@@ -166,7 +164,7 @@ export const Chat = () => {
                         "fixed top-0 right-0 p-[0.9rem] left-20 bg-white dark:bg-gray-800 border-b-[1.5px] border-b-gray-600/30 z-10 transition-all lg:left-[30rem]"
                       )}
                     >
-                      <div className="flex justify-between items-center h-full">
+                      <div className={classNames("flex justify-between items-center h-full ml-6")}>
                         <div className="flex items-center gap-8">
                           <button
                             title="close chat"
@@ -326,19 +324,6 @@ export const Chat = () => {
                                   </Menu.Items>
                                 </Transition>
                               </Menu>
-
-                              <Disclosure.Button className="lg:hidden">
-                                {open ? (
-                                  <FontAwesomeIcon
-                                    icon={faClose}
-                                    className="h-7 w-7 text-gray-500 dark:text-white"
-                                    aria-hidden={true}
-                                    strokeWidth={2.5}
-                                  />
-                                ) : (
-                                  <Bars3Icon className="text-gray-800 h-10" />
-                                )}
-                              </Disclosure.Button>
                             </>
                           ) : (
                             <div className="flex items-center gap-2">
