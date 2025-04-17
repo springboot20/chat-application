@@ -22,10 +22,10 @@ const getInitialState = (): InitialState => ({
 
 const initialState: InitialState = getInitialState();
 
-const updateAuthState = (state: InitialState, { tokens, user }: { tokens: Token; user?: User }) => {
+const updateAuthState = (state: InitialState, { tokens, user, isAuthenticated }: {isAuthenticated:boolean, tokens: Token; user?: User }) => {
   state.tokens = tokens;
   state.user = user || null;
-  state.isAuthenticated = true;
+  state.isAuthenticated = isAuthenticated;
 
   AuthStorage.set("tokens", tokens);
   AuthStorage.set("user", user);
@@ -72,7 +72,7 @@ const AuthSlice = createSlice({
      * Register builder casing
      */
     builder.addMatcher(AuthApiSlice.endpoints.register.matchFulfilled, (state, { payload }) => {
-      updateAuthState(state, { tokens: null!, user: payload.data.user });
+      updateAuthState(state, { tokens: null!, user: payload.data.user, isAuthenticated: false });
     });
 
     /**
@@ -80,7 +80,7 @@ const AuthSlice = createSlice({
      */
     builder.addMatcher(AuthApiSlice.endpoints.login.matchFulfilled, (state, { payload }) => {
       console.log(payload);
-      updateAuthState(state, { tokens: payload.data.tokens, user: payload.data.user });
+      updateAuthState(state, { tokens: payload.data.tokens, user: payload.data.user,  isAuthenticated: true });
     });
 
     /**
