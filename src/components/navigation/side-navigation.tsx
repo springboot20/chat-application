@@ -1,6 +1,7 @@
-import { CogIcon } from "@heroicons/react/24/outline";
+import { ChevronLeftIcon, ChevronRightIcon, CogIcon } from "@heroicons/react/24/outline";
 import { Settings } from "../../pages/settings/Settings";
 import { useState } from "react";
+import { Disclosure } from "@headlessui/react";
 
 const navLinks = {
   links: [
@@ -76,7 +77,7 @@ const navLinks = {
   ],
 };
 
-const SideNavigation = () => {
+const SideNavigation: React.FC = ({ open }) => {
   const [openSettings, setOpenSettings] = useState(false);
 
   return (
@@ -84,6 +85,13 @@ const SideNavigation = () => {
       className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-gray-800 w-20 z-10`}
     >
       <div className={`relative h-full flex justify-between p-5 flex-col items-center`}>
+        <Disclosure.Button
+          title="open mobile menu"
+          className="lg:hidden absolute -right-8 rounded-full flex items-center justify-center h-10 w-10 bg-[#615EF0]"
+        >
+          <ChevronRightIcon className="h-7 w-7 text-white stroke-[4]" />
+        </Disclosure.Button>
+
         <div className="flex flex-col justify-between items-center">
           <div className="flex flex-col items-center space-y-12">
             <div className="flex items-center">

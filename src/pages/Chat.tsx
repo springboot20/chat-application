@@ -107,9 +107,9 @@ export const Chat = () => {
     if (currentChat?._id) {
       socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
       getAllMessages();
-      refetchMessages()
+      refetchMessages();
     }
-  }, [currentChat,refetchMessages, getAllMessages, socket]);
+  }, [currentChat, refetchMessages, getAllMessages, socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -149,7 +149,7 @@ export const Chat = () => {
           >
             <div className="">
               <SideNavigation />
-              <MessageNavigation open={open}  />
+              <MessageNavigation open={open} />
             </div>
             <main
               className={classNames(

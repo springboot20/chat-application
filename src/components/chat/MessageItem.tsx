@@ -74,7 +74,7 @@ export const MessageItem: React.FC<{
                 return (
                   <div
                     key={file._id}
-                    className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer"
+                    className="group relative aspect-square rounded-lg overflow-hidden cursor-pointer"
                   >
                     <button
                       onClick={() => setResizedImage(file.url)}

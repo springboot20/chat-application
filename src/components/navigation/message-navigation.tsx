@@ -2,7 +2,7 @@ import { Disclosure } from "@headlessui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCaretDown, faClose } from "@fortawesome/free-solid-svg-icons";
 import React, { useEffect, useRef, useState } from "react";
-import { MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { ChevronLeftIcon, MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { ChatModal } from "../modal/ChatModal.tsx";
 import { SearchInput } from "../panels/SearchInput.tsx";
 import { ChatItem } from "../chat/ChatItem.tsx";
@@ -157,6 +157,14 @@ export const MessageNavigation: React.FC<{
     ${open ? "translate-x-0 left-0" : "-translate-x-full"}
   `}
       >
+        <Disclosure.Button className={"absolute -right-7 flex items-center justify-center top-2 bg-[#615EF0] h-10 w-10 rounded-full lg:hidden"}>
+          <span className="sr-only">Close panel</span>
+          <ChevronLeftIcon
+            className="h-8 w-8 stroke-[3] text-white"
+            aria-hidden={true}
+          />
+        </Disclosure.Button>
+
         <div className="flex flex-col items-center gap-8 h-full">
           <div className="flex justify-between items-center w-full p-4 border-b-[1.5px] border-b-gray-600/30">
             <div className="flex items-center">
