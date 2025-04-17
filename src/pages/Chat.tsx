@@ -1,7 +1,6 @@
 import React, { Fragment, useEffect } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import {
-  Bars3Icon,
   PaperAirplaneIcon,
   PaperClipIcon,
   UserIcon,
