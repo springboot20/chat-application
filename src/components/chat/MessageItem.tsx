@@ -14,7 +14,7 @@ export const MessageItem: React.FC<{
   message: ChatMessageInterface;
 }> = ({ isOwnedMessage, isGroupChatMessage, message }) => {
   const [resizedImage, setResizedImage] = useState<string | null>(null);
-
+  console.log(resizedImage);
   return (
     <div
       className={classNames(

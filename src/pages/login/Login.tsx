@@ -25,15 +25,15 @@ export const Login = () => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    try {
+     try {
       const response = await login({ ...value }).unwrap();
 
       toast(response?.data?.message, { type: "success" });
 
-      await Promise.resolve(setTimeout(() => navigate("/chat"), 1200));
-    } catch (error: any) {
-      toast(error?.data?.message, { type: "error" });
-    }
+    await Promise.resolve(setTimeout(() => navigate("/chat"), 1200));
+     } catch (error: any) {
+       toast(error?.data?.message, { type: "error" });
+     }
   };
 
   return (
