@@ -28,7 +28,7 @@ function App() {
     <Routes>
       <Route
         path="/"
-        element={isAuthenticated ? <Navigate to="/chat" /> : <Navigate to="/login" />}
+        element={isAuthenticated ? <Navigate to="/chat" /> : <Navigate to="/register" />}
       />
 
       <Route
@@ -47,7 +47,14 @@ function App() {
           </PublicRoutes>
         }
       />
-      <Route path="/register" element={<Register />} />
+      <Route
+        path="/register"
+        element={
+          <PublicRoutes>
+            <Register />
+          </PublicRoutes>
+        }
+      />
       <Route
         path="/forgot"
         element={
