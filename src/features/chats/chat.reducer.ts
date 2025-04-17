@@ -15,10 +15,10 @@ interface InitialState {
 
 const initialState: InitialState = {
   chats: LocalStorage.get("chats") as ChatListItemInterface[],
-  currentChat: LocalStorage.get("current-chat") as ChatListItemInterface || null,
+  currentChat: (LocalStorage.get("current-chat") as ChatListItemInterface) || null,
   users: [] as User[],
   chatMessages: LocalStorage.get("chatmessages") as ChatMessageInterface[],
-  unreadMessages: LocalStorage.get("chatmessages") as ChatMessageInterface[],
+  unreadMessages: LocalStorage.get("unreadMessages") as ChatMessageInterface[],
 };
 
 interface ChatMessageUpdateInterface {
@@ -84,7 +84,7 @@ const ChatSlice = createSlice({
 
       state.unreadMessages = state.chatMessages?.filter((msg) => msg?.chat !== chatId);
 
-      LocalStorage.set("chatmessages", state.unreadMessages);
+      LocalStorage.set("unreadMessages", state.unreadMessages);
     },
 
     updateChatLastMessage: (state, action: PayloadAction<ChatMessageUpdateInterface>) => {
@@ -123,6 +123,8 @@ const ChatSlice = createSlice({
       state.chats = state.chats.filter((chat) => chat?._id !== chatId);
       state.chatMessages = [];
 
+      state.unreadMessages = state.unreadMessages.filter((msg) => msg?.chat !== chatId);
+
       if (state.currentChat?._id === chatId) {
         state.currentChat = null;
         LocalStorage.remove("current-chat");
@@ -130,6 +132,7 @@ const ChatSlice = createSlice({
 
       LocalStorage.set("chats", state.chats);
       LocalStorage.set("chatmessages", state.chatMessages);
+      LocalStorage.set("unreadMessages", state.unreadMessages);
     },
   },
   extraReducers: (builder) => {
@@ -142,7 +145,7 @@ const ChatSlice = createSlice({
 
     builder.addMatcher(ChatApiSlice.endpoints.getChatMessages.matchFulfilled, (state, action) => {
       const { data } = action.payload;
-console.log(data)
+      console.log(data);
       state.chatMessages = data;
 
       LocalStorage.set("chatmessages", state.chatMessages);

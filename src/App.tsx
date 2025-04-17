@@ -24,8 +24,7 @@ function App() {
 
   return (
     <Routes>
-
-<Route path="/" element={<Navigate to="/register" />} />
+      <Route path="/" element={<Navigate to="/register" />} />
 
       <Route
         path="/chat"

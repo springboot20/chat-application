@@ -53,7 +53,7 @@ export const MessageNavigation: React.FC<{
 
   // Consistent logic for calculating unread messages
   const getUnreadCount = (chatId: string) => {
-    return (unreadMessages || [])?.filter((msg) => msg?.chat === chatId).length;
+    return unreadMessages?.filter((msg) => msg?.chat === chatId)?.length || 0;
   };
 
   const filteredChats = [...(chats || [])]?.filter((chat) =>
