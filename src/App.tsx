@@ -47,12 +47,7 @@ function App() {
           </PublicRoutes>
         }
       />
-      <Route
-        path="/register"
-        element={
-            <Register />
-        }
-      />
+      <Route path="/register" element={<Register />} />
       <Route
         path="/forgot"
         element={
