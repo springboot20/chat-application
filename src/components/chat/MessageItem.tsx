@@ -6,15 +6,16 @@ import {
 import { ChatMessageInterface } from "../../types/chat";
 import { classNames } from "../../utils";
 import moment from "moment";
-import { useState } from "react";
+// import { useState } from "react";
 
 export const MessageItem: React.FC<{
   isOwnedMessage?: boolean;
   isGroupChatMessage?: boolean;
   message: ChatMessageInterface;
 }> = ({ isOwnedMessage, isGroupChatMessage, message }) => {
-  const [resizedImage, setResizedImage] = useState<string | null>(null);
-  console.log(resizedImage);
+  // const [resizedImage, setResizedImage] = useState<string | null>(null);
+  // console.log(resizedImage)
+
   return (
     <div
       className={classNames(
@@ -77,7 +78,7 @@ export const MessageItem: React.FC<{
                     className="group relative aspect-square rounded-lg overflow-hidden cursor-pointer"
                   >
                     <button
-                      onClick={() => setResizedImage(file.url)}
+                      // onClick={() => setResizedImage(file.url)}
                       className="absolute inset-0 z-20 flex justify-center items-center w-full gap-2 h-full bg-black/60 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150"
                     >
                       <MagnifyingGlassPlusIcon className="h-6 w-6 text-white" />

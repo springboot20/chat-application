@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ChevronRightIcon, CogIcon } from "@heroicons/react/24/outline";
+import { ChevronRightIcon, CogIcon } from "@heroicons/react/24/outline";
 import { Settings } from "../../pages/settings/Settings";
 import { useState } from "react";
 import { Disclosure } from "@headlessui/react";
@@ -77,7 +77,7 @@ const navLinks = {
   ],
 };
 
-const SideNavigation: React.FC = ({ open }) => {
+const SideNavigation: React.FC = () => {
   const [openSettings, setOpenSettings] = useState(false);
 
   return (

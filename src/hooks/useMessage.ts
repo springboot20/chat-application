@@ -29,9 +29,12 @@ export const useMessage = () => {
     if (!isTyping) {
       setIsTyping(true);
 
+      
       socket?.emit(TYPING_EVENT, currentChat?._id);
     }
-
+    
+    console.log(isTyping)
+    
     if (typingTimeOutRef.current) {
       clearTimeout(typingTimeOutRef.current);
     }

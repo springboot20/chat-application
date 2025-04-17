@@ -6,6 +6,7 @@ import {
   PaperClipIcon,
   UserIcon,
   ArrowLeftIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 import { classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
@@ -381,6 +382,36 @@ export const Chat = () => {
                           </>
                         )}
                       </div>
+                      {attachmentFiles && attachmentFiles?.length > 0 ? (
+                        <div className="grid gap-4 bg-white grid-cols-5 p-4 justify-start max-w-fit">
+                          {attachmentFiles?.map((file, i) => {
+                            return (
+                              <div
+                                key={i}
+                                className="group w-32 h-32 relative aspect-square rounded-xl cursor-pointer"
+                              >
+                                <div className="absolute inset-0 flex justify-center items-center w-full h-full bg-black/40 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150">
+                                  <button
+                                    onClick={() => {
+                                      setAttachmentFiles(
+                                        attachmentFiles?.filter((_, ind) => ind !== i)
+                                      );
+                                    }}
+                                    className="absolute top-2 right-2"
+                                  >
+                                    <XCircleIcon className="h-6 w-6 text-white" />
+                                  </button>
+                                </div>
+                                <img
+                                  className="h-full rounded-xl w-full object-cover"
+                                  src={URL.createObjectURL(file)}
+                                  alt="attachment"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                       <div className="fixed bottom-0 p-4 gap-2 left-20 lg:left-[30rem] right-0 h-28 bg-white dark:bg-gray-800 z-10 border-t-[1.5px] border-b-[1.5px] border-gray-600/30">
                         <div className="h-full z-10 p-4 flex items-center justify-between mx-auto max-w-8xl">
                           <fieldset className="flex items-center">
