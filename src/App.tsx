@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { Chat } from "./pages/Chat";
 import { Login } from "./pages/login/Login";
 import { Register } from "./pages/signup/Register";
@@ -6,14 +6,12 @@ import { Forgot } from "./pages/forgot-password/Forgot";
 import { PrivateRoutes } from "./routes/PrivateRoute";
 import { PublicRoutes } from "./routes/PublicRoutes";
 import { OtpForm } from "./pages/otp-code-form/OtpForm";
-import { useAppDispatch, useAppSelector } from "./redux/redux.hooks";
-import { RootState } from "./app/store";
+import { useAppDispatch } from "./redux/redux.hooks";
 import { LocalStorage } from "./utils";
 import { authenticationExpires } from "./features/auth/auth.reducer";
 import { useEffect } from "react";
 
 function App() {
-  const { isAuthenticated } = useAppSelector((state: RootState) => state.auth);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
