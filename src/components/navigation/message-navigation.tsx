@@ -17,7 +17,8 @@ import { ChatListItemInterface } from "../../types/chat.ts";
 
 export const MessageNavigation: React.FC<{
   open: boolean;
-}> = ({ open }) => {
+  close:()=> any
+}> = ({ open, close }) => {
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
   const { unreadMessages, setMessage, getAllMessages } = useMessage();
@@ -44,6 +45,8 @@ export const MessageNavigation: React.FC<{
     dispatch(setCurrentChat({ chat }));
     setMessage("");
     getAllMessages();
+
+    close()
   };
 
   const handleChatDelete = (chatId: string) => {

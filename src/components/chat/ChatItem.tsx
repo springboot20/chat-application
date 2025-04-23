@@ -9,11 +9,13 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import moment from "moment";
-import { useAppSelector } from "../../redux/redux.hooks";
+import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks";
 import { RootState } from "../../app/store";
 import { useDeleteOneOneChatMessageMutation } from "../../features/chats/chat.slice";
 import { toast } from "react-toastify";
 import { Menu, Transition } from "@headlessui/react";
+import { GroupChatInfo } from "../modal/GroupChatInfo";
+import { setCurrentChat } from "../../features/chats/chat.reducer";
 
 export const ChatItem: React.FC<{
   chat: ChatListItemInterface;
@@ -25,6 +27,8 @@ export const ChatItem: React.FC<{
   const { user } = useAppSelector((state: RootState) => state.auth);
   const [openGroupInfo, setOpenGroupInfo] = useState(false);
   const [openOptions, setOpenOptions] = useState<{ [key: string]: boolean }>({});
+
+  const dispatch = useAppDispatch();
 
   const toggleOptions = (id: string, evt: React.MouseEvent) => {
     evt.stopPropagation();
@@ -57,10 +61,11 @@ export const ChatItem: React.FC<{
 
   return (
     <>
+      <GroupChatInfo open={openGroupInfo} handleClose={() => setOpenGroupInfo(false)} />
       <div
         role="button"
         className={classNames(
-          "hover:bg-gray-200/50 group flex items-start cursor-pointer bg-gray-100 px-1 py-2.5 justify-between",
+          "hover:bg-gray-300/40 group flex items-start cursor-pointer bg-gray-100 px-1 py-2.5 justify-between",
           isActive ? "bg-gray-300/40 border-[1.5px] border-zinc-300" : "",
           unreadCount > 0 ? "border-2 border-green-500 bg-green-100" : ""
         )}
@@ -69,49 +74,6 @@ export const ChatItem: React.FC<{
       >
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-4">
-            {/* <button
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleOptions(chat?._id, e);
-              }}
-              className="self-center relative"
-            >
-              <EllipsisVerticalIcon className="h-6 group-hover:w-6 group-hover:opacity-100 w-0 opacity-0 transition-all ease-in-out duration-100 text-zinc-300" />
-              <div
-                className={classNames(
-                  "z-20 text-left absolute bottom-0 translate-y-full text-sm w-52 bg-dark rounded-2xl p-2 shadow-md border-[1px] border-secondary",
-                  openOptions ? "block" : "hidden"
-                )}
-              >
-                {chat.isGroupChat ? (
-                  <p
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenGroupInfo(true);
-                    }}
-                    role="button"
-                    className="p-4 w-full rounded-lg inline-flex items-center hover:bg-secondary"
-                  >
-                    <InformationCircleIcon className="h-4 w-4 mr-2" /> About group
-                  </p>
-                ) : (
-                  <p
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const ok = confirm("Are you sure you want to delete this chat?");
-                      if (ok) {
-                        deleteChat();
-                      }
-                    }}
-                    role="button"
-                    className="p-4 text-danger rounded-lg w-full inline-flex items-center hover:bg-secondary"
-                  >
-                    <TrashIcon className="h-4 w-4 mr-2" />
-                    Delete chat
-                  </p>
-                )}
-              </div>
-            </button> */}
             <Menu as="div" className="relative">
               <div>
                 <Menu.Button
@@ -133,13 +95,13 @@ export const ChatItem: React.FC<{
                 leaveFrom="transform opacity-100 scale-100"
                 leaveTo="transform opacity-0 scale-95"
               >
-                <Menu.Items className="absolute left-5 z-10 mt-4 w-max origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <Menu.Items className="absolute left-5 z-40 mt-4 w-max origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   {openOptions && (
                     <Menu.Item>
                       {({ active }) => (
                         <button
                           type="button"
-                          title="delete notification"
+                          title="mark as read"
                           className={classNames(
                             active ? "bg-gray-100" : "",
                             "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium"
@@ -162,7 +124,7 @@ export const ChatItem: React.FC<{
                       {({ active }) => (
                         <button
                           type="button"
-                          title="delete notification"
+                          title="check group info"
                           className={classNames(
                             active ? "bg-gray-100" : "",
                             "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium"
@@ -170,6 +132,8 @@ export const ChatItem: React.FC<{
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenGroupInfo(true);
+
+                            dispatch(setCurrentChat({ chat }));
                           }}
                           role="button"
                         >
@@ -182,7 +146,7 @@ export const ChatItem: React.FC<{
                       {({ active }) => (
                         <button
                           type="button"
-                          title="delete notification"
+                          title="delete messages"
                           className={classNames(
                             active ? "bg-gray-100" : "",
                             "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium"
@@ -208,35 +172,35 @@ export const ChatItem: React.FC<{
                 <div className="w-12 relative h-12 flex-shrink-0 flex justify-start items-center flex-nowrap">
                   {React.Children.toArray(
                     chat.participants &&
-                    chat.participants?.slice(0, 3)?.map((_, index) => (
-                      // <img
-                      //   src={p.avatar.url}
-                      //   className={classNames(
-                      //     "w-8 h-8 rounded-full border-[1.5px] border-gray-500 absolute",
-                      //     index === 0
-                      //       ? "left-0 z-30"
-                      //       : index == 1
-                      //       ? "left-2.5 z-20"
-                      //       : index === 2
-                      //       ? "left-3.5 z-20"
-                      //       : ""
-                      //   )}
-                      //   alt=""
-                      //   key={p?._id}
-                      // />
-                      <div
-                        className={classNames(
-                          "w-8 h-8 rounded-full border-[1.5px] border-gray-500 absolute",
-                          index === 0
-                            ? "left-0 z-10 bg-green-500"
-                            : index == 1
-                            ? "left-1.5 z-20 bg-indigo-500"
-                            : index === 2
-                            ? "left-3.5 z-30 bg-violet-500"
-                            : ""
-                        )}
-                      ></div>
-                    ))
+                      chat.participants?.slice(0, 3)?.map((_, index) => (
+                        // <img
+                        //   src={p.avatar.url}
+                        //   className={classNames(
+                        //     "w-8 h-8 rounded-full border-[1.5px] border-gray-500 absolute",
+                        //     index === 0
+                        //       ? "left-0 z-30"
+                        //       : index == 1
+                        //       ? "left-2.5 z-20"
+                        //       : index === 2
+                        //       ? "left-3.5 z-20"
+                        //       : ""
+                        //   )}
+                        //   alt=""
+                        //   key={p?._id}
+                        // />
+                        <div
+                          className={classNames(
+                            "w-8 h-8 rounded-full border-[1.5px] border-gray-500 absolute",
+                            index === 0
+                              ? "left-0 z-10 bg-green-500"
+                              : index == 1
+                              ? "left-1.5 z-20 bg-indigo-500"
+                              : index === 2
+                              ? "left-3.5 z-30 bg-violet-500"
+                              : ""
+                          )}
+                        ></div>
+                      ))
                   )}
                 </div>
               ) : (

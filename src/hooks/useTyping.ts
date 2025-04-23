@@ -10,15 +10,18 @@ export const useTyping = () => {
   const [userTyping, setUserTyping] = useState<boolean>(false);
 
   const handleStartTyping = (chatId: string) => {
-    if (chatId !== currentChat?._id) return;
+    if (chatId === currentChat?._id) {
+      setIsTyping(true);
+    }
 
-    setIsTyping(true);
+    return
   };
-
+  
   const handleStopTyping = (chatId: string) => {
-    if (chatId !== currentChat?._id) return;
-
-    setIsTyping(false);
+    if (chatId === currentChat?._id) {
+      setIsTyping(false);
+    }
+    return
   };
 
   return useMemo(
@@ -29,8 +32,16 @@ export const useTyping = () => {
       isTyping,
       userTyping,
       setIsTyping,
-					setUserTyping
+      setUserTyping,
     }),
-    [handleStartTyping, handleStopTyping, typingTimeOutRef, isTyping, userTyping, setIsTyping, setUserTyping]
+    [
+      handleStartTyping,
+      handleStopTyping,
+      typingTimeOutRef,
+      isTyping,
+      userTyping,
+      setIsTyping,
+      setUserTyping,
+    ]
   );
 };

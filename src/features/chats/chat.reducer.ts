@@ -16,7 +16,7 @@ interface InitialState {
 const initialState: InitialState = {
   chats: LocalStorage.get("chats") as ChatListItemInterface[],
   currentChat: (LocalStorage.get("current-chat") as ChatListItemInterface) || null,
-  users: [] as User[],
+  users: (LocalStorage.get("users") as User[]) || [],
   chatMessages: LocalStorage.get("chatmessages") as ChatMessageInterface[],
   unreadMessages: LocalStorage.get("unreadMessages") as ChatMessageInterface[],
 };
@@ -165,7 +165,7 @@ const ChatSlice = createSlice({
 
       state.users = data;
 
-      LocalStorage.set("chatmessages", state.chatMessages);
+      LocalStorage.set("users", state.users);
     });
 
     builder.addMatcher(ChatApiSlice.endpoints.createUserChat.matchFulfilled, (state, action) => {
@@ -187,6 +187,19 @@ const ChatSlice = createSlice({
 
       LocalStorage.set("chats", state.chats);
     });
+
+    builder.addMatcher(
+      ChatApiSlice.endpoints.updateGroupChatDetails.matchFulfilled,
+      (state, action) => {
+        const { data } = action.payload;
+
+        console.log(data)
+
+        state.chats = [...state.chats, data];
+
+        LocalStorage.set("chats", state.chats);
+      }
+    );
   },
 });
 

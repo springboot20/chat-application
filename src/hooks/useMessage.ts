@@ -24,17 +24,17 @@ export const useMessage = () => {
 
   const handleOnMessageChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(evt.target.value);
-    if (!socket && !connected) return;
+
+    if (!socket || !connected) return;
 
     if (!isTyping) {
       setIsTyping(true);
 
-      
       socket?.emit(TYPING_EVENT, currentChat?._id);
     }
-    
-    console.log(isTyping)
-    
+
+    console.log(isTyping);
+
     if (typingTimeOutRef.current) {
       clearTimeout(typingTimeOutRef.current);
     }

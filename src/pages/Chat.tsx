@@ -135,9 +135,11 @@ export const Chat = () => {
     _onChatLeave,
   ]);
 
+  console.log(isTyping)
+
   return (
     <Disclosure as={"div"}>
-      {({ open }) => (
+      {({ open, close }) => (
         <React.Fragment>
           <div
             className={classNames(
@@ -147,7 +149,7 @@ export const Chat = () => {
           >
             <div className="">
               <SideNavigation />
-              <MessageNavigation open={open} />
+              <MessageNavigation open={open} close={close} />
             </div>
             <main
               className={classNames(
@@ -201,7 +203,7 @@ export const Chat = () => {
                         <div className="flex items-center gap-3">
                           {isAuthenticated ? (
                             <>
-                              <Menu as="div" className="relative z-30">
+                              <Menu as="div" className="relative z-40">
                                 <div>
                                   <Menu.Button className="flex dark:text-white text-gray-900">
                                     <span className="sr-only">Open auth menu</span>
@@ -219,7 +221,7 @@ export const Chat = () => {
                                   leaveFrom="transform opacity-100 scale-100"
                                   leaveTo="transform opacity-0 scale-95"
                                 >
-                                  <Menu.Items className="absolute right-0 z-30 mt-4 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                  <Menu.Items className="absolute right-0 z-40 mt-4 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                                     <Menu.Item>
                                       {({ active }) => (
                                         <button
@@ -341,7 +343,6 @@ export const Chat = () => {
                           </div>
                         ) : (
                           <>
-                            {isTyping && <Typing />}
                             <div ref={bottomRef} className="flex flex-col gap-6 h-full">
                               {reduxStateMessages && reduxStateMessages?.length > 0 ? (
                                 React.Children.toArray(
@@ -360,6 +361,13 @@ export const Chat = () => {
                                   <p className="text-gray-500">
                                     No messages yet. Start a conversation!
                                   </p>
+                                </div>
+                              )}
+                              {isTyping && (
+                                <div className="p-3 rounded-xl bg-gray-100 w-fit inline-flex gap-2 ml-4">
+                                  <span className="animation1 h-3 w-3 bg-gray-500 rounded-full"></span>
+                                  <span className="animation2 h-3 w-3 bg-gray-500 rounded-full"></span>
+                                  <span className="animation3 h-3 w-3 bg-gray-500 rounded-full"></span>
                                 </div>
                               )}
                             </div>

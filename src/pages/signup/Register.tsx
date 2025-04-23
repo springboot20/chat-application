@@ -66,8 +66,8 @@ export const Register = () => {
 
     try {
       const response = await register({ ...value }).unwrap();
-      await Promise.resolve(setTimeout(() => navigate("/login"), 1200));
       toast(response?.data?.message, { type: "success" });
+      await Promise.resolve(setTimeout(() => navigate("/login"), 1200));
     } catch (error: any) {
       toast(error?.data?.message, { type: "error" });
     }
