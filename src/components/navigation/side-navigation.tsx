@@ -82,14 +82,14 @@ const SideNavigation: React.FC = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-gray-800 w-20 z-10`}
+      className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-black dark:border-r-white/15 w-16 sm:w-20 z-10`}
     >
       <div className={`relative h-full flex justify-between p-5 flex-col items-center`}>
         <Disclosure.Button
           title="open mobile menu"
-          className="lg:hidden absolute -right-8 rounded-full flex items-center justify-center h-10 w-10 bg-[#615EF0]"
+          className="lg:hidden absolute -right-6 sm:-right-8 rounded-full flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 bg-[#615EF0]"
         >
-          <ChevronRightIcon className="h-7 w-7 text-white stroke-[4]" />
+          <ChevronRightIcon className="h-5 w-5 text-white" strokeWidth={3} />
         </Disclosure.Button>
 
         <div className="flex flex-col justify-between items-center">
@@ -101,7 +101,7 @@ const SideNavigation: React.FC = () => {
                   height="56"
                   viewBox="0 0 56 56"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="fill-[#615EF0] h-16 w-16"
+                  className="fill-[#615EF0] w-10 h-10 sm:h-16 sm:w-16"
                 >
                   <rect width="56" height="56" rx="14" />
                   <path

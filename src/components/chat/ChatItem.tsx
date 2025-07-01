@@ -65,7 +65,7 @@ export const ChatItem: React.FC<{
       <div
         role="button"
         className={classNames(
-          "hover:bg-gray-300/40 group flex items-start cursor-pointer bg-gray-100 px-1 py-2.5 justify-between",
+          "hover:bg-gray-300/40 group flex items-start cursor-pointer bg-gray-100 px-1 py-2.5 justify-between dark:bg-white/5",
           isActive ? "bg-gray-300/40 border-[1.5px] border-zinc-300" : "",
           unreadCount > 0 ? "border-2 border-green-500 bg-green-100" : ""
         )}
@@ -83,7 +83,7 @@ export const ChatItem: React.FC<{
                   className="flex dark:text-white text-gray-900"
                 >
                   <span className="sr-only">Open auth menu</span>
-                  <EllipsisVerticalIcon className="h-6 group-hover:w-6 group-hover:opacity-100 w-0 opacity-0 transition-all ease-in-out duration-100 text-gray-600" />
+                  <EllipsisVerticalIcon className="h-6 group-hover:w-6 group-hover:opacity-100 w-0 opacity-0 transition-all ease-in-out duration-100 text-gray-600 dark:text-white" />
                 </Menu.Button>
               </div>
               <Transition
@@ -95,7 +95,7 @@ export const ChatItem: React.FC<{
                 leaveFrom="transform opacity-100 scale-100"
                 leaveTo="transform opacity-0 scale-95"
               >
-                <Menu.Items className="absolute left-5 z-40 mt-4 w-max origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <Menu.Items className="absolute left-5 z-40 mt-8 w-max origin-top-right rounded-md bg-white dark:bg-black/50 dark:ring-white/10 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   {openOptions && (
                     <Menu.Item>
                       {({ active }) => (
@@ -103,8 +103,8 @@ export const ChatItem: React.FC<{
                           type="button"
                           title="mark as read"
                           className={classNames(
-                            active ? "bg-gray-100" : "",
-                            "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium"
+                            active ? "bg-gray-100 dark:bg-white/5" : "",
+                            "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium dark:text-white"
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -126,8 +126,8 @@ export const ChatItem: React.FC<{
                           type="button"
                           title="check group info"
                           className={classNames(
-                            active ? "bg-gray-100" : "",
-                            "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium"
+                            active ? "bg-gray-100 dark:bg-white/5" : "",
+                            "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium dark:text-white"
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -148,8 +148,8 @@ export const ChatItem: React.FC<{
                           type="button"
                           title="delete messages"
                           className={classNames(
-                            active ? "bg-gray-100" : "",
-                            "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium"
+                            active ? "bg-gray-100 dark:bg-white/5" : "",
+                            "flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium dark:text-white"
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -215,20 +215,20 @@ export const ChatItem: React.FC<{
           </div>
 
           <div className="flex flex-col items-start">
-            <p> {getMessageObjectMetaData(chat, user!)?.title}</p>
+            <p className="dark:text-white"> {getMessageObjectMetaData(chat, user!)?.title}</p>
             <div className="flex items-center gap-1 text-gray-500">
               {chat?.lastMessage &&
               chat?.lastMessage.attachments &&
               chat?.lastMessage.attachments?.length > 0 ? (
                 <PaperClipIcon className="h-4 w-4" />
               ) : null}
-              <small>{getMessageObjectMetaData(chat, user!).lastMessage}</small>
+              <small className="dark:text-white">{getMessageObjectMetaData(chat, user!).lastMessage}</small>
             </div>
           </div>
         </div>
 
         <div className="h-full flex flex-col justify-start">
-          <small className="flex-shrink-0 inline-block w-full">
+          <small className="flex-shrink-0 inline-block w-full dark:text-white">
             {moment(chat.updatedAt).add("TIME_ZONE", "hours").fromNow(true)}
           </small>
 

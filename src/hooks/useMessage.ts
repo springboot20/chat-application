@@ -18,6 +18,7 @@ export const useMessage = () => {
   const dispatch = useAppDispatch();
 
   const [message, setMessage] = useState<string>("");
+  const [emoji, setEmoji] = useState<string | null>(null);
   const { socket, connected } = useSocketContext();
   const { typingTimeOutRef, setIsTyping, isTyping } = useTyping();
   const [attachmentFiles, setAttachmentFiles] = useState<File[] | undefined>([]);
@@ -96,5 +97,7 @@ export const useMessage = () => {
     bottomRef,
     getAllMessages,
     // scrollToBottom, // Expose the scrollToBottom function
+    setEmoji,
+    emoji,
   };
 };

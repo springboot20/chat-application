@@ -17,7 +17,7 @@ import { ChatListItemInterface } from "../../types/chat.ts";
 
 export const MessageNavigation: React.FC<{
   open: boolean;
-  close:()=> any
+  close: () => any;
 }> = ({ open, close }) => {
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
@@ -46,7 +46,7 @@ export const MessageNavigation: React.FC<{
     setMessage("");
     getAllMessages();
 
-    close()
+    close();
   };
 
   const handleChatDelete = (chatId: string) => {
@@ -75,7 +75,7 @@ export const MessageNavigation: React.FC<{
         onClose={() => setOpenChat(false)}
       />
       <div
-        className={`fixed left-20 w-[25rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 translate-x-0 hidden lg:block
+        className={`fixed left-20 w-[25rem] bg-white dark:bg-black flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 translate-x-0 hidden lg:block
   `}
       >
         <div className="flex flex-col items-center gap-8 h-full">
@@ -114,13 +114,16 @@ export const MessageNavigation: React.FC<{
             </button>
           </div>
           <div className="px-3 w-full">
-            <div className="w-full rounded-md border border-gray-400 flex items-center h-12 bg-gray-100/60">
+            <div className="w-full rounded-md border border-gray-400 flex items-center h-12 bg-gray-100/60 dark:bg-black dark:ring-1 dark:ring-white/10">
               <button
                 title="search icon"
                 type="button"
                 className="px-2 py-2 flex items-center justify-center"
               >
-                <MagnifyingGlassIcon className="h-7 text-gray-700" aria-hidden={true} />
+                <MagnifyingGlassIcon
+                  className="h-7 text-gray-700 dark:text-white"
+                  aria-hidden={true}
+                />
               </button>
 
               <SearchInput
@@ -128,7 +131,7 @@ export const MessageNavigation: React.FC<{
                 placeholder="Search messages"
                 onChange={(e) => setLocalSearchQuery(e.target.value.toLowerCase())}
                 value={localSearchQuery}
-                className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none"
+                className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder:text-white/60"
               />
             </div>
             {isLoadingChats ? (
@@ -156,16 +159,17 @@ export const MessageNavigation: React.FC<{
       </div>
 
       <Disclosure.Panel
-        className={`fixed w-full sm:w-[25rem] bg-white dark:bg-gray-800 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 translate-x-0 lg:hidden
+        className={`fixed w-full sm:w-[25rem] bg-white dark:bg-black dark:border-r-white/15 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 translate-x-0 lg:hidden
     ${open ? "translate-x-0 left-0" : "-translate-x-full"}
   `}
       >
-        <Disclosure.Button className={"absolute -right-7 flex items-center justify-center top-2 bg-[#615EF0] h-10 w-10 rounded-full lg:hidden"}>
+        <Disclosure.Button
+          className={
+            "absolute right-7 flex items-center justify-center bottom-10 bg-[#615EF0] h-8 w-8 rounded-full lg:hidden"
+          }
+        >
           <span className="sr-only">Close panel</span>
-          <ChevronLeftIcon
-            className="h-8 w-8 stroke-[3] text-white"
-            aria-hidden={true}
-          />
+          <ChevronLeftIcon className="h-5 w-5 text-white" aria-hidden={true} strokeWidth={3} />
         </Disclosure.Button>
 
         <div className="flex flex-col items-center gap-8 h-full">
@@ -194,7 +198,7 @@ export const MessageNavigation: React.FC<{
             </button>
           </div>
           <div className="px-3 w-full">
-            <div className="w-full rounded-md border border-gray-400 flex items-center h-12 bg-gray-100/60">
+            <div className="w-full rounded-md border border-gray-400 flex items-center h-12 bg-gray-100/60 dark:bg-black dark:ring-1 dark:ring-white/10">
               <button
                 title="search icon"
                 type="button"
@@ -208,7 +212,7 @@ export const MessageNavigation: React.FC<{
                 placeholder="Search messages"
                 onChange={(e) => setLocalSearchQuery(e.target.value.toLowerCase())}
                 value={localSearchQuery}
-                className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none"
+                className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder:text-white/60"
               />
             </div>
             {isLoadingChats ? (

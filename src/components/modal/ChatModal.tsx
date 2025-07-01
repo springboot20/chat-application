@@ -114,7 +114,7 @@ export const ChatModal: React.FC<{
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
                 <Dialog.Panel
-                  className="relative transform overflow-x-hidden rounded-lg bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl sm:p-6 h-full"
+                  className="relative transform overflow-x-hidden rounded-lg bg-white dark:bg-black dark:border dark:border-white/10 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl sm:p-6 h-full"
                   style={{
                     overflow: "inherit",
                   }}
@@ -129,13 +129,13 @@ export const ChatModal: React.FC<{
                       </Dialog.Title>
                       <button
                         type="button"
-                        className="bg-gray-300 hover:text-zinc-600 rounded-full p-2 flex justify-center items-center"
+                        className="bg-gray-300 hover:text-zinc-600 dark:bg-white/5 rounded-full dark:border dark:border-white/10 p-2 flex justify-center items-center"
                         onClick={() => handleClose()}
                       >
                         <span className="sr-only">Close</span>
                         <XMarkIcon
                           strokeWidth={2.5}
-                          className="h-6 w-6 text-gray-800"
+                          className="h-6 w-6 text-gray-800 dark:text-white"
                           aria-hidden="true"
                         />
                       </button>
@@ -147,14 +147,14 @@ export const ChatModal: React.FC<{
                       onChange={setIsGroupChat}
                       className={classNames(
                         isGroupChat ? "bg-gray-200" : "bg-gray-100",
-                        "relative outline outline-[1px] outline-white inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-0"
+                        "relative outline outline-[1px] dark:bg-black dark:outline-white/10 outline-white inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-0"
                       )}
                     >
                       <span
                         aria-hidden="true"
                         className={classNames(
                           isGroupChat ? "translate-x-5 bg-white" : "translate-x-0 bg-white",
-                          "pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out"
+                          "pointer-events-none inline-block h-5 w-5 transform rounded-full shadow dark:bg-white/50 ring-0 transition duration-200 ease-in-out"
                         )}
                       />
                     </Switch>
@@ -173,7 +173,7 @@ export const ChatModal: React.FC<{
                   {isGroupChat ? (
                     <div className="my-5">
                       <input
-                        className="block w-full rounded-xl outline outline-[1px] outline-zinc-400 border-0 py-4 px-5"
+                        className="block w-full rounded-xl outline outline-[1px] outline-zinc-400 dark:bg-black dark:outline-white/10 dark:text-white dark:placeholder:text-white/60 border-0 py-4 px-5"
                         placeholder="Enter a group name"
                         value={groupName}
                         onChange={(e) => setGroupName(e.target.value)}
@@ -248,7 +248,7 @@ export const ChatModal: React.FC<{
                     <Button
                       disabled={creatingChat}
                       onClick={handleClose}
-                      className="w-[40%] bg-black/40 text-white text-xl font-semibold rounded-lg"
+                      className="w-[40%] bg-black/40 dark:bg-white/5 dark:hover:bg-white/10 text-white text-xl font-semibold rounded-lg"
                     >
                       Close
                     </Button>

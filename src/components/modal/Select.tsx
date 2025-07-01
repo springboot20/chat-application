@@ -36,15 +36,15 @@ export const SelectModalInput: React.FC<{
               setQuery(event.target.value);
             }}
             placeholder={placeholder}
-            className="w-full px-5 py-4 bg-gray-200 text-gray-800 font-medium text-base block rounded-xl border-0 outline outline-[1px] outline-zinc-400 placeholder:text-gray-700 focus:ring-[1px] focus:ring-white"
+            className="w-full px-5 py-4 bg-gray-200 dark:bg-black dark:text-white dark:outline-white/10 text-gray-800 font-medium text-base block rounded-xl border-0 outline outline-[1px] outline-zinc-400 placeholder:text-gray-700 focus:ring-[1px] focus:ring-white dark:focus:ring-white/10"
           />
         </Combobox.Button>
         <Combobox.Button className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none">
-          <ChevronUpDownIcon className="h-8 w-8 text-gray-700" aria-hidden="true" />
+          <ChevronUpDownIcon className="h-8 w-8 text-gray-700 dark:text-white" aria-hidden="true" />
         </Combobox.Button>
 
         {(localOptions || [])?.length > 0 && (
-          <Combobox.Options className="outline outline-[1px] outline-zinc-400 bg-white absolute z-10 mt-2 p-2 max-h-60 w-full overflow-auto rounded-2xl dark:bg-gray-800 text-base shadow-lg ring-opacity-5 focus:outline-none sm:text-sm">
+          <Combobox.Options className="outline outline-[1px] outline-zinc-400 bg-white absolute z-10 mt-2 p-2 max-h-60 w-full overflow-auto rounded-xl dark:bg-black dark:outline-white/10 text-base shadow-lg ring-opacity-5 focus:outline-none sm:text-sm">
             {localOptions?.length === 0 && query !== "" ? (
               <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-white">
                 Nothing found.
@@ -57,8 +57,8 @@ export const SelectModalInput: React.FC<{
                     value={opt}
                     className={({ active }) =>
                       classNames(
-                        "cursor-pointer relative rounded-2xl select-none py-4 pl-3 pr-9 dark:text-white ",
-                        active ? "bg-gray-200 dark:bg-gray-700 text-gray-700 " : "text-gray-800"
+                        "cursor-pointer relative rounded-lg select-none py-4 pl-3 pr-9 dark:text-white dark:hover:bg-white/10 dark:bg-white/5",
+                        active ? "bg-gray-200 text-gray-700 " : "text-gray-800"
                       )
                     }
                   >
@@ -76,7 +76,7 @@ export const SelectModalInput: React.FC<{
                               active ? "text-green-700" : "text-green-600"
                             )}
                           >
-                            <CheckIcon className="h-7 w-7 stroke-[4]" aria-hidden="true" />
+                            <CheckIcon className="h-6" strokeWidth={3} aria-hidden="true" />
                           </span>
                         )}
                       </>

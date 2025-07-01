@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import {
   PaperAirplaneIcon,
@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
-// import EmojiPicker from "emoji-picker-react";
+import EmojiPicker from "emoji-picker-react";
 import { MessageNavigation } from "../components/navigation/message-navigation.tsx";
 import SideNavigation from "../components/navigation/side-navigation.tsx";
 import { Link } from "react-router-dom";
@@ -42,6 +42,10 @@ export const Chat = () => {
   const dispatch = useAppDispatch();
   const [logout] = useLogoutMutation();
   const [sendMessage] = useSendMessageMutation();
+
+  const [openEmoji, setOpenEmoji] = useState<boolean>(false);
+
+  const handleOpenAndCloseEmoji = () => setOpenEmoji(!openEmoji);
 
   const { socket } = useSocketContext();
   const { onNewChat, _onChatLeave, chats } = useChat();
@@ -101,6 +105,14 @@ export const Chat = () => {
   };
 
   useEffect(() => {
+    const handleCloseEmoji = () => setOpenEmoji(false);
+
+    document.addEventListener("mousedown", handleCloseEmoji);
+
+    return () => document.removeEventListener("mousedown", handleCloseEmoji);
+  }, []);
+
+  useEffect(() => {
     // Run getChats only once when component mounts or socket changes
     if (currentChat?._id) {
       socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
@@ -135,7 +147,7 @@ export const Chat = () => {
     _onChatLeave,
   ]);
 
-  console.log(isTyping)
+  console.log(isTyping);
 
   return (
     <Disclosure as={"div"}>
@@ -162,7 +174,7 @@ export const Chat = () => {
                   <>
                     <header
                       className={classNames(
-                        "fixed top-0 right-0 p-[0.9rem] left-20 bg-white dark:bg-gray-800 border-b-[1.5px] border-b-gray-600/30 z-10 transition-all lg:left-[30rem]"
+                        "fixed top-0 right-0 p-[0.9rem] left-16 sm:left-20 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-10 transition-all lg:left-[30rem]"
                       )}
                     >
                       <div className={classNames("flex justify-between items-center h-full ml-6")}>
@@ -176,7 +188,7 @@ export const Chat = () => {
                               dispatch(setCurrentChat({ chat: null }));
                             }}
                           >
-                            <ArrowLeftIcon className="h-8 w-8" />
+                            <ArrowLeftIcon className="h-8 w-8 dark:text-white" />
                           </button>
                           <div>
                             <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
@@ -207,7 +219,7 @@ export const Chat = () => {
                                 <div>
                                   <Menu.Button className="flex dark:text-white text-gray-900">
                                     <span className="sr-only">Open auth menu</span>
-                                    <span className="flex items-center justify-center h-12 w-12 rounded-full border cursor-pointer dark:border-2">
+                                    <span className="flex items-center justify-center h-12 w-12 rounded-full border cursor-pointer dark:border dark:border-white/10">
                                       <UserIcon className="h-7 w-7 text-gray-600 dark:text-white" />
                                     </span>
                                   </Menu.Button>
@@ -335,7 +347,7 @@ export const Chat = () => {
                       </div>
                     </header>
 
-                    <div className="relative left-20 lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto mt-20 w-[calc(100%-5rem)] pb-28">
+                    <div className="relative left-16 w-[calc(100%-4rem)] sm:left-20 sm:w-[calc(100%-5rem)] lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto mt-20 pb-16">
                       <div className="flex flex-col flex-grow px-5 overflow-y-auto gap-10">
                         {loadingMessages ? (
                           <div className="flex justify-center items-center min-h-[calc(100%-5rem)]">
@@ -404,51 +416,70 @@ export const Chat = () => {
                           })}
                         </div>
                       ) : null}
-                      <div className="fixed bottom-0 p-4 gap-2 left-20 lg:left-[30rem] right-0 h-28 bg-white dark:bg-gray-800 z-10 border-t-[1.5px] border-b-[1.5px] border-gray-600/30">
-                        <div className="h-full z-10 p-4 flex items-center justify-between mx-auto max-w-8xl">
-                          <fieldset className="flex items-center">
+                      <div className="fixed bottom-0 gap-2 left-16 lg:left-[30rem] right-0 h-16 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30">
+                        <div className="h-full absolute">
+                          {openEmoji && (
+                            <EmojiPicker
+                              className="absolute bottom-[38rem] min-w-[300px] sm:min-w-[500px] dark:bg-black dark:border dark:border-white/10 -z-10"
+                              searchPlaceHolder="search for emoji"
+                            />
+                          )}
+                          <div className="flex items-center justify-between mx-auto max-w-8xl h-full relative z-20 px-2 sm:p-4">
+                            <button
+                              onClick={handleOpenAndCloseEmoji}
+                              className="cursor-pointer mr-1.5 h-10 w-10 shrink-0"
+                              type="button"
+                            >
+                              <span className="inline-block h-full w-full dark:bg-white/5 bg-gray-50 dark:hover:bg-white/10 rounded-lg "></span>
+                            </button>
+
+                            <fieldset className="flex items-center shrink-0">
+                              <input
+                                hidden
+                                multiple
+                                type="file"
+                                id="files"
+                                max={5}
+                                onChange={(event) => {
+                                  if (event.target.files) {
+                                    setAttachmentFiles([...event.target.files]);
+                                  }
+                                }}
+                              />
+                              <label htmlFor="files">
+                                <PaperClipIcon className="cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition" />
+                              </label>
+                            </fieldset>
+
                             <input
-                              hidden
-                              multiple
-                              type="file"
-                              id="files"
-                              max={5}
-                              onChange={(event) => {
-                                if (event.target.files) {
-                                  setAttachmentFiles([...event.target.files]);
+                              id="message-input"
+                              type="text"
+                              value={message}
+                              onChange={(event) => handleOnMessageChange(event)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  sendChatMessage();
                                 }
                               }}
+                              className="relative block px-4 py-3.5 focus:outline-nonerounded-md border-0 outline-none w-full dark:bg-transparent dark:text-white"
+                              placeholder="Type a message..."
                             />
-                            <label htmlFor="files" className="mr-4">
-                              <PaperClipIcon className="cursor-pointer w-10 h-10 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition" />
-                            </label>
-                          </fieldset>
-                          <input
-                            id="message-input"
-                            type="text"
-                            value={message}
-                            onChange={(event) => handleOnMessageChange(event)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                sendChatMessage();
-                              }
-                            }}
-                            className="relative block px-4 py-3.5 focus:outline-none hover:border-indigo-400 rounded-md border-gray-600/30 border-2 w-full"
-                            placeholder="Type a message..."
-                          />
-                          <button
-                            title="send message"
-                            disabled={!message && attachmentFiles!.length <= 0}
-                            className="shadow-none"
-                            onClick={() => {
-                              sendChatMessage();
-                            }}
-                          >
-                            <PaperAirplaneIcon
-                              aria-hidden={true}
-                              className="h-12 text-violet-500"
-                            />
-                          </button>
+                            {message && (
+                              <button
+                                title="send message"
+                                disabled={!message && attachmentFiles!.length <= 0}
+                                className="shadow-none"
+                                onClick={() => {
+                                  sendChatMessage();
+                                }}
+                              >
+                                <PaperAirplaneIcon
+                                  aria-hidden={true}
+                                  className="h-7 text-gray-500 dark:text-white"
+                                />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
