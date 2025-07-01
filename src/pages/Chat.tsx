@@ -496,7 +496,7 @@ export const Chat = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="w-full h-full flex justify-center items-center">
+                  <div className="w-full h-full flex justify-center items-center dark:text-white">
                     No chat selected
                   </div>
                 )}

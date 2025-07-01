@@ -44,7 +44,7 @@ export const Login = () => {
           Sign in to your account
         </h2>
       </div>
-      <div className="mt-10 w-full bg-white rounded-lg p-4 sm:p-6 md:max-w-xl">
+      <div className="mt-10 w-full bg-white dark:bg-white/5 rounded-lg p-4 sm:p-6 md:max-w-xl">
         <form
           onSubmit={async (e) => {
             await handleSubmit(e);
@@ -63,7 +63,7 @@ export const Login = () => {
                 value={value.email}
                 onChange={handleChange("email")}
                 placeholder="enter your email..."
-                className="block w-full px-3 rounded-md border-0 py-2.5 sm:py-4 md:py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
+                className="block w-full px-3 rounded-md border-0 py-2.5 sm:py-4 md:py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none dark:ring-white/10 dark:bg-black dark:text-white dark:placeholder:text-white/600"
               />
             </div>
           </fieldset>
@@ -81,7 +81,7 @@ export const Login = () => {
                 placeholder="enter your password..."
                 value={value.password}
                 onChange={handleChange("password")}
-                className="block w-full px-3 rounded-md border-0 py-2.5 sm:py-4 md:py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
+                className="block w-full px-3 rounded-md border-0 py-2.5 sm:py-4 md:py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none dark:ring-white/10 dark:bg-black dark:text-white dark:placeholder:text-white/600"
               />
               <button
                 type="button"
@@ -105,7 +105,7 @@ export const Login = () => {
                 </label>
                 <input id="check" type="checkbox" className="rounded-sm" />
               </div>
-              <span className="text-sm font-medium text-gray-700">Remember me</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-white">Remember me</span>
             </div>
             <Link to={"/forgot"} className="text-sm text-indigo-600 font-medium">
               forgot password?
@@ -121,7 +121,7 @@ export const Login = () => {
         </form>
       </div>
       <div className="mx-auto mt-3">
-        <p className="text-center text-sm font-normal">
+        <p className="text-center text-sm font-normal dark:text-white">
           Don't have an account?{" "}
           <Link to="/register" className="text-[#4632A8]">
             SignUp
