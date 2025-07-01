@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useEffect } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import {
   PaperAirplaneIcon,
@@ -6,6 +6,7 @@ import {
   UserIcon,
   ArrowLeftIcon,
   XCircleIcon,
+  FaceSmileIcon,
 } from "@heroicons/react/24/outline";
 import { classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
@@ -43,10 +44,6 @@ export const Chat = () => {
   const [logout] = useLogoutMutation();
   const [sendMessage] = useSendMessageMutation();
 
-  const [openEmoji, setOpenEmoji] = useState<boolean>(false);
-
-  const handleOpenAndCloseEmoji = () => setOpenEmoji(!openEmoji);
-
   const { socket } = useSocketContext();
   const { onNewChat, _onChatLeave, chats } = useChat();
   const { isOnline } = useNetwork();
@@ -61,12 +58,18 @@ export const Chat = () => {
 
   const {
     message,
+    openEmoji,
+    setOpenEmoji,
+    handleOpenAndCloseEmoji,
+    // handleEmojiSimpleSelect,
     setAttachmentFiles,
     getAllMessages,
     handleOnMessageChange,
+    handleEmojiSelect,
     attachmentFiles,
     onMessageReceive,
     bottomRef,
+    messageInputRef,
     setMessage,
   } = useMessage();
 
@@ -105,7 +108,11 @@ export const Chat = () => {
   };
 
   useEffect(() => {
-    const handleCloseEmoji = () => setOpenEmoji(false);
+    const handleCloseEmoji = (event: MouseEvent) => {
+      if (!(event.target as HTMLElement).closest(".EmojiPickerReact")) {
+        setOpenEmoji(false);
+      }
+    };
 
     document.addEventListener("mousedown", handleCloseEmoji);
 
@@ -417,69 +424,73 @@ export const Chat = () => {
                         </div>
                       ) : null}
                       <div className="fixed bottom-0 gap-2 left-16 lg:left-[30rem] right-0 h-16 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30">
-                        <div className="h-full absolute">
-                          {openEmoji && (
+                        {openEmoji && (
+                          <div className="bottom-20 absolute left-6 z-50">
                             <EmojiPicker
-                              className="absolute bottom-[38rem] min-w-[300px] sm:min-w-[500px] dark:bg-black dark:border dark:border-white/10 -z-10"
+                              className="absolute min-w-[300px] sm:min-w-[500px] dark:bg-black dark:border dark:border-white/10"
                               searchPlaceHolder="search for emoji"
+                              onEmojiClick={(data, event) => handleEmojiSelect(data, event)}
                             />
-                          )}
-                          <div className="flex items-center justify-between mx-auto max-w-8xl h-full relative z-20 px-2 sm:p-4">
-                            <button
-                              onClick={handleOpenAndCloseEmoji}
-                              className="cursor-pointer mr-1.5 h-10 w-10 shrink-0"
-                              type="button"
-                            >
-                              <span className="inline-block h-full w-full dark:bg-white/5 bg-gray-50 dark:hover:bg-white/10 rounded-lg "></span>
-                            </button>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between mx-auto max-w-8xl h-full relative z-20 px-2 sm:p-4">
+                          <button
+                            onClick={handleOpenAndCloseEmoji}
+                            className="cursor-pointer mr-1.5 h-12 w-12 shrink-0"
+                            type="button"
+                          >
+                            <span className="flex items-center justify-center h-full w-full dark:bg-transparent bg-gray-50 dark:hover:bg-white/10 rounded-lg ">
+                              <FaceSmileIcon className="h-9 dark:text-white/60" />
+                            </span>
+                          </button>
 
-                            <fieldset className="flex items-center shrink-0">
-                              <input
-                                hidden
-                                multiple
-                                type="file"
-                                id="files"
-                                max={5}
-                                onChange={(event) => {
-                                  if (event.target.files) {
-                                    setAttachmentFiles([...event.target.files]);
-                                  }
-                                }}
-                              />
-                              <label htmlFor="files">
-                                <PaperClipIcon className="cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition" />
-                              </label>
-                            </fieldset>
-
+                          <fieldset className="flex items-center shrink-0">
                             <input
-                              id="message-input"
-                              type="text"
-                              value={message}
-                              onChange={(event) => handleOnMessageChange(event)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  sendChatMessage();
+                              hidden
+                              multiple
+                              type="file"
+                              id="files"
+                              max={5}
+                              onChange={(event) => {
+                                if (event.target.files) {
+                                  setAttachmentFiles([...event.target.files]);
                                 }
                               }}
-                              className="relative block px-4 py-3.5 focus:outline-nonerounded-md border-0 outline-none w-full dark:bg-transparent dark:text-white"
-                              placeholder="Type a message..."
                             />
-                            {message && (
-                              <button
-                                title="send message"
-                                disabled={!message && attachmentFiles!.length <= 0}
-                                className="shadow-none"
-                                onClick={() => {
-                                  sendChatMessage();
-                                }}
-                              >
-                                <PaperAirplaneIcon
-                                  aria-hidden={true}
-                                  className="h-7 text-gray-500 dark:text-white"
-                                />
-                              </button>
-                            )}
-                          </div>
+                            <label htmlFor="files">
+                              <PaperClipIcon className="cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition" />
+                            </label>
+                          </fieldset>
+
+                          <input
+                            id="message-input"
+                            type="text"
+                            value={message}
+                            ref={messageInputRef}
+                            onChange={(event) => handleOnMessageChange(event)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                sendChatMessage();
+                              }
+                            }}
+                            className="relative block px-4 py-3.5 focus:outline-nonerounded-md border-0 outline-none w-full dark:bg-transparent dark:text-white"
+                            placeholder="Type a message..."
+                          />
+                          {message && (
+                            <button
+                              title="send message"
+                              disabled={!message && attachmentFiles!.length <= 0}
+                              className="shadow-none"
+                              onClick={() => {
+                                sendChatMessage();
+                              }}
+                            >
+                              <PaperAirplaneIcon
+                                aria-hidden={true}
+                                className="h-7 text-gray-500 dark:text-white"
+                              />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

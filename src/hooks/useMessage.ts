@@ -5,6 +5,8 @@ import { useTyping } from "./useTyping.ts";
 import { STOP_TYPING_EVENT, TYPING_EVENT, JOIN_CHAT_EVENT } from "../enums/index.ts";
 import { RootState } from "../app/store.ts";
 import { useAppSelector } from "../redux/redux.hooks.ts";
+import { type EmojiClickData } from "emoji-picker-react";
+
 import {
   onMessageReceived,
   updateChatLastMessage,
@@ -18,10 +20,67 @@ export const useMessage = () => {
   const dispatch = useAppDispatch();
 
   const [message, setMessage] = useState<string>("");
-  const [emoji, setEmoji] = useState<string | null>(null);
   const { socket, connected } = useSocketContext();
   const { typingTimeOutRef, setIsTyping, isTyping } = useTyping();
   const [attachmentFiles, setAttachmentFiles] = useState<File[] | undefined>([]);
+  const messageInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [openEmoji, setOpenEmoji] = useState<boolean>(false);
+
+  const handleOpenAndCloseEmoji = () => setOpenEmoji(!openEmoji);
+
+  const insertEmoji = (emojiData: EmojiClickData) => {
+    const input = messageInputRef.current;
+
+    console.log("Inserting emoji:", emojiData.emoji);
+
+    if (!input) {
+      // Fallback: add to end if no input ref
+      setMessage((prev) => prev + emojiData.emoji);
+      return;
+    }
+
+    const start = input.selectionStart || 0;
+    const end = input.selectionEnd || 0;
+
+    console.log("Cursor position - start:", start, "end:", end);
+    console.log("Current message:", message);
+
+    const newMessage = message.slice(0, start) + emojiData.emoji + message.slice(end);
+    setMessage(newMessage);
+
+    console.log("Emoji inserted:", emojiData.emoji);
+    console.log("New message:", newMessage);
+
+    setTimeout(() => {
+      const newCursorPos = start + emojiData?.emoji.length;
+      input.setSelectionRange(newCursorPos, newCursorPos);
+      input.focus();
+    }, 0);
+
+    setOpenEmoji(false);
+  };
+
+  const handleEmojiSelect = (emojiData: EmojiClickData, event: MouseEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    insertEmoji(emojiData);
+    setOpenEmoji(false);
+
+    console.log(emojiData);
+  };
+
+  const handleEmojiSimpleSelect = (emojiData: EmojiClickData, event: MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setMessage((prev) => {
+      const newMessage = prev + emojiData.emoji;
+
+      return newMessage;
+    });
+    setOpenEmoji(false);
+  };
 
   const handleOnMessageChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(evt.target.value);
@@ -48,6 +107,10 @@ export const useMessage = () => {
       setIsTyping(false);
     }, typingLength);
   };
+
+  console.log("Input ref:", messageInputRef.current);
+  console.log("Input value:", messageInputRef.current?.value);
+  console.log("Message state:", message);
 
   const getAllMessages = useCallback(async () => {
     // Early return checks
@@ -97,7 +160,11 @@ export const useMessage = () => {
     bottomRef,
     getAllMessages,
     // scrollToBottom, // Expose the scrollToBottom function
-    setEmoji,
-    emoji,
+    setOpenEmoji,
+    handleOpenAndCloseEmoji,
+    messageInputRef,
+    openEmoji,
+    handleEmojiSelect,
+    handleEmojiSimpleSelect,
   };
 };

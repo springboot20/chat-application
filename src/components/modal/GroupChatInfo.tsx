@@ -22,7 +22,7 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
   const [updateGroupChatDetails] = useUpdateGroupChatDetailsMutation();
   const [newGroupName, setNewGroupName] = useState<string>("");
   const [renamingName, setRenamingName] = useState<boolean>(false);
-  const [participantToBeAdded, setParticipantToBeAdded] = useState<string>("");
+  // const [participantToBeAdded, setParticipantToBeAdded] = useState<string>("");
 
   const dispatch = useAppDispatch();
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
@@ -40,8 +40,6 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
   const availableUsers = usersResponse?.data as User[];
 
   console.log(availableUsers);
-
-  console.log(groupChatDetails);
 
   const handleGroupChatUpdate = async () => {
     if (!newGroupName) toast("Group name is required", { type: "info" });

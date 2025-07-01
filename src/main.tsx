@@ -11,16 +11,14 @@ import { Provider } from "react-redux";
 import store from "./app/store.ts";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-          <Provider store={store}>
+  <BrowserRouter>
+    <Provider store={store}>
       <SocketContextProvider>
         <ThemeContextProvider>
-            <ToastContainer />
-            <App />
+          <ToastContainer />
+          <App />
         </ThemeContextProvider>
       </SocketContextProvider>
-          </Provider>
-    </BrowserRouter>
-  </React.StrictMode>
+    </Provider>
+  </BrowserRouter>
 );
