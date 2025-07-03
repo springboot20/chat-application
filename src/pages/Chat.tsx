@@ -7,6 +7,7 @@ import {
   ArrowLeftIcon,
   XCircleIcon,
   FaceSmileIcon,
+  DocumentIcon,
 } from "@heroicons/react/24/outline";
 import { classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
@@ -34,6 +35,7 @@ import { RootState } from "../app/store.ts";
 import { toast } from "react-toastify";
 import { updateChatLastMessage, setCurrentChat } from "../features/chats/chat.reducer.ts";
 import { useGetChatMessagesQuery, useSendMessageMutation } from "../features/chats/chat.slice.ts";
+import { FileSelection } from "../components/file/FileSelection.tsx";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -56,6 +58,8 @@ export const Chat = () => {
     skip: !currentChat?._id,
   });
 
+  console.log(_);
+
   const {
     message,
     openEmoji,
@@ -71,6 +75,7 @@ export const Chat = () => {
     bottomRef,
     messageInputRef,
     setMessage,
+    handleRemoveFile,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
@@ -82,7 +87,7 @@ export const Chat = () => {
 
     // Clear input fields immediately for better UX
     setMessage("");
-    setAttachmentFiles([]);
+    setAttachmentFiles({});
 
     await sendMessage({
       chatId: currentChat?._id as string,
@@ -117,7 +122,7 @@ export const Chat = () => {
     document.addEventListener("mousedown", handleCloseEmoji);
 
     return () => document.removeEventListener("mousedown", handleCloseEmoji);
-  }, []);
+  }, [setOpenEmoji]);
 
   useEffect(() => {
     // Run getChats only once when component mounts or socket changes
@@ -393,9 +398,11 @@ export const Chat = () => {
                           </>
                         )}
                       </div>
-                      {attachmentFiles && attachmentFiles?.length > 0 ? (
+                      {attachmentFiles?.files && attachmentFiles?.files?.length > 0 ? (
                         <div className="grid gap-4 bg-white grid-cols-5 p-4 justify-start max-w-fit">
-                          {attachmentFiles?.map((file, i) => {
+                          {attachmentFiles?.files?.map((file, i) => {
+                            const isImage = file.type.startsWith("image/");
+
                             return (
                               <div
                                 key={i}
@@ -404,26 +411,34 @@ export const Chat = () => {
                                 <div className="absolute inset-0 flex justify-center items-center w-full h-full bg-black/40 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150">
                                   <button
                                     onClick={() => {
-                                      setAttachmentFiles(
-                                        attachmentFiles?.filter((_, ind) => ind !== i)
-                                      );
+                                      handleRemoveFile(i);
                                     }}
                                     className="absolute top-2 right-2"
                                   >
                                     <XCircleIcon className="h-6 w-6 text-white" />
                                   </button>
                                 </div>
-                                <img
-                                  className="h-full rounded-xl w-full object-cover"
-                                  src={URL.createObjectURL(file)}
-                                  alt="attachment"
-                                />
+
+                                {isImage ? (
+                                  <img
+                                    className="h-full rounded-xl w-full object-cover"
+                                    src={URL.createObjectURL(file)}
+                                    alt="attachment"
+                                  />
+                                ) : (
+                                  <div className="h-full rounded-xl w-full bg-gray-200 flex flex-col items-center justify-center">
+                                    <DocumentIcon className="h-8 w-8 text-gray-600 mb-2" />
+                                    <span className="text-xs text-gray-600 text-center px-1 truncate">
+                                      {file.name}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
                         </div>
                       ) : null}
-                      <div className="fixed bottom-0 gap-2 left-16 lg:left-[30rem] right-0 h-16 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30">
+                      <div className="fixed bottom-0 gap-2 left-16 sm:left-20 lg:left-[30rem] right-0 h-16 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30">
                         {openEmoji && (
                           <div className="bottom-20 absolute left-6 z-50">
                             <EmojiPicker
@@ -444,7 +459,7 @@ export const Chat = () => {
                             </span>
                           </button>
 
-                          <fieldset className="flex items-center shrink-0">
+                          {/* <fieldset className="flex items-center shrink-0">
                             <input
                               hidden
                               multiple
@@ -460,7 +475,23 @@ export const Chat = () => {
                             <label htmlFor="files">
                               <PaperClipIcon className="cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition" />
                             </label>
-                          </fieldset>
+                          </fieldset> */}
+
+                          <Disclosure>
+                            {({ close, open }) => {
+                              return (
+                                <>
+                                  <Disclosure.Button className="cursor-pointer mr-1.5 h-12 w-12 shrink-0">
+                                    <span className="sr-only">Open file menu</span>
+                                    <span className="flex items-center justify-center h-full w-full dark:bg-transparent bg-gray-50 dark:hover:bg-white/10 rounded-lg ">
+                                      <PaperClipIcon className="cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition" />
+                                    </span>
+                                  </Disclosure.Button>
+                                  <FileSelection close={close} open={open} />
+                                </>
+                              );
+                            }}
+                          </Disclosure>
 
                           <input
                             id="message-input"
@@ -479,7 +510,7 @@ export const Chat = () => {
                           {message && (
                             <button
                               title="send message"
-                              disabled={!message && attachmentFiles!.length <= 0}
+                              disabled={!message && attachmentFiles?.files?.length <= 0}
                               className="shadow-none"
                               onClick={() => {
                                 sendChatMessage();

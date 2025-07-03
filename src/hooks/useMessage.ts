@@ -14,6 +14,11 @@ import {
 } from "../features/chats/chat.reducer.ts";
 // import { toast } from "react-toastify";
 
+type FileType = {
+  files: File[] | null;
+  type: "document-file" | "image-file";
+};
+
 export const useMessage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { currentChat, unreadMessages } = useAppSelector((state: RootState) => state.chat);
@@ -22,8 +27,27 @@ export const useMessage = () => {
   const [message, setMessage] = useState<string>("");
   const { socket, connected } = useSocketContext();
   const { typingTimeOutRef, setIsTyping, isTyping } = useTyping();
-  const [attachmentFiles, setAttachmentFiles] = useState<File[] | undefined>([]);
+  const [attachmentFiles, setAttachmentFiles] = useState<FileType>({} as FileType);
   const messageInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const documentInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFileChange = useCallback(
+    (fileType: "document-file" | "image-file", event: React.ChangeEvent<HTMLInputElement>) => {
+      const target = event.target;
+      if (Array.isArray(attachmentFiles.files)) {
+        const files = target.files;
+        setAttachmentFiles({
+          type: fileType,
+          files: files as any,
+        });
+      }
+
+      console.log(attachmentFiles);
+    },
+    [attachmentFiles]
+  );
+  console.log(attachmentFiles);
 
   const [openEmoji, setOpenEmoji] = useState<boolean>(false);
 
@@ -99,7 +123,7 @@ export const useMessage = () => {
       clearTimeout(typingTimeOutRef.current);
     }
 
-    let typingLength = 3000;
+    const typingLength = 3000;
 
     typingTimeOutRef.current = setTimeout(() => {
       socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
@@ -131,8 +155,8 @@ export const useMessage = () => {
     socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
 
     // Filter unread reduxStateMessages
-    dispatch(setUnreadMessages({ chatId: currentChat?._id! }));
-  }, [currentChat?._id, dispatch, socket]);
+    dispatch(setUnreadMessages({ chatId: currentChat!._id! }));
+  }, [currentChat, dispatch, socket]);
 
   const onMessageReceive = (data: any) => {
     // Always dispatch the received message to the Redux store
@@ -148,6 +172,16 @@ export const useMessage = () => {
   //     bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
   //   }
   // };
+
+  const handleRemoveFile = (indexToRemove: number) => {
+    if (attachmentFiles?.files) {
+      const updatedFiles = attachmentFiles.files.filter((_, index) => index !== indexToRemove);
+      setAttachmentFiles({
+        ...attachmentFiles,
+        files: updatedFiles.length > 0 ? updatedFiles : null,
+      });
+    }
+  };
 
   return {
     handleOnMessageChange,
@@ -166,5 +200,9 @@ export const useMessage = () => {
     openEmoji,
     handleEmojiSelect,
     handleEmojiSimpleSelect,
+    handleFileChange,
+    imageInputRef,
+    documentInputRef,
+    handleRemoveFile,
   };
 };
