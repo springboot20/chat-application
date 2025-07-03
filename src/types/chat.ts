@@ -8,6 +8,7 @@ export interface ChatMessageInterface {
     url: string;
     localPath: string;
     _id: string;
+    type?: string;
   }>;
   chat: string;
   createdAt: string;

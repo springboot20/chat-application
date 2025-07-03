@@ -75,7 +75,7 @@ export const MessageNavigation: React.FC<{
         onClose={() => setOpenChat(false)}
       />
       <div
-        className={`fixed left-20 w-[25rem] bg-white dark:bg-black flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 translate-x-0 hidden lg:block
+        className={`fixed left-20 w-[25rem] bg-white dark:bg-black flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen translate-x-0 hidden lg:block
   `}
       >
         <div className="flex flex-col items-center gap-8 h-full">

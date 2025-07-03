@@ -1,7 +1,6 @@
 import { Disclosure, Transition } from "@headlessui/react";
 import { DocumentIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { Fragment, useEffect, useRef } from "react";
-import { useMessage } from "../../hooks/useMessage";
 
 type FileTypes = "document-file" | "image-file";
 
@@ -9,11 +8,22 @@ interface FileSelectionProps {
   onSelectionClick?: (type: FileTypes) => void;
   close: (focusableElement?: HTMLElement | React.MutableRefObject<HTMLElement | null>) => void;
   open?: boolean;
+  documentInputRef: React.MutableRefObject<HTMLInputElement | null>;
+  imageInputRef: React.MutableRefObject<HTMLInputElement | null>;
+  handleFileChange: (
+    fileType: "document-file" | "image-file",
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => void;
 }
 
-export const FileSelection: React.FC<FileSelectionProps> = ({ close, open }) => {
+export const FileSelection: React.FC<FileSelectionProps> = ({
+  imageInputRef,
+  documentInputRef,
+  handleFileChange,
+  close,
+  open,
+}) => {
   const ref = useRef<HTMLDivElement | null>(null);
-  const { imageInputRef, documentInputRef, handleFileChange } = useMessage();
 
   useEffect(() => {
     const handleCloseFileMenu = (event: MouseEvent) => {
@@ -30,10 +40,12 @@ export const FileSelection: React.FC<FileSelectionProps> = ({ close, open }) => 
   // console.log(open)
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Image files selected:", event.target.files);
     handleFileChange("image-file", event);
     close();
   };
   const handleDocumentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Document files selected:", event.target.files);
     handleFileChange("document-file", event);
     close();
   };
@@ -50,8 +62,8 @@ export const FileSelection: React.FC<FileSelectionProps> = ({ close, open }) => 
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <div className=" mt-4 min-w-[250px] w-full origin-top-right rounded-md bg-white dark:bg-white/10 dark:ring-white/15 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-            <button className="w-full dark:hover:bg-white/5 px-3 py-2" type="button">
+          <div className=" mt-4 min-w-[250px] w-full origin-top-right rounded-md bg-white dark:bg-gray-900 dark:ring-white/15 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+            <div className="w-full dark:hover:bg-white/5 px-3 py-2">
               <input
                 hidden
                 multiple
@@ -62,7 +74,7 @@ export const FileSelection: React.FC<FileSelectionProps> = ({ close, open }) => 
                 ref={imageInputRef}
                 onChange={handleImageChange}
               />
-              <label htmlFor="files">
+              <label htmlFor="image-files">
                 <div className="flex items-center gap-3">
                   <PhotoIcon className="h-6 dark:stroke-white" />
                   <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
@@ -70,9 +82,9 @@ export const FileSelection: React.FC<FileSelectionProps> = ({ close, open }) => 
                   </span>
                 </div>
               </label>
-            </button>
+            </div>
 
-            <button className="w-full dark:hover:bg-white/5 px-3 py-2" type="button">
+            <div className="w-full dark:hover:bg-white/5 px-3 py-2">
               <input
                 hidden
                 multiple
@@ -83,7 +95,7 @@ export const FileSelection: React.FC<FileSelectionProps> = ({ close, open }) => 
                 ref={documentInputRef}
                 onChange={handleDocumentChange}
               />
-              <label htmlFor="files">
+              <label htmlFor="document-files">
                 <div className="flex items-center gap-3">
                   <DocumentIcon className="h-6 dark:stroke-white" />
                   <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
@@ -91,7 +103,7 @@ export const FileSelection: React.FC<FileSelectionProps> = ({ close, open }) => 
                   </span>
                 </div>
               </label>
-            </button>
+            </div>
           </div>
         </Transition.Child>
       </Disclosure.Panel>

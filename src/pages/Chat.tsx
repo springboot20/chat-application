@@ -5,9 +5,7 @@ import {
   PaperClipIcon,
   UserIcon,
   ArrowLeftIcon,
-  XCircleIcon,
   FaceSmileIcon,
-  DocumentIcon,
 } from "@heroicons/react/24/outline";
 import { classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
@@ -36,6 +34,7 @@ import { toast } from "react-toastify";
 import { updateChatLastMessage, setCurrentChat } from "../features/chats/chat.reducer.ts";
 import { useGetChatMessagesQuery, useSendMessageMutation } from "../features/chats/chat.slice.ts";
 import { FileSelection } from "../components/file/FileSelection.tsx";
+import { DocumentPreview } from "../components/file/DocumentPreview.tsx";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -76,6 +75,9 @@ export const Chat = () => {
     messageInputRef,
     setMessage,
     handleRemoveFile,
+    imageInputRef,
+    documentInputRef,
+    handleFileChange,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
@@ -93,7 +95,7 @@ export const Chat = () => {
       chatId: currentChat?._id as string,
       data: {
         content: message,
-        attachments: attachmentFiles,
+        attachments: attachmentFiles.files,
       },
     })
       .unwrap()
@@ -160,6 +162,10 @@ export const Chat = () => {
   ]);
 
   console.log(isTyping);
+
+  useEffect(() => {
+    console.log("Current attachmentFiles state:", attachmentFiles);
+  }, [attachmentFiles]);
 
   return (
     <Disclosure as={"div"}>
@@ -399,41 +405,15 @@ export const Chat = () => {
                         )}
                       </div>
                       {attachmentFiles?.files && attachmentFiles?.files?.length > 0 ? (
-                        <div className="grid gap-4 bg-white grid-cols-5 p-4 justify-start max-w-fit">
+                        <div className="grid gap-4 bg-white dark:bg-white/5 grid-cols-5 p-4 justify-start max-w-fit rounded-t-lg ml-3">
                           {attachmentFiles?.files?.map((file, i) => {
-                            const isImage = file.type.startsWith("image/");
-
                             return (
-                              <div
+                              <DocumentPreview
                                 key={i}
-                                className="group w-32 h-32 relative aspect-square rounded-xl cursor-pointer"
-                              >
-                                <div className="absolute inset-0 flex justify-center items-center w-full h-full bg-black/40 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150">
-                                  <button
-                                    onClick={() => {
-                                      handleRemoveFile(i);
-                                    }}
-                                    className="absolute top-2 right-2"
-                                  >
-                                    <XCircleIcon className="h-6 w-6 text-white" />
-                                  </button>
-                                </div>
-
-                                {isImage ? (
-                                  <img
-                                    className="h-full rounded-xl w-full object-cover"
-                                    src={URL.createObjectURL(file)}
-                                    alt="attachment"
-                                  />
-                                ) : (
-                                  <div className="h-full rounded-xl w-full bg-gray-200 flex flex-col items-center justify-center">
-                                    <DocumentIcon className="h-8 w-8 text-gray-600 mb-2" />
-                                    <span className="text-xs text-gray-600 text-center px-1 truncate">
-                                      {file.name}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
+                                index={i}
+                                onRemove={handleRemoveFile}
+                                file={file}
+                              />
                             );
                           })}
                         </div>
@@ -487,7 +467,13 @@ export const Chat = () => {
                                       <PaperClipIcon className="cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition" />
                                     </span>
                                   </Disclosure.Button>
-                                  <FileSelection close={close} open={open} />
+                                  <FileSelection
+                                    imageInputRef={imageInputRef}
+                                    documentInputRef={documentInputRef}
+                                    handleFileChange={handleFileChange}
+                                    close={close}
+                                    open={open}
+                                  />
                                 </>
                               );
                             }}

@@ -1,32 +1,151 @@
 import {
-  ArrowDownTrayIcon,
-  MagnifyingGlassPlusIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
   PaperClipIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { ChatMessageInterface } from "../../types/chat";
 import { classNames } from "../../utils";
 import moment from "moment";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { DocumentPreview } from "../file/DocumentPreview";
 
 export const MessageItem: React.FC<{
   isOwnedMessage?: boolean;
   isGroupChatMessage?: boolean;
   message: ChatMessageInterface;
 }> = ({ isOwnedMessage, isGroupChatMessage, message }) => {
-  const [resizedImage, setResizedImage] = useState<string | null>(null);
+  // const [resizedImage, setResizedImage] = useState<string | null>(null);
+  const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
+  const messageFiles = message.attachments;
+
+  const handleNextImage = useCallback(() => {
+    setCurrentMessageImageIndex((prev) => (prev + 1) % messageFiles.length);
+  }, [messageFiles]);
+
+  const handleImageChange = useCallback(
+    (index: number) => {
+      setCurrentMessageImageIndex(index);
+    },
+    [setCurrentMessageImageIndex]
+  );
+
+  const handlePreviousImage = useCallback(() => {
+    if (currentMessageImageIndex > 1) {
+      setCurrentMessageImageIndex((prev) => (prev - 1 + messageFiles.length) % messageFiles.length);
+    }
+  }, [currentMessageImageIndex, messageFiles]);
+
+  const handleCloseModal = useCallback(() => {
+    setCurrentMessageImageIndex(-1);
+  }, []);
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (currentMessageImageIndex >= 0) {
+        switch (e.key) {
+          case "Escape":
+            handleCloseModal();
+            break;
+          case "ArrowLeft":
+            handlePreviousImage();
+            break;
+          case "ArrowRight":
+            handleNextImage();
+            break;
+        }
+      }
+    },
+    [currentMessageImageIndex, handleCloseModal, handlePreviousImage, handleNextImage]
+  );
+
+  useEffect(() => {
+    if (currentMessageImageIndex >= 0) {
+      document.addEventListener("keydown", handleKeyDown);
+      // Prevent body scrolling when modal is open
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "unset";
+    };
+  }, [currentMessageImageIndex, handleKeyDown]);
 
   return (
     <>
-      {resizedImage ? (
-        <div className="h-full z-30 p-8 overflow-hidden w-full absolute inset-0 bg-black/70 flex justify-center items-center">
-          <XMarkIcon
-            className="absolute top-5 right-5 w-9 h-9 text-white cursor-pointer"
-            onClick={() => setResizedImage(null)}
-          />
-          <img className="w-full h-full object-contain" src={resizedImage} alt="chat image" />
-        </div>
-      ) : null}
+      {messageFiles.length > 0 &&
+        currentMessageImageIndex >= 0 &&
+        currentMessageImageIndex < messageFiles.length && (
+          <div className="h-full z-30 p-8 overflow-y-auto w-full fixed inset-0 bg-black/80">
+            {/* Close button */}
+            <button
+              className="absolute top-4 right-4 z-60 p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+              onClick={handleCloseModal}
+              aria-label="Close preview"
+            >
+              <XMarkIcon className="h-6 w-6 text-white" />
+            </button>
+
+            {/* Navigation buttons */}
+            {messageFiles.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-60 flex items-center justify-center rounded-full h-12 w-12 bg-white/20 hover:bg-white/30 transition-colors"
+                  onClick={handlePreviousImage}
+                  aria-label="Previous image"
+                >
+                  <ArrowLeftIcon className="h-6 w-6 text-white" />
+                </button>
+
+                <button
+                  type="button"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-60 flex items-center justify-center rounded-full h-12 w-12 bg-white/20 hover:bg-white/30 transition-colors"
+                  onClick={handleNextImage}
+                  aria-label="Next image"
+                >
+                  <ArrowRightIcon className="h-6 w-6 text-white" />
+                </button>
+              </>
+            )}
+
+            {/* Main content */}
+            <div className="relative max-w-4xl mx-auto flex flex-col items-center gap-6 w-full">
+              <div className="w-full max-h-[80vh] flex items-center justify-center">
+                <DocumentPreview
+                  attachment={messageFiles[currentMessageImageIndex]}
+                  index={currentMessageImageIndex}
+                  isModal={true}
+                />
+              </div>
+
+              {/* Thumbnail navigation */}
+              {messageFiles.length > 1 && (
+                <div className="flex items-center gap-3 overflow-x-auto pb-2">
+                  {messageFiles.map((file, index) => (
+                    <button
+                      key={file._id}
+                      onClick={() => handleImageChange(index)}
+                      className={classNames(
+                        "h-16 w-16 rounded overflow-hidden transition-all flex-shrink-0",
+                        index === currentMessageImageIndex
+                          ? "ring-2 ring-white scale-110"
+                          : "hover:scale-105 opacity-70 hover:opacity-100"
+                      )}
+                      aria-label={`View attachment ${index + 1}`}
+                    >
+                      <DocumentPreview attachment={file} index={index} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       <div
         className={classNames(
@@ -41,6 +160,9 @@ export const MessageItem: React.FC<{
             "h-10 w-10 object-cover rounded-full items-center justify-center flex flex-shrink-0 bg-white border-2",
             isOwnedMessage ? "order-1" : "order-2"
           )}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
         />
         <div
           className={classNames(
@@ -81,34 +203,23 @@ export const MessageItem: React.FC<{
                   message.content ? "mb-6" : ""
                 )}
               >
-                {message.attachments?.map((file) => {
+                {message.attachments?.map((file, index) => {
                   return (
-                    <div
+                    <DocumentPreview
                       key={file._id}
-                      className="group relative aspect-square rounded-lg overflow-hidden cursor-pointer"
-                    >
-                      <button
-                        onClick={() => setResizedImage(file.url)}
-                        className="absolute inset-0 z-20 flex justify-center items-center w-full gap-2 h-full bg-black/60 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150"
-                      >
-                        <MagnifyingGlassPlusIcon className="h-6 w-6 text-white" />
-                        <a href={file.url} download onClick={(e) => e.stopPropagation()}>
-                          <ArrowDownTrayIcon
-                            title="download"
-                            className="hover:text-zinc-400 h-6 w-6 text-white cursor-pointer"
-                          />
-                        </a>
-                      </button>
-                      <img className="h-full w-full object-cover" src={file.url} alt="msg_img" />
-                    </div>
+                      attachment={file}
+                      index={index}
+                      onClick={() => handleImageChange(index)}
+                      isModal={false}
+                    />
                   );
                 })}
               </div>
             ) : null}
 
-            {message.content ? (
+            {message.content && (
               <p className="text-base font-semibold text-white">{message.content}</p>
-            ) : null}
+            )}
 
             <p
               className={classNames(

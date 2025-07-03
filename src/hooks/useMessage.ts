@@ -27,7 +27,10 @@ export const useMessage = () => {
   const [message, setMessage] = useState<string>("");
   const { socket, connected } = useSocketContext();
   const { typingTimeOutRef, setIsTyping, isTyping } = useTyping();
-  const [attachmentFiles, setAttachmentFiles] = useState<FileType>({} as FileType);
+  const [attachmentFiles, setAttachmentFiles] = useState<FileType>({
+    files: null,
+    type: "document-file",
+  });
   const messageInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const documentInputRef = useRef<HTMLInputElement | null>(null);
@@ -35,19 +38,28 @@ export const useMessage = () => {
   const handleFileChange = useCallback(
     (fileType: "document-file" | "image-file", event: React.ChangeEvent<HTMLInputElement>) => {
       const target = event.target;
-      if (Array.isArray(attachmentFiles.files)) {
-        const files = target.files;
-        setAttachmentFiles({
-          type: fileType,
-          files: files as any,
+      const files = target.files;
+
+      if (files && files.length) {
+        const fileArray = Array.from(files);
+
+        setAttachmentFiles((prev) => {
+          // If the previous files are null, initialize with an empty array
+          const updatedFiles =
+            prev.files && prev.type === fileType ? [...prev.files, ...fileArray] : fileArray;
+          const newState = {
+            type: fileType,
+            files: updatedFiles,
+          };
+          console.log("Updated attachmentFiles:", newState);
+          return newState;
         });
       }
 
-      console.log(attachmentFiles);
+      target.value = "";
     },
-    [attachmentFiles]
+    []
   );
-  console.log(attachmentFiles);
 
   const [openEmoji, setOpenEmoji] = useState<boolean>(false);
 
@@ -72,9 +84,6 @@ export const useMessage = () => {
 
     const newMessage = message.slice(0, start) + emojiData.emoji + message.slice(end);
     setMessage(newMessage);
-
-    console.log("Emoji inserted:", emojiData.emoji);
-    console.log("New message:", newMessage);
 
     setTimeout(() => {
       const newCursorPos = start + emojiData?.emoji.length;
@@ -131,10 +140,6 @@ export const useMessage = () => {
       setIsTyping(false);
     }, typingLength);
   };
-
-  console.log("Input ref:", messageInputRef.current);
-  console.log("Input value:", messageInputRef.current?.value);
-  console.log("Message state:", message);
 
   const getAllMessages = useCallback(async () => {
     // Early return checks
