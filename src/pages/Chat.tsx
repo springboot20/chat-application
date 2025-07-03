@@ -87,7 +87,7 @@ export const Chat = () => {
 
     // Clear input fields immediately for better UX
     setMessage("");
-    setAttachmentFiles({});
+    setAttachmentFiles({} as any);
 
     await sendMessage({
       chatId: currentChat?._id as string,
@@ -510,7 +510,7 @@ export const Chat = () => {
                           {message && (
                             <button
                               title="send message"
-                              disabled={!message && attachmentFiles?.files?.length <= 0}
+                              disabled={!message && (attachmentFiles?.files || [])?.length <= 0}
                               className="shadow-none"
                               onClick={() => {
                                 sendChatMessage();
