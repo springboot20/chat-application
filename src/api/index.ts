@@ -88,7 +88,11 @@ export const leaveChatGroup = (chatId: string) =>
 export const deleteOneOneChatMessage = (chatId: string) =>
   chatAppApiClient.delete(`/chat-app/chats/delete-one-on-one/${chatId}`);
 
-export const getChatMessages = (chatId: string) => chatAppApiClient.get(`/chat-app/messages/${chatId}`);
+export const getChatMessages = (chatId: string) =>
+  chatAppApiClient.get(`/chat-app/messages/${chatId}`);
+
+export const reactToChatMessages = (chatId: string) =>
+  chatAppApiClient.patch(`/chat-app/messages/${chatId}`);
 
 export const sendMessage = (
   chatId: string,

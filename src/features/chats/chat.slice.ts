@@ -143,6 +143,17 @@ export const ChatApiSlice = ApiService.injectEndpoints({
           : [{ type: "Message", id: "MESSAGE" }],
     }),
 
+    reactToChatMessage: builder.mutation<
+      Response,
+      { chatId: string; messageId: string; emoji: string }
+    >({
+      query: ({ chatId, messageId, ...rest }) => ({
+        url: `/chat-app/messages/${chatId}/${messageId}/react`,
+        method: "PATCH",
+        body: { ...rest },
+      }),
+    }),
+
     sendMessage: builder.mutation<Response, SendMessageInterface>({
       query: ({ chatId, data }) => {
         const formData = new FormData();
@@ -151,7 +162,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
           if (key === "attachments" && Array.isArray(data[key])) {
             // Handle attachments array by appending each file individually
             for (let i = 0; i < data[key].length; i++) {
-              console.log(data[key][i])
+              console.log(data[key][i]);
               formData.append("attachments", data[key][i]);
             }
           } else if (typeof data[key] === "object" && !(data[key] instanceof File)) {
@@ -187,4 +198,5 @@ export const {
   useDeleteOneOneChatMessageMutation,
   useGetChatMessagesQuery,
   useSendMessageMutation,
+  useReactToChatMessageMutation,
 } = ChatApiSlice;

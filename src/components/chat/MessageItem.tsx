@@ -32,7 +32,6 @@ export const MessageItem: React.FC<{
   handleSelectReactionEmoji,
   handleHideReactionPicker,
   reactionLocation,
-  reaction,
 }) => {
   const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
   const messageFiles = message.attachments;
@@ -207,6 +206,27 @@ export const MessageItem: React.FC<{
           </div>
         )}
 
+        {message.reactions && message.reactions.length > 0 && (
+          <div
+            className={classNames(
+              "absolute z-40 -bottom-4 rounded-full px-3 justify-center flex items-center gap-1",
+              isOwnedMessage
+                ? "bg-[#615EF0] right-3 dark:bg-[#615EF0] dark:text-white border-2 dark:border-black"
+                : "bg-green-500 dark:bg-green-200 dark:text-green-700 border-2 dark:border-black left-3"
+            )}
+          >
+            {message.reactions.map((reaction) => {
+              return (
+                <span key={reaction._id} className="text-lg">
+                  {reaction.emoji}
+                </span>
+              );
+            })}
+            <span className="text-xs">{message.reactions.length}</span>{" "}
+            {/* Placeholder for reaction count */}
+          </div>
+        )}
+
         <img
           src={message.sender?.avatar ? message.sender?.avatar?.url : ""}
           alt={message.sender?.username}
@@ -275,14 +295,6 @@ export const MessageItem: React.FC<{
                 })}
               </div>
             ) : null}
-
-            {reaction[message._id] && (
-              <div className="mt-1 flex items-center gap-1">
-                <span className="text-lg">{reaction[message._id]}</span>
-                <span className="text-xs text-gray-300">1</span>{" "}
-                {/* Placeholder for reaction count */}
-              </div>
-            )}
 
             {message.content && (
               <p className="text-base font-semibold text-white break-words">{message.content}</p>

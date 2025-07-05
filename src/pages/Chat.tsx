@@ -20,6 +20,7 @@ import {
   STOP_TYPING_EVENT,
   TYPING_EVENT,
   LEAVE_CHAT_EVENT,
+  REACTION_RECEIVED_EVENT,
 } from "../enums/index.ts";
 import { useChat } from "../hooks/useChat.ts";
 import { useTyping } from "../hooks/useTyping.ts";
@@ -148,6 +149,12 @@ export const Chat = () => {
     socket?.on(TYPING_EVENT, handleStartTyping);
     socket?.on(STOP_TYPING_EVENT, handleStopTyping);
     socket?.on(MESSAGE_RECEIVED_EVENT, onMessageReceive);
+    socket?.on(REACTION_RECEIVED_EVENT, (data) => {
+      console.log("Received ADD_REACTION:", data);
+
+      refetchMessages();
+      onMessageReceive(data);
+    });
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
 
@@ -155,6 +162,7 @@ export const Chat = () => {
       socket?.off(TYPING_EVENT, handleStartTyping);
       socket?.off(STOP_TYPING_EVENT, handleStopTyping);
       socket?.off(MESSAGE_RECEIVED_EVENT, onMessageReceive);
+      socket?.off(REACTION_RECEIVED_EVENT, onMessageReceive);
       socket?.off(NEW_CHAT_EVENT, onNewChat);
       socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);
     };
@@ -166,6 +174,7 @@ export const Chat = () => {
     onMessageReceive,
     onNewChat,
     _onChatLeave,
+    refetchMessages,
   ]);
 
   console.log(isTyping);

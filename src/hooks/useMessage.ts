@@ -12,6 +12,7 @@ import {
   updateChatLastMessage,
   setUnreadMessages,
 } from "../features/chats/chat.reducer.ts";
+import { useReactToChatMessageMutation } from "../features/chats/chat.slice.ts";
 // import { toast } from "react-toastify";
 
 type FileType = {
@@ -45,6 +46,7 @@ export const useMessage = () => {
       }
     >
   >({});
+  const [reactToMessage] = useReactToChatMessageMutation();
 
   const calculatePickerPosition = useCallback((messageId: string) => {
     const messageElement = messageItemRef.current[messageId];
@@ -98,14 +100,36 @@ export const useMessage = () => {
   const handleHideReactionPicker = (key: string) =>
     setShowReactionPicker((prev) => ({ ...prev, [key]: false }));
 
-  const handleSelectReactionEmoji = (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
-    event.preventDefault();
+  const handleSelectReactionEmoji = async (
+    key: string,
+    emojiData: EmojiClickData,
+    event: MouseEvent
+  ) => {
     event.stopPropagation();
 
     setReaction((prev) => ({
       ...prev,
       [key]: emojiData.emoji, // Store the emoji string
     }));
+
+    await reactToMessage({
+      chatId: currentChat?._id || "",
+      messageId: key,
+      emoji: emojiData.emoji,
+    })
+      .unwrap()
+      .then((result) => {
+        console.log(result);
+      })
+      .catch((error: any) => {
+        console.error("Failed to send reaction:", error);
+        // Optionally revert local state on failure
+        setReaction((prev) => {
+          const { [key]: _, ...rest } = prev;
+          console.log(_);
+          return rest;
+        });
+      });
 
     handleHideReactionPicker(key);
   };

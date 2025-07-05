@@ -10,6 +10,7 @@ export interface ChatMessageInterface {
     _id: string;
     type?: string;
   }>;
+  reactions: { emoji: string; _id: string }[];
   chat: string;
   createdAt: string;
   updatedAt: string;

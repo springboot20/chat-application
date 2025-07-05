@@ -6,4 +6,5 @@ export const TYPING_EVENT = "typing";
 export const STOP_TYPING_EVENT = "stopTyping";
 export const MESSAGE_RECEIVED_EVENT = "new-message-recieved";
 export const LEAVE_CHAT_EVENT = "leaveChat";
-export const UPDATE_GROUP_NAME_EVENT = "updateGroupName"
+export const UPDATE_GROUP_NAME_EVENT = "updateGroupName";
+export const REACTION_RECEIVED_EVENT = "reaction-received";
