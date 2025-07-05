@@ -78,6 +78,13 @@ export const Chat = () => {
     imageInputRef,
     documentInputRef,
     handleFileChange,
+    messageItemRef,
+    handleReactionPicker,
+    showReactionPicker,
+    reactionLocation,
+    handleHideReactionPicker,
+    handleSelectReactionEmoji,
+    reaction,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
@@ -382,6 +389,13 @@ export const Chat = () => {
                                         isOwnedMessage={msg.sender?._id === user?._id}
                                         isGroupChatMessage={currentChat?.isGroupChat}
                                         message={msg}
+                                        messageItemRef={messageItemRef}
+                                        showReactionPicker={showReactionPicker}
+                                        handleReactionPicker={handleReactionPicker}
+                                        reactionLocation={reactionLocation}
+                                        handleSelectReactionEmoji={handleSelectReactionEmoji}
+                                        handleHideReactionPicker={handleHideReactionPicker}
+                                        reaction={reaction}
                                       />
                                     );
                                   })

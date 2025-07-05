@@ -40,7 +40,7 @@ export const MessageNavigation: React.FC<{
   }, [refetch, itemDeleted]);
 
   const handleChatSelect = (chat: ChatListItemInterface) => {
-    if (currentChat?._id && currentChat?._id === chat?._id) return;
+    if (currentChat && currentChat?._id === chat?._id) return;
 
     dispatch(setCurrentChat({ chat }));
     setMessage("");

@@ -84,10 +84,10 @@ const SideNavigation: React.FC = () => {
     <nav
       className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-black dark:border-r-white/15 w-16 sm:w-20 z-10`}
     >
-      <div className={`relative h-full flex justify-between p-5 flex-col items-center`}>
+      <div className={`h-full flex justify-between p-5 flex-col items-center`}>
         <Disclosure.Button
           title="open mobile menu"
-          className="lg:hidden absolute -right-6 sm:-right-8 rounded-full flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 bg-[#615EF0]"
+          className="lg:hidden absolute -right-6 sm:-right-8 rounded-full flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 bg-[#615EF0] "
         >
           <ChevronRightIcon className="h-5 w-5 text-white" strokeWidth={3} />
         </Disclosure.Button>

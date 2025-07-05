@@ -9,13 +9,31 @@ import { classNames } from "../../utils";
 import moment from "moment";
 import { useCallback, useEffect, useState } from "react";
 import { DocumentPreview } from "../file/DocumentPreview";
+import EmojiPicker, { Theme, type EmojiClickData } from "emoji-picker-react";
 
 export const MessageItem: React.FC<{
   isOwnedMessage?: boolean;
   isGroupChatMessage?: boolean;
   message: ChatMessageInterface;
-}> = ({ isOwnedMessage, isGroupChatMessage, message }) => {
-  // const [resizedImage, setResizedImage] = useState<string | null>(null);
+  messageItemRef: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
+  handleReactionPicker: (key: string) => void;
+  showReactionPicker: Record<string, boolean>;
+  handleSelectReactionEmoji: (key: string, emojiData: EmojiClickData, event: MouseEvent) => void;
+  handleHideReactionPicker: (key: string) => void;
+  reaction: Record<string, any>;
+  reactionLocation: Record<string, { left: number; top: number }>;
+}> = ({
+  isOwnedMessage,
+  messageItemRef,
+  isGroupChatMessage,
+  message,
+  handleReactionPicker,
+  showReactionPicker,
+  handleSelectReactionEmoji,
+  handleHideReactionPicker,
+  reactionLocation,
+  reaction,
+}) => {
   const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
   const messageFiles = message.attachments;
 
@@ -31,7 +49,7 @@ export const MessageItem: React.FC<{
   );
 
   const handlePreviousImage = useCallback(() => {
-    if (currentMessageImageIndex > 1) {
+    if (currentMessageImageIndex > 0) {
       setCurrentMessageImageIndex((prev) => (prev - 1 + messageFiles.length) % messageFiles.length);
     }
   }, [currentMessageImageIndex, messageFiles]);
@@ -63,7 +81,6 @@ export const MessageItem: React.FC<{
   useEffect(() => {
     if (currentMessageImageIndex >= 0) {
       document.addEventListener("keydown", handleKeyDown);
-      // Prevent body scrolling when modal is open
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -77,11 +94,11 @@ export const MessageItem: React.FC<{
 
   return (
     <>
+      {/* Image Modal */}
       {messageFiles.length > 0 &&
         currentMessageImageIndex >= 0 &&
         currentMessageImageIndex < messageFiles.length && (
           <div className="h-full z-30 p-8 overflow-y-auto w-full fixed inset-0 bg-black/80">
-            {/* Close button */}
             <button
               className="absolute top-4 right-4 z-60 p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
               onClick={handleCloseModal}
@@ -90,7 +107,6 @@ export const MessageItem: React.FC<{
               <XMarkIcon className="h-6 w-6 text-white" />
             </button>
 
-            {/* Navigation buttons */}
             {messageFiles.length > 1 && (
               <>
                 <button
@@ -113,7 +129,6 @@ export const MessageItem: React.FC<{
               </>
             )}
 
-            {/* Main content */}
             <div className="relative max-w-4xl mx-auto flex flex-col items-center gap-6 w-full">
               <div className="w-full max-h-[80vh] flex items-center justify-center">
                 <DocumentPreview
@@ -123,15 +138,14 @@ export const MessageItem: React.FC<{
                 />
               </div>
 
-              {/* Thumbnail navigation */}
               {messageFiles.length > 1 && (
-                <div className="flex items-center gap-3 overflow-x-auto pb-2">
+                <div className="flex items-center gap-3 pb-2">
                   {messageFiles.map((file, index) => (
                     <button
                       key={file._id}
                       onClick={() => handleImageChange(index)}
                       className={classNames(
-                        "h-16 w-16 rounded overflow-hidden transition-all flex-shrink-0",
+                        "h-24 w-24 rounded overflow-hidden transition-all flex-shrink-0",
                         index === currentMessageImageIndex
                           ? "ring-2 ring-white scale-110"
                           : "hover:scale-105 opacity-70 hover:opacity-100"
@@ -147,12 +161,52 @@ export const MessageItem: React.FC<{
           </div>
         )}
 
+      {/* Message Content */}
       <div
         className={classNames(
-          "flex items-start p-1.5 text-white text-base relative h-auto w-full gap-6 ",
+          "flex items-start p-1.5 text-white text-base relative h-auto w-full gap-6",
           isOwnedMessage ? "justify-end" : "justify-start"
         )}
+        onDoubleClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleReactionPicker(message._id);
+        }}
       >
+        {/* Emoji Picker Portal */}
+        {showReactionPicker[message._id] && reactionLocation[message._id] && (
+          <div
+            className="fixed z-[100] animate-in fade-in-0 zoom-in-95 duration-200"
+            style={{
+              top: `${reactionLocation[message._id].top}px`,
+              left: `${reactionLocation[message._id].left}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative shadow-2xl rounded-lg overflow-hidden">
+              <EmojiPicker
+                onReactionClick={(emoji, event) =>
+                  handleSelectReactionEmoji(message._id, emoji, event)
+                }
+                reactionsDefaultOpen={true}
+                theme={Theme.DARK}
+                searchDisabled={false}
+                width={window.innerWidth < 768 ? Math.min(350, window.innerWidth - 40) : 350}
+                height={window.innerWidth < 768 ? Math.min(400, window.innerHeight - 100) : 400}
+                lazyLoadEmojis
+              />
+              {/* Close button for mobile */}
+              <button
+                onClick={() => handleHideReactionPicker(message._id)}
+                className="absolute top-2 right-2 p-1.5 bg-gray-800/80 backdrop-blur-sm rounded-full hover:bg-gray-700 transition-colors md:hidden z-10"
+                aria-label="Close emoji picker"
+              >
+                <XMarkIcon className="h-4 w-4 text-white" />
+              </button>
+            </div>
+          </div>
+        )}
+
         <img
           src={message.sender?.avatar ? message.sender?.avatar?.url : ""}
           alt={message.sender?.username}
@@ -164,13 +218,18 @@ export const MessageItem: React.FC<{
             e.currentTarget.style.display = "none";
           }}
         />
+
         <div
+          ref={(element) => {
+            messageItemRef.current[message._id] = element;
+          }}
+          id={`message-item-${message._id}`}
           className={classNames(
-            "flex flex-col self-end w-auto p-2 relative",
+            "flex flex-col self-end w-auto p-2 relative max-w-md",
             isOwnedMessage ? "order-1" : "order-2",
             isOwnedMessage
               ? "before:absolute before:content-[''] before:border-[#615EF0] before:-right-5 before:-z-10 before:top-0 before:border-t-[15px] before:border-b-[15px] before:border-b-transparent before:border-l-[25px] before:border-r-[25px] before:border-r-transparent bg-[#615EF0] before:-right rounded-xl rounded-tr-none"
-              : "bg-green-500 before:absolute before:content-[''] before:-left-5 before:-z-10 before:top-0 before:border-b-[25px] before:border-t-transparent before:border-b-transparent  before:border-r-[40px] before:border-green-500 rounded-xl rounded-tl-none"
+              : "bg-green-500 before:absolute before:content-[''] before:-left-5 before:-z-10 before:top-0 before:border-b-[25px] before:border-t-transparent before:border-b-transparent before:border-r-[40px] before:border-green-500 rounded-xl rounded-tl-none"
           )}
         >
           {isOwnedMessage && (
@@ -197,9 +256,9 @@ export const MessageItem: React.FC<{
               <div
                 className={classNames(
                   "grid max-w-7xl gap-2",
-                  message.attachments?.length === 1 ? " grid-cols-1" : "",
-                  message.attachments?.length === 2 ? " grid-cols-2" : "",
-                  message.attachments?.length >= 3 ? " grid-cols-3" : "",
+                  message.attachments?.length === 1 ? "grid-cols-1" : "",
+                  message.attachments?.length === 2 ? "grid-cols-2" : "",
+                  message.attachments?.length >= 3 ? "grid-cols-3" : "",
                   message.content ? "mb-6" : ""
                 )}
               >
@@ -217,8 +276,16 @@ export const MessageItem: React.FC<{
               </div>
             ) : null}
 
+            {reaction[message._id] && (
+              <div className="mt-1 flex items-center gap-1">
+                <span className="text-lg">{reaction[message._id]}</span>
+                <span className="text-xs text-gray-300">1</span>{" "}
+                {/* Placeholder for reaction count */}
+              </div>
+            )}
+
             {message.content && (
-              <p className="text-base font-semibold text-white">{message.content}</p>
+              <p className="text-base font-semibold text-white break-words">{message.content}</p>
             )}
 
             <p
@@ -227,7 +294,7 @@ export const MessageItem: React.FC<{
                 isOwnedMessage ? "text-zinc-50" : "text-gray-800"
               )}
             >
-              {message.attachments?.length > 0 ? <PaperClipIcon className="h-4 w-4 mr-2 " /> : null}
+              {message.attachments?.length > 0 ? <PaperClipIcon className="h-4 w-4 mr-2" /> : null}
               {moment(message.updatedAt).add("TIME_ZONE", "hours").fromNow(true)} ago
             </p>
           </div>
