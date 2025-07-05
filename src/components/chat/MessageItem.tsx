@@ -167,9 +167,12 @@ export const MessageItem: React.FC<{
           isOwnedMessage ? "justify-end" : "justify-start"
         )}
         onDoubleClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          handleReactionPicker(message._id);
+          if (!isOwnedMessage) {
+            // Only trigger for non-owned messages
+            e.preventDefault();
+            e.stopPropagation();
+            handleReactionPicker(message._id);
+          }
         }}
       >
         {/* Emoji Picker Portal */}
