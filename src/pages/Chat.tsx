@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 import { MessageNavigation } from "../components/navigation/message-navigation.tsx";
 import SideNavigation from "../components/navigation/side-navigation.tsx";
 import { Link } from "react-router-dom";
@@ -20,7 +20,6 @@ import {
   STOP_TYPING_EVENT,
   TYPING_EVENT,
   LEAVE_CHAT_EVENT,
-  REACTION_RECEIVED_EVENT,
 } from "../enums/index.ts";
 import { useChat } from "../hooks/useChat.ts";
 import { useTyping } from "../hooks/useTyping.ts";
@@ -36,6 +35,7 @@ import { updateChatLastMessage, setCurrentChat } from "../features/chats/chat.re
 import { useGetChatMessagesQuery, useSendMessageMutation } from "../features/chats/chat.slice.ts";
 import { FileSelection } from "../components/file/FileSelection.tsx";
 import { DocumentPreview } from "../components/file/DocumentPreview.tsx";
+import { useTheme } from "../context/ThemeContext";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -45,7 +45,7 @@ export const Chat = () => {
   const dispatch = useAppDispatch();
   const [logout] = useLogoutMutation();
   const [sendMessage] = useSendMessageMutation();
-
+  const { theme } = useTheme();
   const { socket } = useSocketContext();
   const { onNewChat, _onChatLeave, chats } = useChat();
   const { isOnline } = useNetwork();
@@ -149,10 +149,6 @@ export const Chat = () => {
     socket?.on(TYPING_EVENT, handleStartTyping);
     socket?.on(STOP_TYPING_EVENT, handleStopTyping);
     socket?.on(MESSAGE_RECEIVED_EVENT, onMessageReceive);
-    socket?.on(REACTION_RECEIVED_EVENT, (data) => {
-      console.log("Received ADD_REACTION:", data);
-      onMessageReceive(data);
-    });
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
 
@@ -160,7 +156,6 @@ export const Chat = () => {
       socket?.off(TYPING_EVENT, handleStartTyping);
       socket?.off(STOP_TYPING_EVENT, handleStopTyping);
       socket?.off(MESSAGE_RECEIVED_EVENT, onMessageReceive);
-      socket?.off(REACTION_RECEIVED_EVENT, onMessageReceive);
       socket?.off(NEW_CHAT_EVENT, onNewChat);
       socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);
     };
@@ -172,7 +167,6 @@ export const Chat = () => {
     onMessageReceive,
     onNewChat,
     _onChatLeave,
-    refetchMessages,
   ]);
 
   console.log(isTyping);
@@ -396,6 +390,7 @@ export const Chat = () => {
                                         isOwnedMessage={msg.sender?._id === user?._id}
                                         isGroupChatMessage={currentChat?.isGroupChat}
                                         message={msg}
+                                        theme={theme}
                                         messageItemRef={messageItemRef}
                                         showReactionPicker={showReactionPicker}
                                         handleReactionPicker={handleReactionPicker}
@@ -443,8 +438,9 @@ export const Chat = () => {
                         {openEmoji && (
                           <div className="bottom-20 absolute left-6 z-50">
                             <EmojiPicker
-                              className="absolute min-w-[300px] sm:min-w-[500px] dark:bg-black dark:border dark:border-white/10"
+                              className="absolute min-w-[300px] sm:min-w-[500px]"
                               searchPlaceHolder="search for emoji"
+                              theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
                               onEmojiClick={(data, event) => handleEmojiSelect(data, event)}
                             />
                           </div>

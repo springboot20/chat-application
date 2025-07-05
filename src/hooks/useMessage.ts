@@ -2,7 +2,12 @@ import { useAppDispatch } from "./../redux/redux.hooks";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useSocketContext } from "../context/SocketContext.tsx";
 import { useTyping } from "./useTyping.ts";
-import { STOP_TYPING_EVENT, TYPING_EVENT, JOIN_CHAT_EVENT } from "../enums/index.ts";
+import {
+  STOP_TYPING_EVENT,
+  TYPING_EVENT,
+  JOIN_CHAT_EVENT,
+  REACTION_RECEIVED_EVENT,
+} from "../enums/index.ts";
 import { RootState } from "../app/store.ts";
 import { useAppSelector } from "../redux/redux.hooks.ts";
 import { type EmojiClickData } from "emoji-picker-react";
@@ -13,6 +18,7 @@ import {
   setUnreadMessages,
 } from "../features/chats/chat.reducer.ts";
 import { useReactToChatMessageMutation } from "../features/chats/chat.slice.ts";
+import { ChatMessageInterface } from "../types/chat.ts";
 // import { toast } from "react-toastify";
 
 type FileType = {
@@ -118,8 +124,8 @@ export const useMessage = () => {
       emoji: emojiData.emoji,
     })
       .unwrap()
-      .then((result) => {
-        console.log(result);
+      .then(() => {
+        handleHideReactionPicker(key);
       })
       .catch((error: any) => {
         console.error("Failed to send reaction:", error);
@@ -130,9 +136,20 @@ export const useMessage = () => {
           return rest;
         });
       });
-
-    handleHideReactionPicker(key);
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on(REACTION_RECEIVED_EVENT, (data: ChatMessageInterface) => {
+      console.log("Received ADD_REACTION:", data);
+      dispatch(onMessageReceived({ data }));
+    });
+
+    return () => {
+      socket.off(REACTION_RECEIVED_EVENT);
+    };
+  }, [socket, dispatch]);
 
   const handleReactionPicker = useCallback(
     (key: string) => {
