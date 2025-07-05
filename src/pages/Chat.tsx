@@ -151,8 +151,6 @@ export const Chat = () => {
     socket?.on(MESSAGE_RECEIVED_EVENT, onMessageReceive);
     socket?.on(REACTION_RECEIVED_EVENT, (data) => {
       console.log("Received ADD_REACTION:", data);
-
-      refetchMessages();
       onMessageReceive(data);
     });
     socket?.on(NEW_CHAT_EVENT, onNewChat);
