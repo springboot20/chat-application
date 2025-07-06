@@ -124,9 +124,7 @@ export const useMessage = () => {
       emoji: emojiData.emoji,
     })
       .unwrap()
-      .then(() => {
-        handleHideReactionPicker(key);
-      })
+      .then(() => {})
       .catch((error: any) => {
         console.error("Failed to send reaction:", error);
         // Optionally revert local state on failure
@@ -136,6 +134,7 @@ export const useMessage = () => {
           return rest;
         });
       });
+    handleHideReactionPicker(key);
   };
 
   useEffect(() => {
