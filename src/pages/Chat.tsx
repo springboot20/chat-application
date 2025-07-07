@@ -37,6 +37,7 @@ import { useGetChatMessagesQuery, useSendMessageMutation } from "../features/cha
 import { FileSelection } from "../components/file/FileSelection.tsx";
 import { DocumentPreview } from "../components/file/DocumentPreview.tsx";
 import { useTheme } from "../context/ThemeContext";
+import { MentionUserMenuComponent } from "../components/menu/MentionUserMenu.tsx";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -89,6 +90,8 @@ export const Chat = () => {
     handleSelectReactionEmoji,
     reaction,
     handleDeleteChatMessage,
+    handleShowMentionUserMenu,
+    showMentionUserMenu,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
@@ -440,6 +443,8 @@ export const Chat = () => {
                             />
                           </div>
                         )}
+
+                        {<MentionUserMenuComponent show={showMentionUserMenu} />}
                         {attachmentFiles?.files && attachmentFiles?.files?.length > 0 ? (
                           <div className="grid gap-4 bg-white dark:bg-white/5 grid-cols-5 p-4 justify-start max-w-fit rounded-t-lg ml-3">
                             {attachmentFiles?.files?.map((file, i) => {
@@ -492,7 +497,10 @@ export const Chat = () => {
                             type="text"
                             value={message}
                             ref={messageInputRef}
-                            onChange={(event) => handleOnMessageChange(event)}
+                            onChange={(event) => {
+                              handleShowMentionUserMenu(event);
+                              handleOnMessageChange(event);
+                            }}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 sendChatMessage();

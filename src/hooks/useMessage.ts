@@ -35,6 +35,7 @@ export const useMessage = () => {
     files: null,
     type: "document-file",
   });
+  const [showMentionUserMenu, setShowMentionUserMenu] = useState<boolean>(false);
   const messageInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const documentInputRef = useRef<HTMLInputElement | null>(null);
@@ -101,6 +102,21 @@ export const useMessage = () => {
     }
 
     return { top, left };
+  }, []);
+
+  const handleShowMentionUserMenu = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    const target = event.target;
+
+    const regexPattern = /(^|\s)@$/;
+
+    console.log(target.value.match(regexPattern));
+
+    if (target.value.match(regexPattern)) {
+      setShowMentionUserMenu(true);
+    } else {
+      setShowMentionUserMenu(false);
+    }
   }, []);
 
   const handleShowReactionPicker = useCallback(
@@ -398,6 +414,8 @@ export const useMessage = () => {
     documentInputRef,
     handleRemoveFile,
     messageItemRef,
+    handleShowMentionUserMenu,
+    showMentionUserMenu,
 
     // React Picker
     handleSelectReactionEmoji,
