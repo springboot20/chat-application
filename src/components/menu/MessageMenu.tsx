@@ -12,12 +12,16 @@ interface MessageMenuSelectionProps {
   open?: boolean;
   menuRef: React.MutableRefObject<HTMLDivElement | null>;
   menuPosition: Position;
+  handleDeleteChatMessage: () => void;
+  closeMenu: () => void;
 }
 
 export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
   open,
   menuRef,
   menuPosition,
+  handleDeleteChatMessage,
+  closeMenu,
 }) => {
   console.log(menuRef);
   console.log(menuPosition);
@@ -41,7 +45,13 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
           ref={menuRef}
           className="fixed z-[100] h-fit origin-top-right min-w-56 rounded-md bg-gray-50 dark:bg-gray-900 dark:ring-white/15 py-1.5 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         >
-          <button type="button" className="w-full dark:hover:bg-white/5 px-3 py-2">
+          <button
+            type="button"
+            className="w-full dark:hover:bg-white/5 px-3 py-2"
+            onClick={() => {
+              closeMenu();
+            }}
+          >
             <div className="flex items-center gap-3">
               <ArrowUturnLeftIcon className="h-6 dark:stroke-white" />
               <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
@@ -50,7 +60,13 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
             </div>
           </button>
 
-          <button type="button" className="w-full dark:hover:bg-white/5 px-3 py-2">
+          <button
+            type="button"
+            className="w-full dark:hover:bg-white/5 px-3 py-2"
+            onClick={() => {
+              closeMenu();
+            }}
+          >
             <div className="flex items-center gap-3">
               <DocumentDuplicateIcon className="h-6 dark:stroke-white" />
               <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
@@ -59,7 +75,14 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
             </div>
           </button>
 
-          <button type="button" className="w-full dark:hover:bg-white/5 px-3 py-2">
+          <button
+            type="button"
+            className="w-full dark:hover:bg-white/5 px-3 py-2"
+            onClick={() => {
+              handleDeleteChatMessage();
+              closeMenu();
+            }}
+          >
             <div className="flex items-center gap-3">
               <TrashIcon className="h-6 text-red-500" />
               <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg text-red-500">

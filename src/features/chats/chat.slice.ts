@@ -154,6 +154,14 @@ export const ChatApiSlice = ApiService.injectEndpoints({
       }),
     }),
 
+    deleteChatMessage: builder.mutation<Response, { chatId: string; messageId: string }>({
+      query: ({ chatId, messageId }) => ({
+        url: `/chat-app/messages/${chatId}/${messageId}/delete`,
+        method: "DELETE",
+        body: {},
+      }),
+    }),
+
     sendMessage: builder.mutation<Response, SendMessageInterface>({
       query: ({ chatId, data }) => {
         const formData = new FormData();
@@ -199,4 +207,5 @@ export const {
   useGetChatMessagesQuery,
   useSendMessageMutation,
   useReactToChatMessageMutation,
+  useDeleteChatMessageMutation,
 } = ChatApiSlice;

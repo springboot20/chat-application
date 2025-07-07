@@ -11,8 +11,12 @@ import {
   onMessageReceived,
   updateChatLastMessage,
   setUnreadMessages,
+  onChatMessageDelete,
 } from "../features/chats/chat.reducer.ts";
-import { useReactToChatMessageMutation } from "../features/chats/chat.slice.ts";
+import {
+  useDeleteChatMessageMutation,
+  useReactToChatMessageMutation,
+} from "../features/chats/chat.slice.ts";
 // import { toast } from "react-toastify";
 
 type FileType = {
@@ -47,6 +51,7 @@ export const useMessage = () => {
     >
   >({});
   const [reactToMessage] = useReactToChatMessageMutation();
+  const [deleteChatMessage] = useDeleteChatMessageMutation();
 
   const calculatePickerPosition = useCallback((messageId: string) => {
     const messageElement = messageItemRef.current[messageId];
@@ -329,6 +334,27 @@ export const useMessage = () => {
     dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
   };
 
+  const onChatMessageDeleted = (data: any) => {
+    dispatch(onChatMessageDelete({ messageId: data._id, message: data }));
+  };
+
+  const handleDeleteChatMessage = useCallback(
+    async (messageId: string) => {
+      await deleteChatMessage({
+        chatId: currentChat?._id || "",
+        messageId,
+      })
+        .unwrap()
+        .then((response) => {
+          console.log(response);
+        })
+        .catch((error: any) => {
+          console.error(error);
+        });
+    },
+    [deleteChatMessage, currentChat]
+  );
+
   const scrollToBottom = () => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -357,6 +383,7 @@ export const useMessage = () => {
     unreadMessages,
     attachmentFiles,
     onMessageReceive,
+    onChatMessageDeleted,
     bottomRef,
     getAllMessages,
     scrollToBottom, // Expose the scrollToBottom function
@@ -380,5 +407,6 @@ export const useMessage = () => {
     showReactionPicker,
     handleHideReactionPicker,
     handleHideAllReactionPickers,
+    handleDeleteChatMessage,
   };
 };

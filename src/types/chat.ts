@@ -10,7 +10,8 @@ export interface ChatMessageInterface {
     _id: string;
     type?: string;
   }>;
-  reactions: { emoji: string; _id: string ; userId: string}[];
+  isDeleted: boolean;
+  reactions: { emoji: string; _id: string; userId: string }[];
   chat: string;
   createdAt: string;
   updatedAt: string;

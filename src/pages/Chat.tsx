@@ -20,6 +20,7 @@ import {
   STOP_TYPING_EVENT,
   TYPING_EVENT,
   LEAVE_CHAT_EVENT,
+  CHAT_MESSAGE_DELETE_EVENT,
 } from "../enums/index.ts";
 import { useChat } from "../hooks/useChat.ts";
 import { useTyping } from "../hooks/useTyping.ts";
@@ -66,6 +67,7 @@ export const Chat = () => {
     setOpenEmoji,
     handleOpenAndCloseEmoji,
     // handleEmojiSimpleSelect,
+    onChatMessageDeleted,
     setAttachmentFiles,
     getAllMessages,
     handleOnMessageChange,
@@ -86,6 +88,7 @@ export const Chat = () => {
     handleHideReactionPicker,
     handleSelectReactionEmoji,
     reaction,
+    handleDeleteChatMessage,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
@@ -150,6 +153,7 @@ export const Chat = () => {
     socket?.on(TYPING_EVENT, handleStartTyping);
     socket?.on(STOP_TYPING_EVENT, handleStopTyping);
     socket?.on(MESSAGE_RECEIVED_EVENT, onMessageReceive);
+    socket?.on(CHAT_MESSAGE_DELETE_EVENT, onChatMessageDeleted);
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
 
@@ -158,6 +162,7 @@ export const Chat = () => {
       socket?.off(STOP_TYPING_EVENT, handleStopTyping);
       socket?.off(MESSAGE_RECEIVED_EVENT, onMessageReceive);
       socket?.off(NEW_CHAT_EVENT, onNewChat);
+      socket?.off(CHAT_MESSAGE_DELETE_EVENT, onChatMessageDeleted);
       socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);
     };
   }, [
@@ -168,6 +173,7 @@ export const Chat = () => {
     onMessageReceive,
     onNewChat,
     _onChatLeave,
+    onChatMessageDeleted,
   ]);
 
   console.log(isTyping);
@@ -399,6 +405,7 @@ export const Chat = () => {
                                         handleSelectReactionEmoji={handleSelectReactionEmoji}
                                         handleHideReactionPicker={handleHideReactionPicker}
                                         reaction={reaction}
+                                        handleDeleteChatMessage={handleDeleteChatMessage}
                                       />
                                     );
                                   })

@@ -21,6 +21,7 @@ interface MessageItemProps {
   showReactionPicker: Record<string, boolean>;
   handleSelectReactionEmoji: (key: string, emojiData: EmojiClickData, event: MouseEvent) => void;
   handleHideReactionPicker: (key: string) => void;
+  handleDeleteChatMessage: (key: string) => void;
   reaction: Record<string, any>;
   theme: string;
   reactionLocation: Record<string, { left: number; top: number }>;
@@ -38,6 +39,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     handleHideReactionPicker,
     reactionLocation,
     theme,
+    handleDeleteChatMessage,
   }) => {
     const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,7 +242,13 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           }}
         >
           {showMenu && (
-            <MessageMenuSelection open={showMenu} menuRef={menuRef} menuPosition={menuPosition} />
+            <MessageMenuSelection
+              open={showMenu}
+              menuRef={menuRef}
+              menuPosition={menuPosition}
+              handleDeleteChatMessage={() => handleDeleteChatMessage(message._id)}
+              closeMenu={() => setShowMenu(false)}
+            />
           )}
 
           {/* Emoji Picker Portal */}

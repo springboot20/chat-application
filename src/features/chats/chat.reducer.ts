@@ -134,6 +134,29 @@ const ChatSlice = createSlice({
       LocalStorage.set("chatmessages", state.chatMessages);
       LocalStorage.set("unreadMessages", state.unreadMessages);
     },
+
+    onChatMessageDelete: (
+      state,
+      action: PayloadAction<{
+        messageId: string;
+        message: ChatMessageInterface;
+      }>
+    ) => {
+      const { messageId, message } = action.payload;
+
+      const messageIndex = state.chatMessages.findIndex((message) => message._id === messageId);
+
+      if (messageIndex !== -1) {
+        const updatedMessage = {
+          ...state.chatMessages[messageIndex],
+          isDeleted: message.isDeleted || true,
+          updatedAt: message?.updatedAt || new Date().toISOString(),
+        };
+
+        state.chatMessages[messageIndex] = updatedMessage;
+      }
+      LocalStorage.set("chatmessages", state.chatMessages);
+    },
   },
   extraReducers: (builder) => {
     builder.addMatcher(ChatApiSlice.endpoints.getUserChats.matchFulfilled, (state, action) => {
@@ -193,7 +216,7 @@ const ChatSlice = createSlice({
       (state, action) => {
         const { data } = action.payload;
 
-        console.log(data)
+        console.log(data);
 
         state.chats = [...state.chats, data];
 
@@ -212,4 +235,5 @@ export const {
   setCurrentChat,
   setUnreadMessages,
   onChatDelete,
+  onChatMessageDelete,
 } = ChatSlice.actions;
