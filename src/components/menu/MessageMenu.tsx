@@ -10,6 +10,7 @@ type Position = {
 interface MessageMenuSelectionProps {
   // onSelectionClick?: (type: FileTypes) => void;
   open?: boolean;
+  isMessageDeleted: boolean;
   menuRef: React.MutableRefObject<HTMLDivElement | null>;
   menuPosition: Position;
   handleDeleteChatMessage: () => void;
@@ -22,6 +23,7 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
   menuPosition,
   handleDeleteChatMessage,
   closeMenu,
+  isMessageDeleted,
 }) => {
   console.log(menuRef);
   console.log(menuPosition);
@@ -43,37 +45,41 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
             left: menuPosition.x,
           }}
           ref={menuRef}
-          className="fixed z-[100] h-fit origin-top-right min-w-56 rounded-md bg-gray-50 dark:bg-gray-900 dark:ring-white/15 py-1.5 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+          className="fixed z-[100] h-fit origin-top-right min-w-[15rem] rounded-md bg-gray-50 dark:bg-gray-900 dark:ring-white/15 py-1.5 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         >
-          <button
-            type="button"
-            className="w-full dark:hover:bg-white/5 px-3 py-2"
-            onClick={() => {
-              closeMenu();
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <ArrowUturnLeftIcon className="h-6 dark:stroke-white" />
-              <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
-                Reply Message
-              </span>
-            </div>
-          </button>
+          {!isMessageDeleted && (
+            <button
+              type="button"
+              className="w-full dark:hover:bg-white/5 px-3 py-2"
+              onClick={() => {
+                closeMenu();
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <ArrowUturnLeftIcon className="h-6 dark:stroke-white" />
+                <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
+                  Reply Message
+                </span>
+              </div>
+            </button>
+          )}
 
-          <button
-            type="button"
-            className="w-full dark:hover:bg-white/5 px-3 py-2"
-            onClick={() => {
-              closeMenu();
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <DocumentDuplicateIcon className="h-6 dark:stroke-white" />
-              <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
-                Copy Message
-              </span>
-            </div>
-          </button>
+          {!isMessageDeleted && (
+            <button
+              type="button"
+              className="w-full dark:hover:bg-white/5 px-3 py-2"
+              onClick={() => {
+                closeMenu();
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <DocumentDuplicateIcon className="h-6 dark:stroke-white" />
+                <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
+                  Copy Message
+                </span>
+              </div>
+            </button>
+          )}
 
           <button
             type="button"

@@ -45,6 +45,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const messageFiles = message.attachments || [];
 
+    console.log(message);
+
     const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({
       x: 0,
       y: 0,
@@ -248,44 +250,47 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
               menuPosition={menuPosition}
               handleDeleteChatMessage={() => handleDeleteChatMessage(message._id)}
               closeMenu={() => setShowMenu(false)}
+              isMessageDeleted={message.isDeleted}
             />
           )}
 
           {/* Emoji Picker Portal */}
-          {showReactionPicker[message._id] && reactionLocation[message._id] && (
-            <div
-              className="fixed z-[100] animate-in fade-in-0 zoom-in-95 duration-200"
-              style={{
-                top: `${reactionLocation[message._id].top}px`,
-                left: `${reactionLocation[message._id].left}px`,
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="relative shadow-2xl rounded-lg overflow-hidden">
-                <EmojiPicker
-                  onReactionClick={(emoji, event) =>
-                    handleSelectReactionEmoji(message._id, emoji, event)
-                  }
-                  reactionsDefaultOpen={true}
-                  theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
-                  searchDisabled={false}
-                  width={window.innerWidth < 768 ? Math.min(350, window.innerWidth - 40) : 350}
-                  height={window.innerWidth < 768 ? Math.min(400, window.innerHeight - 100) : 400}
-                  lazyLoadEmojis
-                />
-                {/* Close button for mobile */}
-                <button
-                  onClick={() => handleHideReactionPicker(message._id)}
-                  className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 bg-gray-800/80 backdrop-blur-sm rounded-full hover:bg-gray-700 transition-colors md:hidden z-10"
-                  aria-label="Close emoji picker"
-                >
-                  <XMarkIcon className="h-4 w-4 text-white" />
-                </button>
+          {!message.isDeleted &&
+            showReactionPicker[message._id] &&
+            reactionLocation[message._id] && (
+              <div
+                className="fixed z-[100] animate-in fade-in-0 zoom-in-95 duration-200"
+                style={{
+                  top: `${reactionLocation[message._id].top}px`,
+                  left: `${reactionLocation[message._id].left}px`,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="relative shadow-2xl rounded-lg overflow-hidden">
+                  <EmojiPicker
+                    onReactionClick={(emoji, event) =>
+                      handleSelectReactionEmoji(message._id, emoji, event)
+                    }
+                    reactionsDefaultOpen={true}
+                    theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
+                    searchDisabled={false}
+                    width={window.innerWidth < 768 ? Math.min(350, window.innerWidth - 40) : 350}
+                    height={window.innerWidth < 768 ? Math.min(400, window.innerHeight - 100) : 400}
+                    lazyLoadEmojis
+                  />
+                  {/* Close button for mobile */}
+                  <button
+                    onClick={() => handleHideReactionPicker(message._id)}
+                    className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 bg-gray-800/80 backdrop-blur-sm rounded-full hover:bg-gray-700 transition-colors md:hidden z-10"
+                    aria-label="Close emoji picker"
+                  >
+                    <XMarkIcon className="h-4 w-4 text-white" />
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {message.reactions && message.reactions.length > 0 && (
+          {!message.isDeleted && message.reactions && message.reactions.length > 0 && (
             <div
               className={classNames(
                 "absolute z-10 -bottom-4 rounded-full px-3 justify-center flex items-center gap-1",
@@ -382,13 +387,19 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
                 </div>
               ) : null}
 
-              {message.content && (
-                <p className="text-base font-semibold text-white break-words">{message.content}</p>
+              {message.isDeleted ? (
+                <p className="text-base italic font-medium text-gray-800 break-words">message deleted</p>
+              ) : (
+                message.content && (
+                  <p className="text-base font-semibold text-white break-words">
+                    {message.content}
+                  </p>
+                )
               )}
 
               <p
                 className={classNames(
-                  "mt-1.5 self-end text-[10px] inline-flex items-center",
+                  "mt-1.5 self-end text-[10px] inline-flex items-center dark:text-white",
                   isOwnedMessage ? "text-zinc-50" : "text-gray-800"
                 )}
               >
