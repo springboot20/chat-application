@@ -2,12 +2,7 @@ import { useAppDispatch } from "./../redux/redux.hooks";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useSocketContext } from "../context/SocketContext.tsx";
 import { useTyping } from "./useTyping.ts";
-import {
-  STOP_TYPING_EVENT,
-  TYPING_EVENT,
-  JOIN_CHAT_EVENT,
-  REACTION_RECEIVED_EVENT,
-} from "../enums/index.ts";
+import { STOP_TYPING_EVENT, TYPING_EVENT, JOIN_CHAT_EVENT } from "../enums/index.ts";
 import { RootState } from "../app/store.ts";
 import { useAppSelector } from "../redux/redux.hooks.ts";
 import { type EmojiClickData } from "emoji-picker-react";
@@ -18,7 +13,6 @@ import {
   setUnreadMessages,
 } from "../features/chats/chat.reducer.ts";
 import { useReactToChatMessageMutation } from "../features/chats/chat.slice.ts";
-import { ChatMessageInterface } from "../types/chat.ts";
 // import { toast } from "react-toastify";
 
 type FileType = {
@@ -62,36 +56,46 @@ export const useMessage = () => {
     const pickerWidth = window.innerWidth < 768 ? Math.min(350, window.innerWidth - 40) : 350;
     const pickerHeight = window.innerWidth < 768 ? Math.min(400, window.innerHeight - 100) : 400;
 
+    const viewportWidth = innerWidth;
+    const viewportHeight = innerHeight;
+
     // Determine if the message is owned (right-aligned) or not (left-aligned)
-    const isOwned = messageElement.classList.contains("justify-end");
+    const isOwned = messageElement.closest("justify-end") !== null;
 
     // Calculate horizontal position
-    let left = isOwned
-      ? rect.right - pickerWidth // Align picker with the right edge for owned messages
-      : rect.left; // Align picker with the left edge for non-owned messages
-
-    // Adjust left position to prevent overflow
-    if (left + pickerWidth > window.innerWidth) {
-      left = window.innerWidth - pickerWidth - 10; // 10px padding from edge
-    }
-    if (left < 10) {
-      left = 10; // 10px padding from left edge
+    let left;
+    if (isOwned) {
+      left = rect.right - pickerWidth;
+    } else {
+      left = rect.left;
     }
 
-    // Calculate vertical position (prefer above the message, like WhatsApp)
-    let top = rect.top - pickerHeight - 10; // 10px gap above the message
+    const rightEdge = left + pickerWidth;
+    const leftEdge = left;
 
-    // If there's not enough space above, place below the message
-    if (top < 10) {
-      top = rect.bottom + 10; // 10px gap below the message
+    if (rightEdge > viewportWidth - 20) {
+      left = viewportWidth - pickerWidth - 20;
     }
 
-    // Ensure the picker doesn't overflow below the viewport
-    if (top + pickerHeight > window.innerHeight) {
-      top = window.innerHeight - pickerHeight - 10; // Adjust to fit within viewport
+    if (leftEdge < 20) {
+      left = 20;
     }
 
-    return { left, top };
+    let top = rect.top - pickerHeight - 20;
+
+    if (top < 20) {
+      top = rect.bottom + 10;
+    }
+
+    if (top + pickerHeight > viewportHeight - 20) {
+      top = viewportHeight - pickerHeight - 20;
+    }
+
+    if (top < 20) {
+      top = 20;
+    }
+
+    return { top, left };
   }, []);
 
   const handleShowReactionPicker = useCallback(
@@ -137,19 +141,6 @@ export const useMessage = () => {
     handleHideReactionPicker(key);
   };
 
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on(REACTION_RECEIVED_EVENT, (data: ChatMessageInterface) => {
-      console.log("Received ADD_REACTION:", data);
-      dispatch(onMessageReceived({ data }));
-    });
-
-    return () => {
-      socket.off(REACTION_RECEIVED_EVENT);
-    };
-  }, [socket, dispatch]);
-
   const handleReactionPicker = useCallback(
     (key: string) => {
       handleShowReactionPicker(key);
@@ -159,22 +150,18 @@ export const useMessage = () => {
 
   const handleHideAllReactionPickers = () => setShowReactionPicker({});
 
-  const handleClickOutside = useCallback((event: MouseEvent) => {
-    const target = event.target as HTMLElement;
+  const handleClickOutside = useCallback(
+    (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
 
-    // Check if the click is outside any emoji picker
-    const isClickInsideAnyPicker = target.closest(".EmojiPickerReact");
-
-    // Check if the click is on a message item (to allow double-click)
-    const isClickOnMessage = Object.keys(messageItemRef.current).some((messageId) => {
-      const messageElement = messageItemRef.current[messageId];
-      return messageElement && messageElement.contains(target);
-    });
-
-    if (!isClickInsideAnyPicker && !isClickOnMessage) {
-      handleHideAllReactionPickers();
-    }
-  }, []);
+      if (!target.closest(".EmojiPickerReact")) {
+        Object.keys(showReactionPicker).forEach((messageId) => {
+          setShowReactionPicker((prev) => ({ ...prev, [messageId]: false }));
+        });
+      }
+    },
+    [showReactionPicker]
+  );
 
   // Handle window resize to recalculate positions
   const handleResize = useCallback(() => {
@@ -195,12 +182,12 @@ export const useMessage = () => {
   }, []);
 
   useEffect(() => {
-    document.addEventListener("click", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
     window.addEventListener("resize", handleResize);
 
     return () => {
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("resize", handleResize);
     };

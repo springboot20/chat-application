@@ -124,6 +124,7 @@ export const Chat = () => {
 
   useEffect(() => {
     const handleCloseEmoji = (event: MouseEvent) => {
+      console.log(event.target);
       if (!(event.target as HTMLElement).closest(".EmojiPickerReact")) {
         setOpenEmoji(false);
       }
@@ -420,23 +421,10 @@ export const Chat = () => {
                           </>
                         )}
                       </div>
-                      {attachmentFiles?.files && attachmentFiles?.files?.length > 0 ? (
-                        <div className="grid gap-4 bg-white dark:bg-white/5 grid-cols-5 p-4 justify-start max-w-fit rounded-t-lg ml-3">
-                          {attachmentFiles?.files?.map((file, i) => {
-                            return (
-                              <DocumentPreview
-                                key={i}
-                                index={i}
-                                onRemove={handleRemoveFile}
-                                file={file}
-                              />
-                            );
-                          })}
-                        </div>
-                      ) : null}
-                      <div className="fixed bottom-0 gap-2 left-16 sm:left-20 lg:left-[30rem] right-0 h-16 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30">
+
+                      <div className="fixed bottom-0 gap-2 left-16 sm:left-20 lg:left-[30rem] right-0 h-auto bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30">
                         {openEmoji && (
-                          <div className="bottom-20 absolute left-6 z-50">
+                          <div className="bottom-24 absolute left-6 z-50">
                             <EmojiPicker
                               className="absolute min-w-[300px] sm:min-w-[500px]"
                               searchPlaceHolder="search for emoji"
@@ -445,6 +433,20 @@ export const Chat = () => {
                             />
                           </div>
                         )}
+                        {attachmentFiles?.files && attachmentFiles?.files?.length > 0 ? (
+                          <div className="grid gap-4 bg-white dark:bg-white/5 grid-cols-5 p-4 justify-start max-w-fit rounded-t-lg ml-3">
+                            {attachmentFiles?.files?.map((file, i) => {
+                              return (
+                                <DocumentPreview
+                                  key={i}
+                                  index={i}
+                                  onRemove={handleRemoveFile}
+                                  file={file}
+                                />
+                              );
+                            })}
+                          </div>
+                        ) : null}
                         <div className="flex items-center justify-between mx-auto max-w-8xl h-full relative z-20 px-2 sm:p-4">
                           <button
                             onClick={handleOpenAndCloseEmoji}
@@ -455,24 +457,6 @@ export const Chat = () => {
                               <FaceSmileIcon className="h-9 dark:text-white/60" />
                             </span>
                           </button>
-
-                          {/* <fieldset className="flex items-center shrink-0">
-                            <input
-                              hidden
-                              multiple
-                              type="file"
-                              id="files"
-                              max={5}
-                              onChange={(event) => {
-                                if (event.target.files) {
-                                  setAttachmentFiles([...event.target.files]);
-                                }
-                              }}
-                            />
-                            <label htmlFor="files">
-                              <PaperClipIcon className="cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition" />
-                            </label>
-                          </fieldset> */}
 
                           <Disclosure>
                             {({ close, open }) => {

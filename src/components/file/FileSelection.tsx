@@ -52,7 +52,7 @@ export const FileSelection: React.FC<FileSelectionProps> = ({
 
   return (
     <Transition.Root show={open} as={Fragment}>
-      <Disclosure.Panel as="div" className="bottom-20 absolute left-8 z-50 file-menu" ref={ref}>
+      <Disclosure.Panel as="div" className="bottom-24 absolute left-4 z-50 file-menu" ref={ref}>
         <Transition.Child
           as={Fragment}
           enter="transition ease-out duration-100"
@@ -62,7 +62,7 @@ export const FileSelection: React.FC<FileSelectionProps> = ({
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <div className=" mt-4 min-w-[250px] w-full origin-top-right rounded-md bg-white dark:bg-gray-900 dark:ring-white/15 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <div className="mt-4 min-w-[250px] w-full origin-top-right rounded-md bg-white dark:bg-gray-900 dark:ring-white/15 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
             <div className="w-full dark:hover:bg-white/5 px-3 py-2">
               <input
                 hidden

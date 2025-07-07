@@ -7,9 +7,10 @@ import {
 import { ChatMessageInterface } from "../../types/chat";
 import { classNames } from "../../utils";
 import moment from "moment";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { DocumentPreview } from "../file/DocumentPreview";
 import EmojiPicker, { Theme, type EmojiClickData } from "emoji-picker-react";
+import { MessageMenuSelection } from "../menu/MessageMenu";
 
 interface MessageItemProps {
   isOwnedMessage?: boolean;
@@ -41,6 +42,65 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const messageFiles = message.attachments || [];
+
+    const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({
+      x: 0,
+      y: 0,
+    });
+    const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement | null>(null);
+
+    const handleContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const clickX = event.clientX;
+      const clickY = event.clientY;
+
+      const screenHeight = window.innerHeight;
+      const screenWidth = window.innerWidth;
+
+      const menuWidth = 192;
+      const menuHeight = 160;
+
+      let XPosition = clickX;
+      let YPosition = clickY;
+
+      if (XPosition + menuWidth > screenWidth) {
+        XPosition = screenWidth - menuWidth - 20;
+      }
+
+      if (YPosition + menuHeight > screenHeight) {
+        YPosition = screenHeight - menuHeight - 20;
+      }
+
+      if (XPosition < 20) XPosition = 20;
+      if (YPosition < 20) YPosition = 20;
+
+      setShowMenu(true);
+      setMenuPosition({ x: XPosition, y: YPosition });
+    };
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as HTMLElement)) {
+        setShowMenu(false);
+      }
+    };
+
+    console.log(menuPosition);
+    console.log(showMenu);
+
+    useEffect(() => {
+      if (showMenu) {
+        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("contextmenu", handleClickOutside);
+
+        return () => {
+          document.removeEventListener("mousedown", handleClickOutside);
+          document.removeEventListener("contextmenu", handleClickOutside);
+        };
+      }
+    }, [showMenu]);
 
     const handleNextImage = useCallback(() => {
       setCurrentMessageImageIndex((prev) => (prev + 1) % messageFiles.length);
@@ -171,16 +231,18 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
         {/* Message Content */}
         <div
           className={classNames(
-            "flex items-start p-1.5 text-white text-base relative h-auto w-full gap-6 cursor-pointer",
+            "flex items-start p-1.5 text-white text-base relative h-auto w-full gap-6",
             isOwnedMessage ? "justify-end" : "justify-start"
           )}
-          onDoubleClick={(e) => {
-            // Only trigger for non-owned messages
-            e.preventDefault();
-            e.stopPropagation();
-            handleReactionPicker(message._id);
+          onContextMenu={(event) => {
+            console.log(menuPosition);
+            handleContextMenu(event);
           }}
         >
+          {showMenu && (
+            <MessageMenuSelection open={showMenu} menuRef={menuRef} menuPosition={menuPosition} />
+          )}
+
           {/* Emoji Picker Portal */}
           {showReactionPicker[message._id] && reactionLocation[message._id] && (
             <div
@@ -206,7 +268,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
                 {/* Close button for mobile */}
                 <button
                   onClick={() => handleHideReactionPicker(message._id)}
-                  className="absolute top-2 right-2 p-1.5 bg-gray-800/80 backdrop-blur-sm rounded-full hover:bg-gray-700 transition-colors md:hidden z-10"
+                  className="absolute top-1/2 -translate-y-1/2 right-2 p-1.5 bg-gray-800/80 backdrop-blur-sm rounded-full hover:bg-gray-700 transition-colors md:hidden z-10"
                   aria-label="Close emoji picker"
                 >
                   <XMarkIcon className="h-4 w-4 text-white" />
@@ -218,7 +280,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           {message.reactions && message.reactions.length > 0 && (
             <div
               className={classNames(
-                "absolute z-40 -bottom-4 rounded-full px-3 justify-center flex items-center gap-1",
+                "absolute z-10 -bottom-4 rounded-full px-3 justify-center flex items-center gap-1",
                 isOwnedMessage
                   ? "bg-[#615EF0] right-3 dark:bg-[#615EF0] dark:text-white border-2 dark:border-black"
                   : "bg-green-500 dark:bg-green-200 dark:text-green-700 border-2 dark:border-black left-3"
@@ -249,17 +311,24 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           />
 
           <div
-            ref={(element) => {
-              messageItemRef.current[message._id] = element;
-            }}
             id={`message-item-${message._id}`}
             className={classNames(
-              "flex flex-col self-end w-auto p-2 relative max-w-md",
+              "flex flex-col self-end w-auto p-2 relative max-w-md cursor-pointer",
               isOwnedMessage ? "order-1" : "order-2",
               isOwnedMessage
                 ? "before:absolute before:content-[''] before:border-[#615EF0] before:-right-5 before:-z-10 before:top-0 before:border-t-[15px] before:border-b-[15px] before:border-b-transparent before:border-l-[25px] before:border-r-[25px] before:border-r-transparent bg-[#615EF0] before:-right rounded-xl rounded-tr-none"
                 : "bg-green-500 before:absolute before:content-[''] before:-left-5 before:-z-10 before:top-0 before:border-b-[25px] before:border-t-transparent before:border-b-transparent before:border-r-[40px] before:border-green-500 rounded-xl rounded-tl-none"
             )}
+            onDoubleClick={(e) => {
+              // Only trigger for non-owned messages
+              e.preventDefault();
+              e.stopPropagation();
+              handleReactionPicker(message._id);
+            }}
+            ref={(element) => {
+              messageItemRef.current[message._id] = element;
+            }}
+            data-id={message._id}
           >
             {isOwnedMessage && (
               <button title="open user profile" className="self-start">
