@@ -35,6 +35,62 @@ export const requestHandler = async ({
 
 export const isBrowser = typeof window !== "undefined";
 
+export class AudioManager {
+  private audio: HTMLAudioElement;
+  private isReady: boolean = false;
+
+  constructor(audioSrc: string) {
+    this.audio = new Audio(audioSrc);
+    this.audio.preload = "auto";
+    this.setupAudio();
+  }
+
+  private setupAudio() {
+    this.audio.volume = 0.5;
+    this.audio.addEventListener("canplaythrough", () => {
+      this.isReady = true;
+    });
+
+    this.audio.addEventListener("error", (e) => {
+      console.error("Audio loading error: ", e);
+    });
+  }
+
+  async initializeAudio(): Promise<void> {
+    if (!this.isReady) return;
+
+    try {
+      this.audio.volume = 0.5;
+      await this.audio.play();
+      this.audio.pause();
+      this.audio.currentTime = 0;
+      this.audio.volume = 0.5;
+      this.isReady = Boolean(1);
+    } catch (error: any) {
+      console.warn("Audio initialization failed:", error);
+    }
+  }
+
+  async playSound(): Promise<void> {
+    if (!this.isReady) {
+      console.warn("Audio not ready. User interaction required first.");
+      return;
+    }
+
+    try {
+      // Reset audio to beginning
+      this.audio.currentTime = 0;
+      await this.audio.play();
+    } catch (error) {
+      console.error("Failed to play audio:", error);
+    }
+  }
+
+  setVolume(volume: number): void {
+    this.audio.volume = Math.max(0, Math.min(1, volume));
+  }
+}
+
 export class LocalStorage {
   static get(key: string) {
     if (!isBrowser) return;

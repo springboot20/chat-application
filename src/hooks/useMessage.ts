@@ -6,6 +6,8 @@ import { STOP_TYPING_EVENT, TYPING_EVENT, JOIN_CHAT_EVENT } from "../enums/index
 import { RootState } from "../app/store.ts";
 import { useAppSelector } from "../redux/redux.hooks.ts";
 import { type EmojiClickData } from "emoji-picker-react";
+import messageSound from "../assets/audio/message-notification.mp3";
+import reactionSound from "../assets/audio/send-message-notification.mp3";
 
 import {
   onMessageReceived,
@@ -18,15 +20,13 @@ import {
   useReactToChatMessageMutation,
 } from "../features/chats/chat.slice.ts";
 import { User } from "../types/auth.ts";
+import { AudioManager } from "../utils/index.ts";
 // import { toast } from "react-toastify";
 
 type FileType = {
   files: File[] | null;
   type: "document-file" | "image-file";
 };
-
-const messageReceivedSound = new Audio("../assets/audio/message-notification.mp3");
-// const reactionSound = new Audio("/sounds/reaction.mp3");
 
 export const useMessage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -58,6 +58,53 @@ export const useMessage = () => {
   >({});
   const [reactToMessage] = useReactToChatMessageMutation();
   const [deleteChatMessage] = useDeleteChatMessageMutation();
+
+  const messageAudioManagerRef = useRef<AudioManager | null>(null);
+  const reactionAudioManagerRef = useRef<AudioManager | null>(null);
+  const [isAudioReady, setIsAudioReady] = useState(false);
+
+  // Initialize audio manager
+  useEffect(() => {
+    messageAudioManagerRef.current = new AudioManager(messageSound);
+    reactionAudioManagerRef.current = new AudioManager(reactionSound);
+
+    // Add event listeners for user interaction to initialize audio
+    const handleUserInteraction = async () => {
+      if (messageAudioManagerRef.current && reactionAudioManagerRef.current && !isAudioReady) {
+        await messageAudioManagerRef.current.initializeAudio();
+        await reactionAudioManagerRef.current.initializeAudio();
+        setIsAudioReady(true);
+
+        // Remove listeners after first interaction
+        document.removeEventListener("click", handleUserInteraction);
+        document.removeEventListener("keydown", handleUserInteraction);
+        document.removeEventListener("touchstart", handleUserInteraction);
+      }
+    };
+
+    document.addEventListener("click", handleUserInteraction);
+    document.addEventListener("keydown", handleUserInteraction);
+    document.addEventListener("touchstart", handleUserInteraction);
+
+    return () => {
+      document.removeEventListener("click", handleUserInteraction);
+      document.removeEventListener("keydown", handleUserInteraction);
+      document.removeEventListener("touchstart", handleUserInteraction);
+    };
+  }, [isAudioReady]);
+
+  // Play sound function
+  const playMessageSound = useCallback(async () => {
+    if (messageAudioManagerRef.current) {
+      await messageAudioManagerRef.current.playSound();
+    }
+  }, []);
+
+  const playReactionSound = useCallback(async () => {
+    if (reactionAudioManagerRef.current) {
+      await reactionAudioManagerRef.current.playSound();
+    }
+  }, []);
 
   const handleSelectUser = useCallback((user: User) => {
     setMessage((prev) => {
@@ -373,10 +420,10 @@ export const useMessage = () => {
     // Update the last message of the chat
     dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
 
-    if (data.chat === currentChat?._id && !currentChat?.participants.includes(data.sender._id)) {
-      messageReceivedSound
-        .play()
-        .catch((error) => console.error("Failed to play received sound:", error));
+    console.log(currentChat?.participants.includes(data.sender?._id));
+
+    if (data.chat === currentChat?._id && !currentChat?.participants.includes(data.sender?._id)) {
+      playMessageSound();
     }
   };
 
@@ -393,15 +440,13 @@ export const useMessage = () => {
         .unwrap()
         .then((response) => {
           console.log(response);
-          messageReceivedSound
-            .play()
-            .catch((error) => console.error("Failed to play received sound:", error));
+          playMessageSound();
         })
         .catch((error: any) => {
           console.error(error);
         });
     },
-    [deleteChatMessage, currentChat]
+    [deleteChatMessage, currentChat?._id, playMessageSound]
   );
 
   const scrollToBottom = () => {
@@ -427,11 +472,9 @@ export const useMessage = () => {
         })
       );
 
-      messageReceivedSound
-        .play()
-        .catch((error) => console.error("Failed to play received sound:", error));
+      playReactionSound();
     },
-    [dispatch]
+    [dispatch, playReactionSound]
   );
 
   const handleRemoveFile = (indexToRemove: number) => {

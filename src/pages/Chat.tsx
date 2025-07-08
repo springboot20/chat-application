@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect } from "react";
+import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import {
   PaperAirplaneIcon,
@@ -7,7 +7,7 @@ import {
   ArrowLeftIcon,
   FaceSmileIcon,
 } from "@heroicons/react/24/outline";
-import { classNames } from "../utils/index.ts";
+import { AudioManager, classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { MessageNavigation } from "../components/navigation/message-navigation.tsx";
@@ -44,6 +44,7 @@ import { DocumentPreview } from "../components/file/DocumentPreview.tsx";
 import { useTheme } from "../context/ThemeContext";
 import { MentionUserMenuComponent } from "../components/menu/MentionUserMenu.tsx";
 import { User } from "../types/auth.ts";
+import messageSound from "../assets/audio/send-message-notification.mp3";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -69,8 +70,6 @@ export const Chat = () => {
   });
 
   console.log(_);
-
-  const messageSentSound = new Audio("../assets/audio/send-message-notification.mp3");
 
   const {
     message,
@@ -107,6 +106,44 @@ export const Chat = () => {
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
+
+  const audioManagerRef = useRef<AudioManager | null>(null);
+  const [isAudioReady, setIsAudioReady] = useState(false);
+
+  // Initialize audio manager
+  useEffect(() => {
+    audioManagerRef.current = new AudioManager(messageSound);
+
+    // Add event listeners for user interaction to initialize audio
+    const handleUserInteraction = async () => {
+      if (audioManagerRef.current && !isAudioReady) {
+        await audioManagerRef.current.initializeAudio();
+        setIsAudioReady(true);
+
+        // Remove listeners after first interaction
+        document.removeEventListener("click", handleUserInteraction);
+        document.removeEventListener("keydown", handleUserInteraction);
+        document.removeEventListener("touchstart", handleUserInteraction);
+      }
+    };
+
+    document.addEventListener("click", handleUserInteraction);
+    document.addEventListener("keydown", handleUserInteraction);
+    document.addEventListener("touchstart", handleUserInteraction);
+
+    return () => {
+      document.removeEventListener("click", handleUserInteraction);
+      document.removeEventListener("keydown", handleUserInteraction);
+      document.removeEventListener("touchstart", handleUserInteraction);
+    };
+  }, [isAudioReady]);
+
+  // Play sound function
+  const playMessageSound = useCallback(async () => {
+    if (audioManagerRef.current) {
+      await audioManagerRef.current.playSound();
+    }
+  }, []);
 
   const processMentionsContent = (message: string, users: User[]) => {
     const mentionRegex = /@(\w+)/g;
@@ -171,9 +208,7 @@ export const Chat = () => {
         );
 
         // Play sound when message is sent
-        messageSentSound
-          .play()
-          .catch((error) => console.error("Failed to play sent sound:", error));
+        playMessageSound();
       })
       .catch((error: any) => {
         console.error(error);
