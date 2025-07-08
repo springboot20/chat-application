@@ -171,7 +171,7 @@ export const useMessage = () => {
         });
       });
     handleHideReactionPicker(key);
-  },[]
+  },[currentChat?._id, handleHideReactionPicker, reactToMessage]
 )
   
 const handleReactionPicker = useCallback(
@@ -212,7 +212,7 @@ const handleReactionPicker = useCallback(
     if (event.key === "Escape") {
       handleHideAllReactionPickers();
     }
-  }, []);
+  }, [handleHideAllReactionPickers]);
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
@@ -283,7 +283,7 @@ const handleReactionPicker = useCallback(
     }, 0);
 
     setOpenEmoji(false);
-  },[]);
+  },[message]);
 
   const handleEmojiSelect = useCallback((emojiData: EmojiClickData, event: MouseEvent) => {
     event?.preventDefault();
@@ -293,7 +293,7 @@ const handleReactionPicker = useCallback(
     setOpenEmoji(false);
 
     console.log(emojiData);
-  },[]);
+  },[insertEmoji]);
 
   const handleEmojiSimpleSelect = useCallback((emojiData: EmojiClickData, event: MouseEvent) => {
     event.preventDefault();
