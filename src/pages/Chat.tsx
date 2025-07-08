@@ -21,6 +21,7 @@ import {
   TYPING_EVENT,
   LEAVE_CHAT_EVENT,
   CHAT_MESSAGE_DELETE_EVENT,
+  REACTION_RECEIVED_EVENT
 } from "../enums/index.ts";
 import { useChat } from "../hooks/useChat.ts";
 import { useTyping } from "../hooks/useTyping.ts";
@@ -74,7 +75,7 @@ export const Chat = () => {
     openEmoji,
     setOpenEmoji,
     handleOpenAndCloseEmoji,
-    // handleEmojiSimpleSelect,
+    onReactionUpdate,
     selectedUser,
     handleSelectUser,
     onChatMessageDeleted,
@@ -200,14 +201,16 @@ export const Chat = () => {
     socket?.on(TYPING_EVENT, handleStartTyping);
     socket?.on(STOP_TYPING_EVENT, handleStopTyping);
     socket?.on(MESSAGE_RECEIVED_EVENT, onMessageReceive);
+    socket?.on(REACTION_RECEIVED_EVENT, onReactionUpdate);
     socket?.on(CHAT_MESSAGE_DELETE_EVENT, onChatMessageDeleted);
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
-
+    
     return () => {
       socket?.off(TYPING_EVENT, handleStartTyping);
       socket?.off(STOP_TYPING_EVENT, handleStopTyping);
       socket?.off(MESSAGE_RECEIVED_EVENT, onMessageReceive);
+      socket?.off(REACTION_RECEIVED_EVENT, onReactionUpdate);
       socket?.off(NEW_CHAT_EVENT, onNewChat);
       socket?.off(CHAT_MESSAGE_DELETE_EVENT, onChatMessageDeleted);
       socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);

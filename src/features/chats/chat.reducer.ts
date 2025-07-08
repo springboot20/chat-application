@@ -56,16 +56,18 @@ const ChatSlice = createSlice({
     onMessageReceived: (state, action) => {
       const { data } = action.payload;
 
-      // If the message is not for the current chat, add it to unread messages
-      if (data?.chat !== state.currentChat?._id) {
-        state.unreadMessages = [...state.unreadMessages, data];
-        // Update localStorage for unread messages
-        LocalStorage.set("unreadMessages", state.unreadMessages);
+      const existingMessageIndex = state.chatMessages.findIndex((msg) => msg._id === data._id);
+
+      if (existingMessageIndex !== -1) {
+        // Update only the reactions for existing messages
+        state.chatMessages[existingMessageIndex].reactions = data.reactions;
+      } else if (data.chat === state.currentChat?._id) {
+        // Add new message to chatMessages if it belongs to the current chat
+        state.chatMessages.push(data);
       } else {
-        // If it's for the current chat, add it to chat messages
-        state.chatMessages = [...state.chatMessages, data];
-        // Update localStorage for chat messages
-        LocalStorage.set("chatmessages", state.chatMessages);
+        // Increment unread count for the chat if the message is not for the current chat
+        const chatId = data.chat;
+        state.unreadMessages[chatId] = (state.unreadMessages[chatId] || 0) + 1;
       }
     },
 

@@ -13,6 +13,31 @@ import { DocumentPreview } from "../file/DocumentPreview";
 import EmojiPicker, { Theme, type EmojiClickData } from "emoji-picker-react";
 import { MessageMenuSelection } from "../menu/MessageMenu";
 import { User } from "../../types/auth";
+import { isEqual } from "lodash"; // For deep comparison
+
+const arePropsEqual = (prevProps: MessageItemProps, nextProps: MessageItemProps) => {
+  // Compare message content, reactions, and attachments
+  const messageEqual = isEqual(prevProps.message, nextProps.message);
+
+  // Compare other props that might change
+  const showReactionPickerEqual =
+    prevProps.showReactionPicker[nextProps.message._id] ===
+    nextProps.showReactionPicker[nextProps.message._id];
+  const reactionLocationEqual = isEqual(
+    prevProps.reactionLocation[nextProps.message._id],
+    nextProps.reactionLocation[nextProps.message._id]
+  );
+
+  // Only re-render if relevant props have changed
+  return (
+    messageEqual &&
+    showReactionPickerEqual &&
+    reactionLocationEqual &&
+    prevProps.isOwnedMessage === nextProps.isOwnedMessage &&
+    prevProps.isGroupChatMessage === nextProps.isGroupChatMessage &&
+    prevProps.theme === nextProps.theme
+  );
+};
 
 interface MessageItemProps {
   isOwnedMessage?: boolean;
@@ -445,7 +470,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
 
               {message.isDeleted ? (
                 <div className="flex items-center gap-2">
-                <NoSymbolIcon className="text-gray-800 dark:text-red-500 h-6" strokeWidth={2} />
+                  <NoSymbolIcon className="text-gray-800 dark:text-red-500 h-6" strokeWidth={2} />
                   <p className="text-base italic font-medium text-gray-800 break-words">
                     message deleted
                   </p>
@@ -474,5 +499,6 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
         </div>
       </>
     );
-  }
+  },
+  arePropsEqual
 );

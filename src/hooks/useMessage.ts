@@ -56,14 +56,14 @@ export const useMessage = () => {
   const [reactToMessage] = useReactToChatMessageMutation();
   const [deleteChatMessage] = useDeleteChatMessageMutation();
 
-  const handleSelectUser = (user: User) => {
+  const handleSelectUser = useCallback((user: User) => {
     setMessage((prev) => {
       return prev + user.username;
     });
 
     setSelectedUser(user);
     setShowMentionUserMenu(false);
-  };
+  }, []);
 
   const calculatePickerPosition = useCallback((messageId: string) => {
     const messageElement = messageItemRef.current[messageId];
@@ -139,10 +139,10 @@ export const useMessage = () => {
     [calculatePickerPosition]
   );
 
-  const handleHideReactionPicker = (key: string) =>
-    setShowReactionPicker((prev) => ({ ...prev, [key]: false }));
+  const handleHideReactionPicker =useCallback( (key: string) =>
+    setShowReactionPicker((prev) => ({ ...prev, [key]: false })), [])
 
-  const handleSelectReactionEmoji = async (
+  const handleSelectReactionEmoji = useCallback(async (
     key: string,
     emojiData: EmojiClickData,
     event: MouseEvent
@@ -171,16 +171,17 @@ export const useMessage = () => {
         });
       });
     handleHideReactionPicker(key);
-  };
-
-  const handleReactionPicker = useCallback(
+  },[]
+)
+  
+const handleReactionPicker = useCallback(
     (key: string) => {
       handleShowReactionPicker(key);
     },
     [handleShowReactionPicker]
   );
 
-  const handleHideAllReactionPickers = () => setShowReactionPicker({});
+  const handleHideAllReactionPickers = useCallback(() => setShowReactionPicker({}), []);
 
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
@@ -255,7 +256,7 @@ export const useMessage = () => {
 
   const handleOpenAndCloseEmoji = () => setOpenEmoji(!openEmoji);
 
-  const insertEmoji = (emojiData: EmojiClickData) => {
+  const insertEmoji = useCallback((emojiData: EmojiClickData) => {
     const input = messageInputRef.current;
 
     console.log("Inserting emoji:", emojiData.emoji);
@@ -282,9 +283,9 @@ export const useMessage = () => {
     }, 0);
 
     setOpenEmoji(false);
-  };
+  },[]);
 
-  const handleEmojiSelect = (emojiData: EmojiClickData, event: MouseEvent) => {
+  const handleEmojiSelect = useCallback((emojiData: EmojiClickData, event: MouseEvent) => {
     event?.preventDefault();
     event?.stopPropagation();
 
@@ -292,9 +293,9 @@ export const useMessage = () => {
     setOpenEmoji(false);
 
     console.log(emojiData);
-  };
+  },[]);
 
-  const handleEmojiSimpleSelect = (emojiData: EmojiClickData, event: MouseEvent) => {
+  const handleEmojiSimpleSelect = useCallback((emojiData: EmojiClickData, event: MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     setMessage((prev) => {
@@ -303,7 +304,7 @@ export const useMessage = () => {
       return newMessage;
     });
     setOpenEmoji(false);
-  };
+  },[]);
 
   const handleOnMessageChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(evt.target.value);
@@ -392,6 +393,22 @@ export const useMessage = () => {
       });
     }
   };
+
+  const onReactionUpdate = useCallback(
+    (data: any) => {
+      // Update only the reactions for the specific message
+      dispatch(
+        onMessageReceived({
+          data: {
+            ...data,
+            reactions: data.reactions, // Only update reactions
+          },
+        })
+      );
+    },
+    [dispatch]
+  );
+
   const handleRemoveFile = (indexToRemove: number) => {
     if (attachmentFiles?.files) {
       const updatedFiles = attachmentFiles.files.filter((_, index) => index !== indexToRemove);
@@ -429,6 +446,7 @@ export const useMessage = () => {
     showMentionUserMenu,
     handleSelectUser,
     selectedUser,
+    onReactionUpdate,
 
     // React Picker
     handleSelectReactionEmoji,
