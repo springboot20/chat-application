@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import { ChatListItemInterface } from "../types/chat";
 import { User } from "../types/auth";
 
-export const classNames = (...className: string[]) => {
+export const classNames = (...className: (string | boolean | undefined)[]) => {
   return className.filter(Boolean).join(" ");
 };
 
@@ -27,10 +27,7 @@ export const requestHandler = async ({
       LocalStorage.clear();
       if (isBrowser) window.location.href = "./";
     }
-    onError(
-      error?.response?.data?.message ?? "something went wrong",
-      toast.error
-    );
+    onError(error?.response?.data?.message ?? "something went wrong", toast.error);
   } finally {
     setLoading && setLoading(false);
   }
@@ -67,10 +64,7 @@ export class LocalStorage {
   }
 }
 
-export const getMessageObjectMetaData = (
-  chat: ChatListItemInterface,
-  user: User
-) => {
+export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User) => {
   const lastMessage = chat.lastMessage?.content
     ? chat.lastMessage?.content
     : chat.lastMessage

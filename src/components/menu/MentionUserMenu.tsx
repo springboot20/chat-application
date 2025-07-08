@@ -1,29 +1,25 @@
 import { Disclosure, Transition } from "@headlessui/react";
-import { Fragment, useState } from "react";
-import { useGetAvailableUsersQuery } from "../../features/chats/chat.slice";
+import { Fragment } from "react";
 import { User } from "../../types/auth";
 import { classNames } from "../../utils";
 import { CheckIcon, UserIcon } from "@heroicons/react/24/outline";
 
 interface MentionUserMenuComponentProp {
   show: boolean;
+  handleSelectUser: (user: User) => void;
+  selectedUser: User;
+  users: User[];
 }
 
-export const MentionUserMenuComponent: React.FC<MentionUserMenuComponentProp> = ({ show }) => {
-  const { data: availableUsers } = useGetAvailableUsersQuery();
-  const users = availableUsers?.data as User[];
-
-  const [selectedUser, setSelectedUser] = useState<User>({} as User);
-
-  console.log(users);
-
-  const handleSelectUser = (user: User) => {
-    setSelectedUser(user);
-  };
-
+export const MentionUserMenuComponent: React.FC<MentionUserMenuComponentProp> = ({
+  show,
+  handleSelectUser,
+  selectedUser,
+  users,
+}) => {
   return (
     <Transition.Root show={show} as={Fragment}>
-      <Disclosure.Panel as="div" className="bottom-24 absolute left-4 z-50 file-menu">
+      <Disclosure.Panel as="div" className="bottom-20 absolute left-4 z-50 file-menu">
         <Transition.Child
           as={Fragment}
           enter="transition ease-out duration-100"
@@ -39,6 +35,7 @@ export const MentionUserMenuComponent: React.FC<MentionUserMenuComponentProp> = 
 
               return (
                 <button
+                  key={user._id}
                   type="button"
                   onClick={() => handleSelectUser(user)}
                   className="group px-3 py-1.5 relative w-full"

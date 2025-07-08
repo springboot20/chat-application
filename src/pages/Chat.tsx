@@ -33,11 +33,16 @@ import { useAppDispatch, useAppSelector } from "../redux/redux.hooks.ts";
 import { RootState } from "../app/store.ts";
 import { toast } from "react-toastify";
 import { updateChatLastMessage, setCurrentChat } from "../features/chats/chat.reducer.ts";
-import { useGetChatMessagesQuery, useSendMessageMutation } from "../features/chats/chat.slice.ts";
+import {
+  useGetAvailableUsersQuery,
+  useGetChatMessagesQuery,
+  useSendMessageMutation,
+} from "../features/chats/chat.slice.ts";
 import { FileSelection } from "../components/file/FileSelection.tsx";
 import { DocumentPreview } from "../components/file/DocumentPreview.tsx";
 import { useTheme } from "../context/ThemeContext";
 import { MentionUserMenuComponent } from "../components/menu/MentionUserMenu.tsx";
+import { User } from "../types/auth.ts";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -51,6 +56,8 @@ export const Chat = () => {
   const { socket } = useSocketContext();
   const { onNewChat, _onChatLeave, chats } = useChat();
   const { isOnline } = useNetwork();
+  const { data: availableUsers } = useGetAvailableUsersQuery();
+  const users = availableUsers?.data as User[];
 
   const {
     data: _,
@@ -68,6 +75,8 @@ export const Chat = () => {
     setOpenEmoji,
     handleOpenAndCloseEmoji,
     // handleEmojiSimpleSelect,
+    selectedUser,
+    handleSelectUser,
     onChatMessageDeleted,
     setAttachmentFiles,
     getAllMessages,
@@ -96,20 +105,56 @@ export const Chat = () => {
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
 
+  const processMentionsContent = (message: string, users: User[]) => {
+    const mentionRegex = /@(\w+)/g;
+    const mentions: Array<{
+      userId: string;
+      username: string;
+      position: number;
+    }> = [];
+    let match: any;
+
+    while ((match = mentionRegex.exec(message)) !== null) {
+      const username = match[1];
+      const mentionedUser = users.find(
+        (user) => user.username.toLowerCase() === username.toLowerCase()
+      );
+
+      if (mentionedUser && !mentions.find((m) => m.userId === mentionedUser?._id)) {
+        mentions.push({
+          userId: mentionedUser._id,
+          username: mentionedUser.username,
+          position: match.index,
+        });
+      }
+    }
+
+    return {
+      content: message,
+      mentions,
+    };
+  };
+
   const sendChatMessage = async () => {
     if (!currentChat?._id || !socket) return;
 
     socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
 
+    const processedMessage = processMentionsContent(message, users);
+
     // Clear input fields immediately for better UX
     setMessage("");
     setAttachmentFiles({} as any);
 
+    console.log(processedMessage);
+    console.log(processedMessage?.mentions);
+
     await sendMessage({
       chatId: currentChat?._id as string,
       data: {
-        content: message,
+        content: processedMessage.content,
         attachments: attachmentFiles.files,
+        mentions: processedMessage.mentions,
       },
     })
       .unwrap()
@@ -130,7 +175,6 @@ export const Chat = () => {
 
   useEffect(() => {
     const handleCloseEmoji = (event: MouseEvent) => {
-      console.log(event.target);
       if (!(event.target as HTMLElement).closest(".EmojiPickerReact")) {
         setOpenEmoji(false);
       }
@@ -178,8 +222,6 @@ export const Chat = () => {
     _onChatLeave,
     onChatMessageDeleted,
   ]);
-
-  console.log(isTyping);
 
   useEffect(() => {
     console.log("Current attachmentFiles state:", attachmentFiles);
@@ -383,7 +425,7 @@ export const Chat = () => {
                       </div>
                     </header>
 
-                    <div className="relative left-16 w-[calc(100%-4rem)] sm:left-20 sm:w-[calc(100%-5rem)] lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto mt-20 pb-16">
+                    <div className="relative left-16 w-[calc(100%-4rem)] sm:left-20 sm:w-[calc(100%-5rem)] lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto mt-20 pb-16 transition-all duration-200">
                       <div className="flex flex-col flex-grow px-5 overflow-y-auto gap-10">
                         {loadingMessages ? (
                           <div className="flex justify-center items-center min-h-[calc(100%-5rem)]">
@@ -409,6 +451,7 @@ export const Chat = () => {
                                         handleHideReactionPicker={handleHideReactionPicker}
                                         reaction={reaction}
                                         handleDeleteChatMessage={handleDeleteChatMessage}
+                                        users={users}
                                       />
                                     );
                                   })
@@ -432,7 +475,14 @@ export const Chat = () => {
                         )}
                       </div>
 
-                      <div className="fixed bottom-0 gap-2 left-16 sm:left-20 lg:left-[30rem] right-0 h-auto bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30">
+                      <div
+                        className={classNames(
+                          "fixed bottom-0 gap-2 left-16 sm:left-20 lg:left-[30rem] right-0 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30",
+                          attachmentFiles.files && attachmentFiles?.files?.length
+                            ? "h-auto"
+                            : "h-16"
+                        )}
+                      >
                         {openEmoji && (
                           <div className="bottom-24 absolute left-6 z-50">
                             <EmojiPicker
@@ -444,9 +494,17 @@ export const Chat = () => {
                           </div>
                         )}
 
-                        {<MentionUserMenuComponent show={showMentionUserMenu} />}
+                        {
+                          <MentionUserMenuComponent
+                            show={showMentionUserMenu}
+                            handleSelectUser={handleSelectUser}
+                            selectedUser={selectedUser}
+                            users={users}
+                          />
+                        }
+
                         {attachmentFiles?.files && attachmentFiles?.files?.length > 0 ? (
-                          <div className="grid gap-4 bg-white dark:bg-white/5 grid-cols-5 p-4 justify-start max-w-fit rounded-t-lg ml-3">
+                          <div className="grid gap-4 bg-white dark:bg-black grid-cols-5 p-4 justify-start">
                             {attachmentFiles?.files?.map((file, i) => {
                               return (
                                 <DocumentPreview
@@ -459,7 +517,7 @@ export const Chat = () => {
                             })}
                           </div>
                         ) : null}
-                        <div className="flex items-center justify-between mx-auto max-w-8xl h-full relative z-20 px-2 sm:p-4">
+                        <div className="flex items-center justify-between mx-auto max-w-8xl h-full relative z-20 px-2 sm:py-4">
                           <button
                             onClick={handleOpenAndCloseEmoji}
                             className="cursor-pointer mr-1.5 h-12 w-12 shrink-0"

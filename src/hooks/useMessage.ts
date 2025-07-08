@@ -17,6 +17,7 @@ import {
   useDeleteChatMessageMutation,
   useReactToChatMessageMutation,
 } from "../features/chats/chat.slice.ts";
+import { User } from "../types/auth.ts";
 // import { toast } from "react-toastify";
 
 type FileType = {
@@ -42,6 +43,7 @@ export const useMessage = () => {
   const messageItemRef = useRef<Record<string, HTMLDivElement | null>>({});
   const [showReactionPicker, setShowReactionPicker] = useState<Record<string, boolean>>({});
   const [reaction, setReaction] = useState<Record<string, any>>({});
+  const [selectedUser, setSelectedUser] = useState<User>({} as User);
   const [reactionLocation, setReactionLocation] = useState<
     Record<
       string,
@@ -53,6 +55,15 @@ export const useMessage = () => {
   >({});
   const [reactToMessage] = useReactToChatMessageMutation();
   const [deleteChatMessage] = useDeleteChatMessageMutation();
+
+  const handleSelectUser = (user: User) => {
+    setMessage((prev) => {
+      return prev + user.username;
+    });
+
+    setSelectedUser(user);
+    setShowMentionUserMenu(false);
+  };
 
   const calculatePickerPosition = useCallback((messageId: string) => {
     const messageElement = messageItemRef.current[messageId];
@@ -416,6 +427,8 @@ export const useMessage = () => {
     messageItemRef,
     handleShowMentionUserMenu,
     showMentionUserMenu,
+    handleSelectUser,
+    selectedUser,
 
     // React Picker
     handleSelectReactionEmoji,

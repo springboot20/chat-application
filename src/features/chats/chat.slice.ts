@@ -164,6 +164,8 @@ export const ChatApiSlice = ApiService.injectEndpoints({
 
     sendMessage: builder.mutation<Response, SendMessageInterface>({
       query: ({ chatId, data }) => {
+        console.log(data);
+
         const formData = new FormData();
 
         Object.keys(data).forEach((key) => {
@@ -176,6 +178,12 @@ export const ChatApiSlice = ApiService.injectEndpoints({
           } else if (typeof data[key] === "object" && !(data[key] instanceof File)) {
             // Handle other objects by stringifying them
             formData.append(key, JSON.stringify(data[key]));
+          } else if (key === "mentions" && Array.isArray(data[key])) {
+            // Handle mentions array by appending each mentioned user individually
+            for (let i = 0; i < data[key].length; i++) {
+              console.log(data[key][i]);
+              formData.append("mentions", data[key][i]);
+            }
           } else {
             // Handle primitive values and File objects
             formData.append(key, data[key]);

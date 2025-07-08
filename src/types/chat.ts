@@ -10,6 +10,11 @@ export interface ChatMessageInterface {
     _id: string;
     type?: string;
   }>;
+  mentions: Array<{
+    userId: string;
+    username: string;
+    position: number;
+  }>;
   isDeleted: boolean;
   reactions: { emoji: string; _id: string; userId: string }[];
   chat: string;

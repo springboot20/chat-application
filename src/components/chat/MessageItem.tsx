@@ -1,6 +1,7 @@
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
+  NoSymbolIcon,
   PaperClipIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -11,6 +12,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { DocumentPreview } from "../file/DocumentPreview";
 import EmojiPicker, { Theme, type EmojiClickData } from "emoji-picker-react";
 import { MessageMenuSelection } from "../menu/MessageMenu";
+import { User } from "../../types/auth";
 
 interface MessageItemProps {
   isOwnedMessage?: boolean;
@@ -24,6 +26,7 @@ interface MessageItemProps {
   handleDeleteChatMessage: (key: string) => void;
   reaction: Record<string, any>;
   theme: string;
+  users: User[];
   reactionLocation: Record<string, { left: number; top: number }>;
 }
 
@@ -40,13 +43,11 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     reactionLocation,
     theme,
     handleDeleteChatMessage,
+    users,
   }) => {
     const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const messageFiles = message.attachments || [];
-
-    console.log(message);
-
     const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({
       x: 0,
       y: 0,
@@ -90,9 +91,6 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
         setShowMenu(false);
       }
     };
-
-    console.log(menuPosition);
-    console.log(showMenu);
 
     useEffect(() => {
       if (showMenu) {
@@ -162,6 +160,64 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
         document.body.style.overflow = "unset";
       };
     }, [currentMessageImageIndex, handleKeyDown]);
+
+    const renderMessageWithtMention = () => {
+      const mentionRegex = /@(\w+)/g;
+      const parts = [];
+      let lastIndex = 0;
+      let match;
+
+      while ((match = mentionRegex.exec(message.content)) !== null) {
+        const username = match[1];
+
+        const mentionedUser = (users || [])?.find(
+          (user) => user.username.toLowerCase() === username.toLowerCase()
+        );
+
+        if (match.index > lastIndex) {
+          parts.push(message.content.slice(lastIndex, match.index));
+        }
+
+        if (mentionedUser) {
+          parts.push(
+            <span
+              key={`mention-${match.index}`}
+              onClick={() => {
+                console.log(mentionedUser.username);
+              }}
+              className={classNames(
+                isOwnedMessage ? "text-gray-800" : "text-indigo-500",
+                " hover:underline !font-bold font-nunito"
+              )}
+            >
+              @{mentionedUser.username}
+            </span>
+          );
+        } else {
+          parts.push(
+            <span
+              key={`not-mention-${username}`}
+              className={classNames(
+                isOwnedMessage ? "text-gray-800" : "text-indigo-500",
+                "hover:underline !font-bold font-nunito"
+              )}
+            >
+              @{username}
+            </span>
+          );
+        }
+
+        lastIndex = match.index + match[0].length;
+      }
+
+      if (lastIndex < message.content.length) {
+        parts.push(message.content.slice(lastIndex));
+      }
+
+      return parts.map((part, index) => {
+        return typeof part === "string" ? <span key={index}>{part}</span> : part;
+      });
+    };
 
     return (
       <>
@@ -388,11 +444,16 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
               ) : null}
 
               {message.isDeleted ? (
-                <p className="text-base italic font-medium text-gray-800 break-words">message deleted</p>
+                <div className="flex items-center gap-2">
+                <NoSymbolIcon className="text-gray-800 dark:text-red-500 h-6" strokeWidth={2} />
+                  <p className="text-base italic font-medium text-gray-800 break-words">
+                    message deleted
+                  </p>
+                </div>
               ) : (
                 message.content && (
                   <p className="text-base font-semibold text-white break-words">
-                    {message.content}
+                    {renderMessageWithtMention()}
                   </p>
                 )
               )}
