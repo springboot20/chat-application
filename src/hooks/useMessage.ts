@@ -480,9 +480,18 @@ export const useMessage = () => {
         })
       );
 
-      playReactionSound();
+      const isCurrentChat = data.chat === currentChat?._id;
+      const isFromCurrentUser = data.sender._id === currentUser?._id;
+
+      if (isCurrentChat && !isFromCurrentUser) {
+        playMessageSound();
+      }
+
+      if (isCurrentChat && isFromCurrentUser) {
+        playReactionSound();
+      }
     },
-    [dispatch, playReactionSound]
+    [dispatch, currentChat?._id, currentUser?._id, playMessageSound, playReactionSound]
   );
 
   const handleRemoveFile = (indexToRemove: number) => {
