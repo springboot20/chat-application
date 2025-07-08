@@ -31,6 +31,7 @@ type FileType = {
 export const useMessage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { currentChat, unreadMessages } = useAppSelector((state: RootState) => state.chat);
+  const { user: currentUser } = useAppSelector((state: RootState) => state.auth);
   const dispatch = useAppDispatch();
   const [message, setMessage] = useState<string>("");
   const { socket, connected } = useSocketContext();
@@ -420,9 +421,17 @@ export const useMessage = () => {
     // Update the last message of the chat
     dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
 
-    console.log(currentChat?.participants.includes(data.sender?._id));
+    // Determine when to play sound
+    const isCurrentChat = data.chat === currentChat?._id;
+    const isFromCurrentUser = data.sender._id === currentUser?._id;
+    const isValidParticipant = currentChat?.participants.includes(data.sender._id);
 
-    if (data.chat === currentChat?._id && !currentChat?.participants.includes(data.sender?._id)) {
+    // Play sound for messages from other users in the current chat
+    // Only play if:
+    // 1. Message is in the currently active chat
+    // 2. Message is NOT from the current user (don't play sound for your own messages)
+    // 3. Sender is a valid participant (optional security check)
+    if (isCurrentChat && !isFromCurrentUser && isValidParticipant) {
       playMessageSound();
     }
   };
