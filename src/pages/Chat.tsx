@@ -21,7 +21,7 @@ import {
   TYPING_EVENT,
   LEAVE_CHAT_EVENT,
   CHAT_MESSAGE_DELETE_EVENT,
-  REACTION_RECEIVED_EVENT
+  REACTION_RECEIVED_EVENT,
 } from "../enums/index.ts";
 import { useChat } from "../hooks/useChat.ts";
 import { useTyping } from "../hooks/useTyping.ts";
@@ -69,6 +69,8 @@ export const Chat = () => {
   });
 
   console.log(_);
+
+  const messageSentSound = new Audio("../assets/audio/send-message-notification.mp3");
 
   const {
     message,
@@ -167,6 +169,11 @@ export const Chat = () => {
             message: response.data,
           })
         );
+
+        // Play sound when message is sent
+        messageSentSound
+          .play()
+          .catch((error) => console.error("Failed to play sent sound:", error));
       })
       .catch((error: any) => {
         console.error(error);
@@ -205,7 +212,7 @@ export const Chat = () => {
     socket?.on(CHAT_MESSAGE_DELETE_EVENT, onChatMessageDeleted);
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
-    
+
     return () => {
       socket?.off(TYPING_EVENT, handleStartTyping);
       socket?.off(STOP_TYPING_EVENT, handleStopTyping);
@@ -224,6 +231,7 @@ export const Chat = () => {
     onNewChat,
     _onChatLeave,
     onChatMessageDeleted,
+    onReactionUpdate,
   ]);
 
   useEffect(() => {

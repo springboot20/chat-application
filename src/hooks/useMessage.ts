@@ -25,6 +25,9 @@ type FileType = {
   type: "document-file" | "image-file";
 };
 
+const messageReceivedSound = new Audio("../assets/audio/message-notification.mp3");
+// const reactionSound = new Audio("/sounds/reaction.mp3");
+
 export const useMessage = () => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { currentChat, unreadMessages } = useAppSelector((state: RootState) => state.chat);
@@ -139,42 +142,42 @@ export const useMessage = () => {
     [calculatePickerPosition]
   );
 
-  const handleHideReactionPicker =useCallback( (key: string) =>
-    setShowReactionPicker((prev) => ({ ...prev, [key]: false })), [])
+  const handleHideReactionPicker = useCallback(
+    (key: string) => setShowReactionPicker((prev) => ({ ...prev, [key]: false })),
+    []
+  );
 
-  const handleSelectReactionEmoji = useCallback(async (
-    key: string,
-    emojiData: EmojiClickData,
-    event: MouseEvent
-  ) => {
-    event.stopPropagation();
+  const handleSelectReactionEmoji = useCallback(
+    async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
+      event.stopPropagation();
 
-    setReaction((prev) => ({
-      ...prev,
-      [key]: emojiData.emoji, // Store the emoji string
-    }));
+      setReaction((prev) => ({
+        ...prev,
+        [key]: emojiData.emoji, // Store the emoji string
+      }));
 
-    await reactToMessage({
-      chatId: currentChat?._id || "",
-      messageId: key,
-      emoji: emojiData.emoji,
-    })
-      .unwrap()
-      .then(() => {})
-      .catch((error: any) => {
-        console.error("Failed to send reaction:", error);
-        // Optionally revert local state on failure
-        setReaction((prev) => {
-          const { [key]: _, ...rest } = prev;
-          console.log(_);
-          return rest;
+      await reactToMessage({
+        chatId: currentChat?._id || "",
+        messageId: key,
+        emoji: emojiData.emoji,
+      })
+        .unwrap()
+        .then(() => {})
+        .catch((error: any) => {
+          console.error("Failed to send reaction:", error);
+          // Optionally revert local state on failure
+          setReaction((prev) => {
+            const { [key]: _, ...rest } = prev;
+            console.log(_);
+            return rest;
+          });
         });
-      });
-    handleHideReactionPicker(key);
-  },[currentChat?._id, handleHideReactionPicker, reactToMessage]
-)
-  
-const handleReactionPicker = useCallback(
+      handleHideReactionPicker(key);
+    },
+    [currentChat?._id, handleHideReactionPicker, reactToMessage]
+  );
+
+  const handleReactionPicker = useCallback(
     (key: string) => {
       handleShowReactionPicker(key);
     },
@@ -208,11 +211,14 @@ const handleReactionPicker = useCallback(
   }, [showReactionPicker, calculatePickerPosition]);
 
   // Keyboard navigation handler
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      handleHideAllReactionPickers();
-    }
-  }, [handleHideAllReactionPickers]);
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleHideAllReactionPickers();
+      }
+    },
+    [handleHideAllReactionPickers]
+  );
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
@@ -256,44 +262,50 @@ const handleReactionPicker = useCallback(
 
   const handleOpenAndCloseEmoji = () => setOpenEmoji(!openEmoji);
 
-  const insertEmoji = useCallback((emojiData: EmojiClickData) => {
-    const input = messageInputRef.current;
+  const insertEmoji = useCallback(
+    (emojiData: EmojiClickData) => {
+      const input = messageInputRef.current;
 
-    console.log("Inserting emoji:", emojiData.emoji);
+      console.log("Inserting emoji:", emojiData.emoji);
 
-    if (!input) {
-      // Fallback: add to end if no input ref
-      setMessage((prev) => prev + emojiData.emoji);
-      return;
-    }
+      if (!input) {
+        // Fallback: add to end if no input ref
+        setMessage((prev) => prev + emojiData.emoji);
+        return;
+      }
 
-    const start = input.selectionStart || 0;
-    const end = input.selectionEnd || 0;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
 
-    console.log("Cursor position - start:", start, "end:", end);
-    console.log("Current message:", message);
+      console.log("Cursor position - start:", start, "end:", end);
+      console.log("Current message:", message);
 
-    const newMessage = message.slice(0, start) + emojiData.emoji + message.slice(end);
-    setMessage(newMessage);
+      const newMessage = message.slice(0, start) + emojiData.emoji + message.slice(end);
+      setMessage(newMessage);
 
-    setTimeout(() => {
-      const newCursorPos = start + emojiData?.emoji.length;
-      input.setSelectionRange(newCursorPos, newCursorPos);
-      input.focus();
-    }, 0);
+      setTimeout(() => {
+        const newCursorPos = start + emojiData?.emoji.length;
+        input.setSelectionRange(newCursorPos, newCursorPos);
+        input.focus();
+      }, 0);
 
-    setOpenEmoji(false);
-  },[message]);
+      setOpenEmoji(false);
+    },
+    [message]
+  );
 
-  const handleEmojiSelect = useCallback((emojiData: EmojiClickData, event: MouseEvent) => {
-    event?.preventDefault();
-    event?.stopPropagation();
+  const handleEmojiSelect = useCallback(
+    (emojiData: EmojiClickData, event: MouseEvent) => {
+      event?.preventDefault();
+      event?.stopPropagation();
 
-    insertEmoji(emojiData);
-    setOpenEmoji(false);
+      insertEmoji(emojiData);
+      setOpenEmoji(false);
 
-    console.log(emojiData);
-  },[insertEmoji]);
+      console.log(emojiData);
+    },
+    [insertEmoji]
+  );
 
   const handleEmojiSimpleSelect = useCallback((emojiData: EmojiClickData, event: MouseEvent) => {
     event.preventDefault();
@@ -304,7 +316,7 @@ const handleReactionPicker = useCallback(
       return newMessage;
     });
     setOpenEmoji(false);
-  },[]);
+  }, []);
 
   const handleOnMessageChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(evt.target.value);
@@ -360,6 +372,12 @@ const handleReactionPicker = useCallback(
 
     // Update the last message of the chat
     dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
+
+    if (data.chat === currentChat?._id && !currentChat?.participants.includes(data.sender._id)) {
+      messageReceivedSound
+        .play()
+        .catch((error) => console.error("Failed to play received sound:", error));
+    }
   };
 
   const onChatMessageDeleted = (data: any) => {
@@ -375,6 +393,9 @@ const handleReactionPicker = useCallback(
         .unwrap()
         .then((response) => {
           console.log(response);
+          messageReceivedSound
+            .play()
+            .catch((error) => console.error("Failed to play received sound:", error));
         })
         .catch((error: any) => {
           console.error(error);
@@ -405,6 +426,10 @@ const handleReactionPicker = useCallback(
           },
         })
       );
+
+      messageReceivedSound
+        .play()
+        .catch((error) => console.error("Failed to play received sound:", error));
     },
     [dispatch]
   );
