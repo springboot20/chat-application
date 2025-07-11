@@ -84,6 +84,38 @@
     }
   }
 
+  @keyframes glow-purple {
+    0% {
+      background: linear-gradient(135deg, rgba(97, 94, 240, 0.3) 0%, rgba(97, 94, 240, 0.1) 100%);
+    }
+    50% {
+      background: linear-gradient(135deg, rgba(97, 94, 240, 0.5) 0%, rgba(97, 94, 240, 0.2) 100%);
+    }
+    100% {
+      background: linear-gradient(135deg, rgba(97, 94, 240, 0.3) 0%, rgba(97, 94, 240, 0.1) 100%);
+    }
+  }
+
+  @keyframes glow-green {
+    0% {
+      background: linear-gradient(135deg, rgba(0, 255, 0, 0.3) 0%, rgba(0, 255, 0, 0.1) 100%);
+    }
+    50% {
+      background: linear-gradient(135deg, rgba(0, 255, 0, 0.5) 0%, rgba(0, 255, 0, 0.2) 100%);
+    }
+    100% {
+      background: linear-gradient(135deg, rgba(0, 255, 0, 0.3) 0%, rgba(0, 255, 0, 0.1) 100%);
+    }
+  }
+
+  .animate-glow-purple {
+    animation: glow-purple 2s ease-in-out;
+  }
+
+  .animate-glow-green {
+    animation: glow-green 2s ease-in-out;
+  }
+
   .animation1 {
     -webkit-animation: bounce 0.4s ease-in-out infinite alternate;
     animation: bounce 0.4s ease-in-out infinite alternate;

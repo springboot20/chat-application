@@ -117,6 +117,11 @@ export const Chat = () => {
 
   const audioManagerRef = useRef<AudioManager | null>(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | undefined>(undefined);
+
+  const handleSetHighlightedMessage = (messageId: string | undefined) => {
+    setHighlightedMessageId(messageId);
+  };
 
   // Initialize audio manager
   useEffect(() => {
@@ -468,20 +473,22 @@ export const Chat = () => {
                                   reduxStateMessages?.map((msg) => {
                                     return (
                                       <MessageItem
-                                        isOwnedMessage={msg.sender?._id === user?._id}
-                                        isGroupChatMessage={currentChat?.isGroupChat}
                                         message={msg}
                                         theme={theme}
+                                        users={users}
+                                        reaction={reaction}
                                         messageItemRef={messageItemRef}
-                                        showReactionPicker={showReactionPicker}
-                                        handleReactionPicker={handleReactionPicker}
                                         reactionLocation={reactionLocation}
+                                        handleSetOpenReply={handleSetOpenReply}
+                                        showReactionPicker={showReactionPicker}
+                                        highlightedMessageId={highlightedMessageId}
+                                        handleReactionPicker={handleReactionPicker}
+                                        isGroupChatMessage={currentChat?.isGroupChat}
+                                        isOwnedMessage={msg.sender?._id === user?._id}
                                         handleSelectReactionEmoji={handleSelectReactionEmoji}
                                         handleHideReactionPicker={handleHideReactionPicker}
-                                        reaction={reaction}
                                         handleDeleteChatMessage={handleDeleteChatMessage}
-                                        handleSetOpenReply={handleSetOpenReply}
-                                        users={users}
+                                        onSetHighlightedMessage={handleSetHighlightedMessage}
                                       />
                                     );
                                   })

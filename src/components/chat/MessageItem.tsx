@@ -35,7 +35,8 @@ const arePropsEqual = (prevProps: MessageItemProps, nextProps: MessageItemProps)
     reactionLocationEqual &&
     prevProps.isOwnedMessage === nextProps.isOwnedMessage &&
     prevProps.isGroupChatMessage === nextProps.isGroupChatMessage &&
-    prevProps.theme === nextProps.theme
+    prevProps.theme === nextProps.theme &&
+    prevProps.highlightedMessageId === nextProps.highlightedMessageId
   );
 };
 
@@ -54,6 +55,8 @@ interface MessageItemProps {
   users: User[];
   reactionLocation: Record<string, { left: number; top: number }>;
   handleSetOpenReply: (messageId: string) => void;
+  highlightedMessageId?: string; // Add this prop to track which message should glow
+  onSetHighlightedMessage?: (messageId: string | undefined) => void;
 }
 
 export const MessageItem: React.FC<MessageItemProps> = React.memo(
@@ -71,6 +74,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     handleDeleteChatMessage,
     users,
     handleSetOpenReply,
+    onSetHighlightedMessage,
+    highlightedMessageId
   }) => {
     console.log(message);
 
@@ -83,6 +88,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     });
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
+    const [isGlowing, setIsGlowing] = useState(false);
 
     const handleContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       event.preventDefault();
@@ -190,6 +196,20 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       };
     }, [currentMessageImageIndex, handleKeyDown]);
 
+    // Handle glow effect when message is highlighted
+    useEffect(() => {
+      if (highlightedMessageId === message._id) {
+        setIsGlowing(true);
+        // Remove glow after animation completes
+        const timer = setTimeout(() => {
+          setIsGlowing(false);
+          onSetHighlightedMessage?.(undefined);
+        }, 2000); // Adjust timing as needed
+
+        return () => clearTimeout(timer);
+      }
+    }, [highlightedMessageId, message._id, onSetHighlightedMessage]);
+
     const renderMessageWithtMention = () => {
       const mentionRegex = /@(\w+)/g;
       const parts = [];
@@ -248,7 +268,13 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       });
     };
 
-    console.log(["text-green-500", "text-[#615EF0]"][message?.sender?.username?.length % 2]);
+    const getGlowClass = () => {
+      if (!isGlowing) return "";
+      return isOwnedMessage ? "animate-glow-purple" : "animate-glow-green";
+    };
+
+    console.log(getGlowClass());
+    console.log(highlightedMessageId);
 
     return (
       <>
@@ -323,10 +349,10 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
         <div
           className={classNames(
             "flex items-start p-1.5 text-white text-base relative h-auto w-full gap-6",
-            isOwnedMessage ? "justify-end" : "justify-start"
+            isOwnedMessage ? "justify-end" : "justify-start",
+            getGlowClass()
           )}
           onContextMenu={(event) => {
-            console.log(menuPosition);
             handleContextMenu(event);
           }}
         >
@@ -457,13 +483,14 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
               {message.replyId && (
                 <div
                   className={classNames(
-                    "p-2 rounded-lg bg-gray-100 dark:bg-gray-700",
-                    isOwnedMessage ? "border-[#615EF0]" : "border-green-500"
+                    "mb-2 p-2 rounded-lg bg-gray-100/50 dark:bg-gray-700/50 border-l-4 cursor-pointer"
                   )}
                   onClick={() => {
-                    if (message.repliedMessage) {
-                      const element = messageItemRef.current[message.replyId!] as HTMLElement;
+                    if (message.repliedMessage && message.replyId) {
+                      // Set the message to be highlighted
+                      onSetHighlightedMessage?.(message.replyId);
 
+                      const element = messageItemRef.current[message.replyId] as HTMLElement;
                       if (element) {
                         element.scrollIntoView({ behavior: "smooth", block: "center" });
                       }
