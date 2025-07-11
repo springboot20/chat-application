@@ -105,7 +105,7 @@ export const Register = () => {
           Sign up to create an account
         </h2>
       </div>
-      <div className="mt-10 w-full bg-white rounded-lg p-4 sm:p-6 md:max-w-xl">
+      <div className="mt-10 w-full bg-white dark:bg-white/5 rounded-lg p-4 sm:p-6 md:max-w-xl">
         <form onSubmit={handleSubmit}>
           <fieldset>
             <label
@@ -120,7 +120,7 @@ export const Register = () => {
                 name="username"
                 onChange={handleChange("username")}
                 placeholder="enter your username..."
-                className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
+                className="block w-full px-3 rounded-md border-0 py-3 dark:bg-black dark:ring-white/10 dark:text-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
             </div>
           </fieldset>
@@ -137,7 +137,7 @@ export const Register = () => {
                 placeholder="enter your email..."
                 name="email"
                 onChange={handleChange("email")}
-                className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
+                className="block w-full px-3 rounded-md border-0 py-3 dark:bg-black dark:ring-white/10 dark:text-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
             </div>
           </fieldset>
@@ -155,7 +155,7 @@ export const Register = () => {
                 name="password"
                 onChange={handleChange("password")}
                 placeholder="enter your password..."
-                className="block w-full px-3 rounded-md border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
+                className="block w-full px-3 rounded-md border-0 py-3 dark:bg-black dark:ring-white/10 dark:text-white text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none"
               />
               <button
                 type="button"
@@ -163,9 +163,9 @@ export const Register = () => {
                 onClick={() => setShow(!show)}
               >
                 {show ? (
-                  <EyeSlashIcon className="h-6 w-6 cursor-pointer text-gray-700 stroke-[3]" />
+                  <EyeSlashIcon className="h-6 w-6 cursor-pointer text-gray-700 dark:text-white/70" strokeWidth={2} />
                 ) : (
-                  <EyeIcon className="h-6 w-6 cursor-pointer text-gray-500 stroke-[3]" />
+                  <EyeIcon className="h-6 w-6 cursor-pointer text-gray-500 dark:text-white/50" strokeWidth={2} />
                 )}
               </button>
             </div>

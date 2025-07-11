@@ -17,10 +17,13 @@ import {
 } from "../features/chats/chat.reducer.ts";
 import {
   useDeleteChatMessageMutation,
+  useGetAvailableUsersQuery,
   useReactToChatMessageMutation,
+  useReplyToMessageMutation,
 } from "../features/chats/chat.slice.ts";
 import { User } from "../types/auth.ts";
 import { AudioManager } from "../utils/index.ts";
+import { toast } from "react-toastify";
 // import { toast } from "react-toastify";
 
 type FileType = {
@@ -42,6 +45,7 @@ export const useMessage = () => {
   });
   const [showMentionUserMenu, setShowMentionUserMenu] = useState<boolean>(false);
   const messageInputRef = useRef<HTMLInputElement | null>(null);
+  const [showReply, setShowReply] = useState<boolean>(false);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const documentInputRef = useRef<HTMLInputElement | null>(null);
   const messageItemRef = useRef<Record<string, HTMLDivElement | null>>({});
@@ -59,7 +63,11 @@ export const useMessage = () => {
   >({});
   const [reactToMessage] = useReactToChatMessageMutation();
   const [deleteChatMessage] = useDeleteChatMessageMutation();
+  const [replyToChatMessage] = useReplyToMessageMutation();
+  const { data: availableUsers } = useGetAvailableUsersQuery();
+  const users = availableUsers?.data as User[];
 
+  const [messageToReply, setMessageToReply] = useState("");
   const messageAudioManagerRef = useRef<AudioManager | null>(null);
   const reactionAudioManagerRef = useRef<AudioManager | null>(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
@@ -457,6 +465,89 @@ export const useMessage = () => {
     [deleteChatMessage, currentChat?._id, playMessageSound]
   );
 
+  const processMentionsContent = (message: string, users: User[]) => {
+    const mentionRegex = /@(\w+)/g;
+    const mentions: Array<{
+      userId: string;
+      username: string;
+      position: number;
+    }> = [];
+    let match: any;
+
+    while ((match = mentionRegex.exec(message)) !== null) {
+      const username = match[1];
+      const mentionedUser = users.find(
+        (user) => user.username.toLowerCase() === username.toLowerCase()
+      );
+
+      if (mentionedUser && !mentions.find((m) => m.userId === mentionedUser?._id)) {
+        mentions.push({
+          userId: mentionedUser._id,
+          username: mentionedUser.username,
+          position: match.index,
+        });
+      }
+    }
+
+    return {
+      content: message,
+      mentions,
+    };
+  };
+
+  const handleReplyToChatMessage = useCallback(async () => {
+    if (!currentChat?._id || !socket) return;
+
+    socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
+
+    const processedMessage = processMentionsContent(message, users);
+
+    const payload = {
+      chatId: currentChat?._id as string,
+      messageId: messageToReply,
+      data: {
+        content: processedMessage.content,
+        attachments: attachmentFiles.files,
+        mentions: processedMessage.mentions,
+      },
+    };
+
+    console.log(payload);
+
+    await replyToChatMessage(payload)
+      .unwrap()
+      .then((response) => {
+        // Update the Redux store
+        dispatch(
+          updateChatLastMessage({
+            chatToUpdateId: currentChat._id!,
+            message: response.data,
+          })
+        );
+        setMessage(""); // Move here
+        setAttachmentFiles({ files: null, type: "document-file" }); // Move here
+        setShowReply(false); // Close reply UI after sending
+        setMessageToReply(""); // Reset messageToReply
+
+        // Play sound when message is sent
+        playMessageSound();
+      })
+      .catch((error: any) => {
+        console.error(error);
+        toast("Failed to send message", { type: "error" });
+      });
+  }, [
+    currentChat?._id,
+    socket,
+    message,
+    users,
+    replyToChatMessage,
+    messageToReply,
+    attachmentFiles.files,
+    dispatch,
+    playMessageSound,
+  ]);
+
   const scrollToBottom = () => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -504,6 +595,16 @@ export const useMessage = () => {
     }
   };
 
+  const handleSetOpenReply = useCallback((messageId: string) => {
+    setMessageToReply(messageId);
+    setShowReply(true);
+  }, []);
+
+  const handleSetCloseReply = useCallback(() => {
+    setShowReply(false);
+    setMessageToReply("");
+  }, []);
+
   return {
     handleOnMessageChange,
     setMessage,
@@ -542,5 +643,11 @@ export const useMessage = () => {
     handleHideReactionPicker,
     handleHideAllReactionPickers,
     handleDeleteChatMessage,
+    handleReplyToChatMessage,
+    processMentionsContent,
+    handleSetOpenReply,
+    handleSetCloseReply,
+    showReply,
+    messageToReply,
   };
 };

@@ -6,6 +6,7 @@ import {
   UserIcon,
   ArrowLeftIcon,
   FaceSmileIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { AudioManager, classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
@@ -57,6 +58,7 @@ export const Chat = () => {
   const { theme } = useTheme();
   const { socket } = useSocketContext();
   const { onNewChat, _onChatLeave, chats } = useChat();
+
   const { isOnline } = useNetwork();
   const { data: availableUsers } = useGetAvailableUsersQuery();
   const users = availableUsers?.data as User[];
@@ -103,6 +105,12 @@ export const Chat = () => {
     handleDeleteChatMessage,
     handleShowMentionUserMenu,
     showMentionUserMenu,
+    processMentionsContent,
+    handleSetCloseReply,
+    handleSetOpenReply,
+    showReply,
+    messageToReply,
+    handleReplyToChatMessage,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
@@ -145,36 +153,6 @@ export const Chat = () => {
     }
   }, []);
 
-  const processMentionsContent = (message: string, users: User[]) => {
-    const mentionRegex = /@(\w+)/g;
-    const mentions: Array<{
-      userId: string;
-      username: string;
-      position: number;
-    }> = [];
-    let match: any;
-
-    while ((match = mentionRegex.exec(message)) !== null) {
-      const username = match[1];
-      const mentionedUser = users.find(
-        (user) => user.username.toLowerCase() === username.toLowerCase()
-      );
-
-      if (mentionedUser && !mentions.find((m) => m.userId === mentionedUser?._id)) {
-        mentions.push({
-          userId: mentionedUser._id,
-          username: mentionedUser.username,
-          position: match.index,
-        });
-      }
-    }
-
-    return {
-      content: message,
-      mentions,
-    };
-  };
-
   const sendChatMessage = async () => {
     if (!currentChat?._id || !socket) return;
 
@@ -214,6 +192,15 @@ export const Chat = () => {
         console.error(error);
         toast("Failed to send message", { type: "error" });
       });
+  };
+
+  const handleSendMessage = async () => {
+    if (showReply) {
+      await handleReplyToChatMessage();
+      handleSetCloseReply();
+    } else {
+      await sendChatMessage();
+    }
   };
 
   useEffect(() => {
@@ -268,10 +255,6 @@ export const Chat = () => {
     onChatMessageDeleted,
     onReactionUpdate,
   ]);
-
-  useEffect(() => {
-    console.log("Current attachmentFiles state:", attachmentFiles);
-  }, [attachmentFiles]);
 
   return (
     <Disclosure as={"div"}>
@@ -497,6 +480,7 @@ export const Chat = () => {
                                         handleHideReactionPicker={handleHideReactionPicker}
                                         reaction={reaction}
                                         handleDeleteChatMessage={handleDeleteChatMessage}
+                                        handleSetOpenReply={handleSetOpenReply}
                                         users={users}
                                       />
                                     );
@@ -524,7 +508,7 @@ export const Chat = () => {
                       <div
                         className={classNames(
                           "fixed bottom-0 gap-2 left-16 sm:left-20 lg:left-[30rem] right-0 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30",
-                          attachmentFiles.files && attachmentFiles?.files?.length
+                          (attachmentFiles.files && attachmentFiles?.files?.length) || showReply
                             ? "h-auto"
                             : "h-16"
                         )}
@@ -540,14 +524,42 @@ export const Chat = () => {
                           </div>
                         )}
 
-                        {
-                          <MentionUserMenuComponent
-                            show={showMentionUserMenu}
-                            handleSelectUser={handleSelectUser}
-                            selectedUser={selectedUser}
-                            users={users}
-                          />
-                        }
+                        <MentionUserMenuComponent
+                          show={showMentionUserMenu}
+                          handleSelectUser={handleSelectUser}
+                          selectedUser={selectedUser}
+                          users={users}
+                        />
+
+                        {showReply && (
+                          <div className="dark:bg-black border-b dark:border-white/10 animate-in p-3 w-full">
+                            <div className="dark:bg-white/5 relative before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full px-2 py-1.5 before:bg-red-500 overflow-hidden rounded-lg">
+                              <button
+                                type="button"
+                                onClick={handleSetCloseReply}
+                                className="rounded-full h-6 w-6 dark:bg-white/10 right-2 absolute top-2 flex items-center justify-center ring-1 dark:ring-black/10"
+                              >
+                                <XMarkIcon className="dark:text-white h-4" strokeWidth={2} />
+                              </button>
+                              {(() => {
+                                const message = reduxStateMessages.find(
+                                  (msg) => msg._id.toString() === messageToReply.toString()
+                                );
+
+                                return (
+                                  <>
+                                    <span className="text-xs font-bold font-nunito dark:text-white mb-2">
+                                      {message?.sender?.username}
+                                    </span>
+                                    <p className="text-lg font-normal font-nunito dark:text-white">
+                                      {message?.content}
+                                    </p>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
 
                         {attachmentFiles?.files && attachmentFiles?.files?.length > 0 ? (
                           <div className="grid gap-4 bg-white dark:bg-black grid-cols-5 p-4 justify-start">
@@ -563,6 +575,7 @@ export const Chat = () => {
                             })}
                           </div>
                         ) : null}
+
                         <div className="flex items-center justify-between mx-auto max-w-8xl h-full relative z-20 px-2 sm:py-4">
                           <button
                             onClick={handleOpenAndCloseEmoji}
@@ -607,7 +620,9 @@ export const Chat = () => {
                             }}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                sendChatMessage();
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSendMessage;
                               }
                             }}
                             className="relative block px-4 py-3.5 focus:outline-nonerounded-md border-0 outline-none w-full dark:bg-transparent dark:text-white"
@@ -618,9 +633,7 @@ export const Chat = () => {
                               title="send message"
                               disabled={!message && (attachmentFiles?.files || [])?.length <= 0}
                               className="shadow-none"
-                              onClick={() => {
-                                sendChatMessage();
-                              }}
+                              onClick={handleSendMessage}
                             >
                               <PaperAirplaneIcon
                                 aria-hidden={true}

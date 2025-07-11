@@ -29,7 +29,7 @@ export const MentionUserMenuComponent: React.FC<MentionUserMenuComponentProp> = 
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <div className="min-w-[250px] w-full origin-top-right rounded-md bg-white dark:bg-gray-900 dark:ring-white/15 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <div className="min-w-[200px] origin-top-right rounded-md bg-white dark:bg-gray-900 dark:ring-white/15 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
             {(users || []).map((user) => {
               const selected = user._id === selectedUser._id;
 

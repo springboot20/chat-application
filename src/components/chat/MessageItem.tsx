@@ -53,6 +53,7 @@ interface MessageItemProps {
   theme: string;
   users: User[];
   reactionLocation: Record<string, { left: number; top: number }>;
+  handleSetOpenReply: (messageId: string) => void;
 }
 
 export const MessageItem: React.FC<MessageItemProps> = React.memo(
@@ -69,7 +70,10 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     theme,
     handleDeleteChatMessage,
     users,
+    handleSetOpenReply,
   }) => {
+    console.log(message);
+
     const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const messageFiles = message.attachments || [];
@@ -244,6 +248,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       });
     };
 
+    console.log(["text-green-500", "text-[#615EF0]"][message?.sender?.username?.length % 2]);
+
     return (
       <>
         {/* Image Modal */}
@@ -332,6 +338,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
               handleDeleteChatMessage={() => handleDeleteChatMessage(message._id)}
               closeMenu={() => setShowMenu(false)}
               isMessageDeleted={message.isDeleted}
+              handleSetOpenReply={() => handleSetOpenReply(message._id)}
             />
           )}
 
@@ -374,15 +381,15 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           {!message.isDeleted && message.reactions && message.reactions.length > 0 && (
             <div
               className={classNames(
-                "absolute z-10 -bottom-4 rounded-full px-3 justify-center flex items-center gap-1",
+                "absolute z-10 -bottom-4 rounded-full px-3 py-1 justify-center flex items-center gap-1",
                 isOwnedMessage
                   ? "bg-[#615EF0] right-3 dark:bg-[#615EF0] dark:text-white border-2 dark:border-black"
                   : "bg-green-500 dark:bg-green-200 dark:text-green-700 border-2 dark:border-black left-3"
               )}
             >
-              {message.reactions.map((reaction, index) => {
+              {message.reactions.slice(0, 3).map((reaction, index) => {
                 return (
-                  <span key={`${reaction.userId}-${reaction.emoji}-${index}`} className="text-lg">
+                  <span key={`${reaction.userId}-${reaction.emoji}-${index}`} className="text-xs">
                     {reaction.emoji}
                   </span>
                 );
@@ -426,7 +433,9 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           >
             {isOwnedMessage && (
               <button title="open user profile" className="self-start">
-                <span className="text-white text-sm">{message.sender?.username}</span>
+                <span className="text-gray-800 font-nunito font-bold text-sm">
+                  ~{message.sender?.username}
+                </span>
               </button>
             )}
 
@@ -435,14 +444,48 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
                 <button title="open user profile" className="self-start">
                   <span
                     className={classNames(
-                      "text-sm text-white font-semibold mb-0.5",
-                      ["text-green-500", "text-[#615EF0]"][message?.sender?.username?.length % 2]
+                      "text-sm font-semibold mb-0.5",
+                      ["text-gray-800", "text-[#615EF0]"][message?.sender?.username?.length % 2]
                     )}
                   >
-                    {message.sender?.username}
+                    ~{message.sender?.username}
                   </span>
                 </button>
               ) : null}
+
+              {/* Reply Preview */}
+              {message.replyId && (
+                <div
+                  className={classNames(
+                    "p-2 rounded-lg bg-gray-100 dark:bg-gray-700",
+                    isOwnedMessage ? "border-[#615EF0]" : "border-green-500"
+                  )}
+                  onClick={() => {
+                    if (message.repliedMessage) {
+                      const element = messageItemRef.current[message.replyId!] as HTMLElement;
+
+                      if (element) {
+                        element.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }
+                    }
+                  }}
+                >
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                    Replying to {message.repliedMessage?.sender?.username}
+                  </p>
+                  {message.repliedMessage ? (
+                    message.repliedMessage.isDeleted ? (
+                      <p className="text-xs italic text-gray-500 dark:text-gray-400">
+                        Message deleted
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-800 dark:text-gray-200 truncate">
+                        {message.repliedMessage.content || "Attachment"}
+                      </p>
+                    )
+                  ) : null}
+                </div>
+              )}
 
               {message?.attachments?.length > 0 ? (
                 <div
@@ -471,13 +514,13 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
               {message.isDeleted ? (
                 <div className="flex items-center gap-2">
                   <NoSymbolIcon className="text-gray-800 dark:text-red-500 h-6" strokeWidth={2} />
-                  <p className="text-base italic font-medium text-gray-800 break-words">
+                  <p className="text-xsm sm:text-sm italic font-normal text-gray-800 break-words">
                     message deleted
                   </p>
                 </div>
               ) : (
                 message.content && (
-                  <p className="text-base font-semibold text-white break-words">
+                  <p className="text-base font-normal text-white break-words">
                     {renderMessageWithtMention()}
                   </p>
                 )
@@ -485,7 +528,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
 
               <p
                 className={classNames(
-                  "mt-1.5 self-end text-[10px] inline-flex items-center dark:text-white",
+                  "mt-1.5 self-end text-xs inline-flex items-center dark:text-white",
                   isOwnedMessage ? "text-zinc-50" : "text-gray-800"
                 )}
               >
