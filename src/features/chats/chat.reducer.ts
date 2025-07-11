@@ -67,7 +67,7 @@ const ChatSlice = createSlice({
       } else {
         // Increment unread count for the chat if the message is not for the current chat
         const chatId = data.chat;
-        state.unreadMessages[chatId] = (state.unreadMessages[chatId] || 0) + 1;
+        state.unreadMessages[chatId] = state.unreadMessages[chatId];
       }
     },
 
