@@ -48,7 +48,7 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
               left: menuPosition.x,
             }}
             ref={menuRef!}
-            className="fixed z-[100] h-fit origin-top-right min-w-[15rem] rounded-md bg-gray-50 dark:bg-gray-900 dark:ring-white/15 py-1.5 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+            className="fixed z-[100] h-fit origin-top-right max-w-[20rem] w-full rounded-md bg-gray-50 dark:bg-gray-900 dark:ring-white/15 py-1.5 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
           >
             {!isMessageDeleted && (
               <button

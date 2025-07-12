@@ -502,7 +502,7 @@ export const Chat = () => {
                           </div>
                         ) : (
                           <>
-                            <div className="flex flex-col gap-6 h-full">
+                            <div className="flex flex-col gap-6 h-full chat-container">
                               {reduxStateMessages && reduxStateMessages?.length > 0 ? (
                                 React.Children.toArray(
                                   reduxStateMessages?.map((msg) => {
@@ -510,6 +510,7 @@ export const Chat = () => {
                                       <MessageItem
                                         message={msg}
                                         theme={theme}
+                                        messageToReply={messageToReply}
                                         users={users}
                                         reaction={reaction}
                                         messageItemRef={messageItemRef}

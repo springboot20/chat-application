@@ -36,6 +36,7 @@ const arePropsEqual = (prevProps: MessageItemProps, nextProps: MessageItemProps)
     prevProps.isOwnedMessage === nextProps.isOwnedMessage &&
     prevProps.isGroupChatMessage === nextProps.isGroupChatMessage &&
     prevProps.theme === nextProps.theme &&
+    prevProps.messageToReply === nextProps.messageToReply &&
     prevProps.highlightedMessageId === nextProps.highlightedMessageId
   );
 };
@@ -52,6 +53,7 @@ interface MessageItemProps {
   handleDeleteChatMessage: (key: string) => void;
   reaction: Record<string, any>;
   theme: string;
+  messageToReply: string;
   users: User[];
   reactionLocation: Record<string, { left: number; top: number }>;
   handleSetOpenReply: (messageId: string) => void;
@@ -75,7 +77,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     users,
     handleSetOpenReply,
     onSetHighlightedMessage,
-    highlightedMessageId
+    highlightedMessageId,
+    messageToReply,
   }) => {
     console.log(message);
 
@@ -89,6 +92,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [isGlowing, setIsGlowing] = useState(false);
+    const [isAnimating, setIsAnimating] = useState(false);
 
     const handleContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       event.preventDefault();
@@ -100,22 +104,32 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       const screenHeight = window.innerHeight;
       const screenWidth = window.innerWidth;
 
-      const menuWidth = 192;
-      const menuHeight = 160;
+      let menuWidth = 250;
+      let menuHeight = 160;
+
+      if (menuRef.current) {
+        const menuRect = menuRef.current.getBoundingClientRect();
+        menuWidth = menuRect.width;
+        menuHeight = menuRect.height;
+      }
 
       let XPosition = clickX;
       let YPosition = clickY;
 
+      console.log(XPosition + menuWidth)
+
       if (XPosition + menuWidth > screenWidth) {
-        XPosition = screenWidth - menuWidth - 20;
+        XPosition = screenWidth - menuWidth - 100;
       }
+
+      console.log(screenWidth - menuWidth)
 
       if (YPosition + menuHeight > screenHeight) {
-        YPosition = screenHeight - menuHeight - 20;
+        YPosition = screenHeight - menuHeight - 100;
       }
 
-      if (XPosition < 20) XPosition = 20;
-      if (YPosition < 20) YPosition = 20;
+      if (XPosition < 20) XPosition = 100;
+      if (YPosition < 20) YPosition = 100;
 
       setShowMenu(true);
       setMenuPosition({ x: XPosition, y: YPosition });
@@ -209,6 +223,19 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
         return () => clearTimeout(timer);
       }
     }, [highlightedMessageId, message._id, onSetHighlightedMessage]);
+
+    // Handle glow effect when replyinh to a message
+    useEffect(() => {
+      if (messageToReply === message._id) {
+        setIsAnimating(true);
+        // Remove glow after animation completes
+        const timer = setTimeout(() => {
+          setIsAnimating(false);
+        }, 2000); // Adjust timing as needed
+
+        return () => clearTimeout(timer);
+      }
+    }, [highlightedMessageId, message._id, messageToReply]);
 
     const renderMessageWithtMention = () => {
       const mentionRegex = /@(\w+)/g;
@@ -350,7 +377,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           className={classNames(
             "flex items-start p-1.5 text-white text-base relative h-auto w-full gap-6",
             isOwnedMessage ? "justify-end" : "justify-start",
-            getGlowClass()
+            getGlowClass(),
+            isAnimating && (isOwnedMessage ? "slide-right" : "slide-left")
           )}
           onContextMenu={(event) => {
             handleContextMenu(event);
