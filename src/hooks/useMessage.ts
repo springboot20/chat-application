@@ -71,6 +71,7 @@ export const useMessage = () => {
   const messageAudioManagerRef = useRef<AudioManager | null>(null);
   const reactionAudioManagerRef = useRef<AudioManager | null>(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   // Initialize audio manager
   useEffect(() => {
@@ -288,6 +289,29 @@ export const useMessage = () => {
     };
   }, [handleClickOutside, handleKeyDown, handleResize]);
 
+  const checkScrollPosition = () => {
+    if (bottomRef.current) {
+      const container = bottomRef.current
+      const threshold = 100; // pixels from bottom
+      const isNearBottom =
+        container?.scrollHeight - container?.scrollTop - container?.clientHeight < threshold;
+      setShowScrollButton(!isNearBottom);
+
+      console.log(isNearBottom)
+    }
+  };
+
+  console.log(showScrollButton)
+
+  // Add scroll listener
+  useEffect(() => {
+    const container = bottomRef.current;
+    if (container) {
+      container.addEventListener("scroll", checkScrollPosition);
+      return () => container.removeEventListener("scroll", checkScrollPosition);
+    }
+  }, []);
+
   const handleFileChange = useCallback(
     (fileType: "document-file" | "image-file", event: React.ChangeEvent<HTMLInputElement>) => {
       const target = event.target;
@@ -433,6 +457,8 @@ export const useMessage = () => {
     const isCurrentChat = data.chat === currentChat?._id;
     const isFromCurrentUser = data.sender._id === currentUser?._id;
 
+    // scrollToBottom();
+
     // Play sound for messages from other users in the current chat
     // Only play if:
     // 1. Message is in the currently active chat
@@ -466,16 +492,14 @@ export const useMessage = () => {
   );
 
   const processMentionsContent = (message: string, users: User[]) => {
-    const mentionRegex = /@(\w+)/g;
+    const mentionRegex = /@([\w\s]+?)(?=\s|$)/g;
     const mentions: Array<{
-      userId: string;
-      username: string;
-      position: number;
+      [key: string]: any;
     }> = [];
     let match: any;
 
     while ((match = mentionRegex.exec(message)) !== null) {
-      const username = match[1];
+      const username = match[1] || match[2];
       const mentionedUser = users.find(
         (user) => user.username.toLowerCase() === username.toLowerCase()
       );
@@ -485,13 +509,29 @@ export const useMessage = () => {
           userId: mentionedUser._id,
           username: mentionedUser.username,
           position: match.index,
+          length: match[0].length,
+          originalMatch: match[0],
+          exists: true,
+        });
+      } else {
+        // Track non-existent mentions too
+        mentions.push({
+          id: null,
+          username: username,
+          displayName: username,
+          position: match.index,
+          length: match[0].length,
+          originalMatch: match[0],
+          exists: false,
         });
       }
     }
 
     return {
       content: message,
-      mentions,
+      mentions: mentions,
+      validMentions: mentions.filter((m) => m.exists),
+      invalidMentions: mentions.filter((m) => !m.exists),
     };
   };
 
@@ -524,6 +564,8 @@ export const useMessage = () => {
             message: response.data,
           })
         );
+        scrollToBottom();
+
         setMessage(""); // Move here
         setAttachmentFiles({ files: null, type: "document-file" }); // Move here
         setShowReply(false); // Close reply UI after sending
@@ -550,12 +592,7 @@ export const useMessage = () => {
 
   const scrollToBottom = () => {
     if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-      Object.keys(showReactionPicker).forEach((key) => {
-        if (showReactionPicker[key]) {
-          handleReactionPicker(key);
-        }
-      });
+      bottomRef.current.scrollTop = bottomRef.current.scrollHeight;
     }
   };
 
@@ -649,5 +686,6 @@ export const useMessage = () => {
     handleSetCloseReply,
     showReply,
     messageToReply,
+    showScrollButton,
   };
 };

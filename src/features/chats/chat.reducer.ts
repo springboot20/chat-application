@@ -64,10 +64,6 @@ const ChatSlice = createSlice({
       } else if (data.chat === state.currentChat?._id) {
         // Add new message to chatMessages if it belongs to the current chat
         state.chatMessages.push(data);
-      } else {
-        // Increment unread count for the chat if the message is not for the current chat
-        const chatId = data.chat;
-        state.unreadMessages[chatId] = state.unreadMessages[chatId];
       }
     },
 

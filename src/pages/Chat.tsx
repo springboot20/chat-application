@@ -111,6 +111,8 @@ export const Chat = () => {
     showReply,
     messageToReply,
     handleReplyToChatMessage,
+    scrollToBottom,
+    showScrollButton,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
@@ -192,6 +194,7 @@ export const Chat = () => {
 
         // Play sound when message is sent
         playMessageSound();
+        scrollToBottom();
       })
       .catch((error: any) => {
         console.error(error);
@@ -260,6 +263,14 @@ export const Chat = () => {
     onChatMessageDeleted,
     onReactionUpdate,
   ]);
+
+  // useEffect(() => {
+  //   if (reduxStateMessages.length) {
+  //     scrollToBottom();
+  //   }
+  // }, [reduxStateMessages, scrollToBottom]);
+
+  console.log(showScrollButton);
 
   return (
     <Disclosure as={"div"}>
@@ -460,14 +471,38 @@ export const Chat = () => {
                     </header>
 
                     <div className="relative left-16 w-[calc(100%-4rem)] sm:left-20 sm:w-[calc(100%-5rem)] lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto mt-20 pb-16 transition-all duration-200">
-                      <div className="flex flex-col flex-grow px-5 overflow-y-auto gap-10">
+                      <div
+                        ref={bottomRef}
+                        className="flex flex-col flex-grow px-5 overflow-y-auto gap-10 relative"
+                      >
+                        {showScrollButton && (
+                          <button
+                            onClick={scrollToBottom}
+                            className="fixed bottom-20 right-5 dark:bg-white/5 text-white p-3 rounded-full shadow-lg transition-all duration-200 z-10"
+                            aria-label="Scroll to bottom"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                              />
+                            </svg>
+                          </button>
+                        )}
                         {loadingMessages ? (
                           <div className="flex justify-center items-center min-h-[calc(100%-5rem)]">
                             <Typing />
                           </div>
                         ) : (
                           <>
-                            <div ref={bottomRef} className="flex flex-col gap-6 h-full">
+                            <div className="flex flex-col gap-6 h-full">
                               {reduxStateMessages && reduxStateMessages?.length > 0 ? (
                                 React.Children.toArray(
                                   reduxStateMessages?.map((msg) => {
