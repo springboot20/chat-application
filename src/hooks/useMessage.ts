@@ -181,8 +181,6 @@ export const useMessage = () => {
 
     const regexPattern = /(^|\s)@$/;
 
-    console.log(target.value.match(regexPattern));
-
     if (target.value.match(regexPattern)) {
       setShowMentionUserMenu(true);
     } else {
@@ -291,17 +289,13 @@ export const useMessage = () => {
 
   const checkScrollPosition = () => {
     if (bottomRef.current) {
-      const container = bottomRef.current
+      const container = bottomRef.current;
       const threshold = 100; // pixels from bottom
       const isNearBottom =
         container?.scrollHeight - container?.scrollTop - container?.clientHeight < threshold;
       setShowScrollButton(!isNearBottom);
-
-      console.log(isNearBottom)
     }
   };
-
-  console.log(showScrollButton)
 
   // Add scroll listener
   useEffect(() => {
@@ -328,7 +322,6 @@ export const useMessage = () => {
             type: fileType,
             files: updatedFiles,
           };
-          console.log("Updated attachmentFiles:", newState);
           return newState;
         });
       }
@@ -346,8 +339,6 @@ export const useMessage = () => {
     (emojiData: EmojiClickData) => {
       const input = messageInputRef.current;
 
-      console.log("Inserting emoji:", emojiData.emoji);
-
       if (!input) {
         // Fallback: add to end if no input ref
         setMessage((prev) => prev + emojiData.emoji);
@@ -356,10 +347,6 @@ export const useMessage = () => {
 
       const start = input.selectionStart || 0;
       const end = input.selectionEnd || 0;
-
-      console.log("Cursor position - start:", start, "end:", end);
-      console.log("Current message:", message);
-
       const newMessage = message.slice(0, start) + emojiData.emoji + message.slice(end);
       setMessage(newMessage);
 
@@ -381,8 +368,6 @@ export const useMessage = () => {
 
       insertEmoji(emojiData);
       setOpenEmoji(false);
-
-      console.log(emojiData);
     },
     [insertEmoji]
   );
@@ -408,8 +393,6 @@ export const useMessage = () => {
 
       socket?.emit(TYPING_EVENT, currentChat?._id);
     }
-
-    console.log(isTyping);
 
     if (typingTimeOutRef.current) {
       clearTimeout(typingTimeOutRef.current);
@@ -470,6 +453,7 @@ export const useMessage = () => {
   };
 
   const onChatMessageDeleted = (data: any) => {
+    console.log(data);
     dispatch(onChatMessageDelete({ messageId: data._id, message: data }));
   };
 
@@ -481,18 +465,23 @@ export const useMessage = () => {
       })
         .unwrap()
         .then((response) => {
-          console.log(response);
+          dispatch(
+            updateChatLastMessage({
+              chatToUpdateId: currentChat?._id as string,
+              message: response.data,
+            })
+          );
           playMessageSound();
         })
         .catch((error: any) => {
           console.error(error);
         });
     },
-    [deleteChatMessage, currentChat?._id, playMessageSound]
+    [deleteChatMessage, currentChat?._id, dispatch, playMessageSound]
   );
 
   const processMentionsContent = (message: string, users: User[]) => {
-    const mentionRegex = /@([\w\s]+?)(?=\s|$)/g;
+    const mentionRegex = /@([@\w\s]+?)(?=\s|$)/g;
     const mentions: Array<{
       [key: string]: any;
     }> = [];
@@ -552,12 +541,11 @@ export const useMessage = () => {
       },
     };
 
-    console.log(payload);
-
     await replyToChatMessage(payload)
       .unwrap()
       .then((response) => {
         // Update the Redux store
+        console.log(response);
         dispatch(
           updateChatLastMessage({
             chatToUpdateId: currentChat._id!,

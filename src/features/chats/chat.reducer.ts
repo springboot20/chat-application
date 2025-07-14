@@ -144,14 +144,10 @@ const ChatSlice = createSlice({
 
       const messageIndex = state.chatMessages.findIndex((message) => message._id === messageId);
 
-      if (messageIndex !== -1) {
-        const updatedMessage = {
-          ...state.chatMessages[messageIndex],
-          isDeleted: message.isDeleted || true,
-          updatedAt: message?.updatedAt || new Date().toISOString(),
-        };
+      console.log(message)
 
-        state.chatMessages[messageIndex] = updatedMessage;
+      if (messageIndex !== -1) {
+        state.chatMessages[messageIndex] = message;
       }
       LocalStorage.set("chatmessages", state.chatMessages);
     },

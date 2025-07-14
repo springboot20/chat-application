@@ -5,6 +5,7 @@ import {
   CheckCircleIcon,
   EllipsisVerticalIcon,
   InformationCircleIcon,
+  NoSymbolIcon,
   PaperClipIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
@@ -23,7 +24,8 @@ export const ChatItem: React.FC<{
   isActive?: boolean;
   unreadCount?: number;
   onChatDelete: (chatId: string) => void;
-}> = ({ chat, onClick, unreadCount = 0, onChatDelete, isActive }) => {
+  close: () => any;
+}> = ({ chat, onClick, unreadCount = 0, onChatDelete, isActive, close }) => {
   const { user } = useAppSelector((state: RootState) => state.auth);
   const [openGroupInfo, setOpenGroupInfo] = useState(false);
   const [openOptions, setOpenOptions] = useState<{ [key: string]: boolean }>({});
@@ -69,7 +71,10 @@ export const ChatItem: React.FC<{
           isActive ? "bg-gray-300/40 border-[1.5px] border-zinc-300" : "",
           unreadCount > 0 ? "border-2 border-green-500 bg-green-100" : ""
         )}
-        onClick={() => onClick(chat)}
+        onClick={() => {
+          onClick(chat);
+          close();
+        }}
         onMouseLeave={(e) => toggleOptions(chat?._id, e)}
       >
         <div className="flex items-center gap-3">
@@ -83,7 +88,7 @@ export const ChatItem: React.FC<{
                   className="flex dark:text-white text-gray-900"
                 >
                   <span className="sr-only">Open auth menu</span>
-                  <EllipsisVerticalIcon className="h-6 group-hover:w-6 group-hover:opacity-100 w-0 opacity-0 transition-all ease-in-out duration-100 text-gray-600 dark:text-white" />
+                  <EllipsisVerticalIcon className="group-hover:h-4 h-0 group-hover:opacity-100 opacity-0 transition-all ease-in-out duration-100 text-gray-600 dark:text-white" />
                 </Menu.Button>
               </div>
               <Transition
@@ -215,14 +220,32 @@ export const ChatItem: React.FC<{
           </div>
 
           <div className="flex flex-col items-start">
-            <p className="dark:text-white"> {getMessageObjectMetaData(chat, user!)?.title}</p>
+            <p className="dark:text-white">{getMessageObjectMetaData(chat, user!)?.title}</p>
             <div className="flex items-center gap-1 text-gray-500">
-              {chat?.lastMessage &&
-              chat?.lastMessage.attachments &&
-              chat?.lastMessage.attachments?.length > 0 ? (
-                <PaperClipIcon className="h-4 w-4" />
-              ) : null}
-              <small className="dark:text-white">{getMessageObjectMetaData(chat, user!).lastMessage}</small>
+              {!chat?.lastMessage.isDeleted &&
+                chat?.lastMessage.attachments &&
+                chat?.lastMessage.attachments?.length > 0 && <PaperClipIcon className="h-4 w-4" />}
+
+              {chat?.lastMessage.isDeleted ? (
+                <div className="flex items-center space-x-1">
+                  <small className="dark:text-white">
+                    {user?._id === chat.lastMessage?.sender._id
+                      ? "You"
+                      : chat.lastMessage?.sender?.username}
+                    :
+                  </small>
+                  <div className="flex items-center">
+                    <NoSymbolIcon className="text-gray-500 h-3 mr-0.5" strokeWidth={2} />
+                    <p className="text-xsm sm:text-sm italic font-normal text-gray-800 dark:text-gray-200 break-words">
+                       deleted this message
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <small className="dark:text-white">
+                  {getMessageObjectMetaData(chat, user!).lastMessage}
+                </small>
+              )}
             </div>
           </div>
         </div>

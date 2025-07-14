@@ -119,6 +119,7 @@ export const Chat = () => {
 
   const audioManagerRef = useRef<AudioManager | null>(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
+  const [isOwnedMessage, setIsOwnedMessage] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | undefined>(undefined);
 
   const handleSetHighlightedMessage = (messageId: string | undefined) => {
@@ -263,14 +264,6 @@ export const Chat = () => {
     onChatMessageDeleted,
     onReactionUpdate,
   ]);
-
-  // useEffect(() => {
-  //   if (reduxStateMessages.length) {
-  //     scrollToBottom();
-  //   }
-  // }, [reduxStateMessages, scrollToBottom]);
-
-  console.log(showScrollButton);
 
   return (
     <Disclosure as={"div"}>
@@ -478,7 +471,7 @@ export const Chat = () => {
                         {showScrollButton && (
                           <button
                             onClick={scrollToBottom}
-                            className="fixed bottom-20 right-5 dark:bg-white/5 text-white p-3 rounded-full shadow-lg transition-all duration-200 z-10"
+                            className="fixed bottom-20 right-5 bg-gray-800 dark:bg-white/5 text-white p-3 rounded-full shadow-lg transition-all duration-200 z-10"
                             aria-label="Scroll to bottom"
                           >
                             <svg
@@ -506,6 +499,7 @@ export const Chat = () => {
                               {reduxStateMessages && reduxStateMessages?.length > 0 ? (
                                 React.Children.toArray(
                                   reduxStateMessages?.map((msg) => {
+                                    setIsOwnedMessage(msg.sender && msg.sender?._id === user?._id);
                                     return (
                                       <MessageItem
                                         message={msg}
@@ -574,35 +568,43 @@ export const Chat = () => {
                           users={users}
                         />
 
-                        {showReply && (
-                          <div className="dark:bg-black border-b dark:border-white/10 animate-in p-3 w-full">
-                            <div className="dark:bg-white/5 relative before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full px-2 py-1.5 before:bg-red-500 overflow-hidden rounded-lg">
-                              <button
-                                type="button"
-                                onClick={handleSetCloseReply}
-                                className="rounded-full h-6 w-6 dark:bg-white/10 right-2 absolute top-2 flex items-center justify-center ring-1 dark:ring-black/10"
-                              >
-                                <XMarkIcon className="dark:text-white h-4" strokeWidth={2} />
-                              </button>
-                              {(() => {
-                                const message = reduxStateMessages.find(
-                                  (msg) => msg._id.toString() === messageToReply.toString()
-                                );
+                        {showReply &&
+                          (() => {
+                            return (
+                              <div className="dark:bg-black border-b dark:border-white/10 animate-in p-3 w-full">
+                                <div
+                                  className={classNames(
+                                    "dark:bg-white/5 relative before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full px-2 py-1.5 overflow-hidden rounded-lg",
+                                    isOwnedMessage ? "before:bg-[#615EF0]" : "before:bg-green-500"
+                                  )}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={handleSetCloseReply}
+                                    className="rounded-full h-6 w-6 dark:bg-white/10 right-2 absolute top-2 flex items-center justify-center ring-1 dark:ring-black/10"
+                                  >
+                                    <XMarkIcon className="dark:text-white h-4" strokeWidth={2} />
+                                  </button>
+                                  {(() => {
+                                    const message = reduxStateMessages.find(
+                                      (msg) => msg._id.toString() === messageToReply.toString()
+                                    );
 
-                                return (
-                                  <>
-                                    <span className="text-xs font-bold font-nunito dark:text-white mb-2">
-                                      {message?.sender?.username}
-                                    </span>
-                                    <p className="text-lg font-normal font-nunito dark:text-white">
-                                      {message?.content}
-                                    </p>
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                        )}
+                                    return (
+                                      <>
+                                        <span className="text-xs font-bold font-nunito dark:text-white mb-2">
+                                          {message?.sender?.username}
+                                        </span>
+                                        <p className="text-lg font-normal font-nunito dark:text-white">
+                                          {message?.content}
+                                        </p>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                              </div>
+                            );
+                          })()}
 
                         {attachmentFiles?.files && attachmentFiles?.files?.length > 0 ? (
                           <div className="grid gap-4 bg-white dark:bg-black grid-cols-5 p-4 justify-start">
@@ -668,22 +670,29 @@ export const Chat = () => {
                                 handleSendMessage;
                               }
                             }}
-                            className="relative block px-4 py-3.5 focus:outline-nonerounded-md border-0 outline-none w-full dark:bg-transparent dark:text-white"
+                            className={classNames(
+                              "relative block px-4 py-3.5 focus:outline-none rounded-md border-0 flex-1 shrink-0 outline-none w-fit dark:bg-transparent dark:text-white"
+                              // message.length > 500 && "whitespace-pre-wrap"
+                            )}
                             placeholder="Type a message..."
                           />
-                          {message && (
-                            <button
-                              title="send message"
-                              disabled={!message && (attachmentFiles?.files || [])?.length <= 0}
-                              className="shadow-none"
-                              onClick={handleSendMessage}
-                            >
-                              <PaperAirplaneIcon
-                                aria-hidden={true}
-                                className="h-7 text-gray-500 dark:text-white"
-                              />
-                            </button>
-                          )}
+
+                          {message ||
+                            (attachmentFiles.files && (
+                              <button
+                                title="send message"
+                                disabled={!message && (attachmentFiles?.files || [])?.length <= 0}
+                                className="shadow-none"
+                                onClick={() => {
+                                  handleSendMessage();
+                                }}
+                              >
+                                <PaperAirplaneIcon
+                                  aria-hidden={true}
+                                  className="h-7 text-gray-500 dark:text-white"
+                                />
+                              </button>
+                            ))}
                         </div>
                       </div>
                     </div>

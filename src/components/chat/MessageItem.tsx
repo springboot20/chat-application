@@ -14,6 +14,8 @@ import EmojiPicker, { Theme, type EmojiClickData } from "emoji-picker-react";
 import { MessageMenuSelection } from "../menu/MessageMenu";
 import { User } from "../../types/auth";
 import { isEqual } from "lodash"; // For deep comparison
+import { useAppSelector } from "../../redux/redux.hooks";
+import { RootState } from "../../app/store";
 
 const arePropsEqual = (prevProps: MessageItemProps, nextProps: MessageItemProps) => {
   // Compare message content, reactions, and attachments
@@ -80,9 +82,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     highlightedMessageId,
     messageToReply,
   }) => {
-    console.log(message);
-
     const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
+    const { user } = useAppSelector((state: RootState) => state.auth);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const messageFiles = message.attachments || [];
     const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({
@@ -116,13 +117,9 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       let XPosition = clickX;
       let YPosition = clickY;
 
-      console.log(XPosition + menuWidth)
-
       if (XPosition + menuWidth > screenWidth) {
         XPosition = screenWidth - menuWidth - 100;
       }
-
-      console.log(screenWidth - menuWidth)
 
       if (YPosition + menuHeight > screenHeight) {
         YPosition = screenHeight - menuHeight - 100;
@@ -238,7 +235,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     }, [highlightedMessageId, message._id, messageToReply]);
 
     const renderMessageWithtMention = () => {
-      const mentionRegex = /@(\w+)/g;
+      const mentionRegex = /@([@\w\s]+?)(?=\s|$)/g;
       const parts = [];
       let lastIndex = 0;
       let match;
@@ -299,9 +296,6 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       if (!isGlowing) return "";
       return isOwnedMessage ? "animate-glow-purple" : "animate-glow-green";
     };
-
-    console.log(getGlowClass());
-    console.log(highlightedMessageId);
 
     return (
       <>
@@ -485,12 +479,16 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
             }}
             data-id={message._id}
           >
-            {isOwnedMessage && (
+            {!isOwnedMessage && !isGroupChatMessage ? (
               <button title="open user profile" className="self-start">
                 <span className="text-gray-800 font-nunito font-bold text-sm">
                   ~{message.sender?.username}
                 </span>
               </button>
+            ) : (
+              isOwnedMessage && (
+                <span className="text-gray-800 font-nunito font-bold text-sm">You</span>
+              )
             )}
 
             <div className="relative">
@@ -511,7 +509,10 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
               {message.replyId && (
                 <div
                   className={classNames(
-                    "mb-2 p-2 rounded-lg bg-gray-100/50 dark:bg-gray-700/50 border-l-4 cursor-pointer"
+                    "mb-2 p-2 rounded-lg overflow-hidden bg-gray-700/80 before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full cursor-pointer relative",
+                    isOwnedMessage
+                      ? "bg-indigo-300/50 before:bg-indigo-100"
+                      : "bg-green-100/50 before:bg-green-100"
                   )}
                   onClick={() => {
                     if (message.repliedMessage && message.replyId) {
@@ -525,16 +526,24 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
                     }
                   }}
                 >
-                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                  <p
+                    className={classNames(
+                      "text-xs font-semibold ",
+                      !isOwnedMessage ? "dark:text-gray-700" : "dark:text-gray-300"
+                    )}
+                  >
                     Replying to {message.repliedMessage?.sender?.username}
                   </p>
                   {message.repliedMessage ? (
                     message.repliedMessage.isDeleted ? (
-                      <p className="text-xs italic text-gray-500 dark:text-gray-400">
-                        Message deleted
-                      </p>
+                      <p className="text-xs italic dark:text-gray-400">Message deleted</p>
                     ) : (
-                      <p className="text-xs text-gray-800 dark:text-gray-200 truncate">
+                      <p
+                        className={classNames(
+                          "text-xs truncate",
+                          !isOwnedMessage ? "dark:text-gray-100" : "dark:text-gray-200"
+                        )}
+                      >
                         {message.repliedMessage.content || "Attachment"}
                       </p>
                     )
@@ -567,10 +576,10 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
               ) : null}
 
               {message.isDeleted ? (
-                <div className="flex items-center gap-2">
-                  <NoSymbolIcon className="text-gray-800 dark:text-red-500 h-6" strokeWidth={2} />
+                <div className="flex items-center">
+                  <NoSymbolIcon className="text-red-500 h-6 mr-2" strokeWidth={2} />
                   <p className="text-xsm sm:text-sm italic font-normal text-gray-800 break-words">
-                    message deleted
+                  {user?._id === message.sender?._id ? "you" : message.sender?.username} deleted this message
                   </p>
                 </div>
               ) : (

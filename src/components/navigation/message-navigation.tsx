@@ -148,6 +148,7 @@ export const MessageNavigation: React.FC<{
                       isActive={chat?._id === currentChat?._id}
                       onClick={handleChatSelect}
                       onChatDelete={handleChatDelete}
+                      close={close}
                       unreadCount={getUnreadCount(chat._id)}
                     />
                   ))
@@ -230,6 +231,7 @@ export const MessageNavigation: React.FC<{
                       onClick={handleChatSelect}
                       onChatDelete={handleChatDelete}
                       unreadCount={getUnreadCount(chat._id)}
+                      close={close}
                     />
                   ))
                 )}

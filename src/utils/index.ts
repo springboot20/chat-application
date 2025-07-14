@@ -121,19 +121,35 @@ export class LocalStorage {
 }
 
 export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User) => {
-  const lastMessage = chat.lastMessage?.content
-    ? chat.lastMessage?.content
-    : chat.lastMessage
-    ? `${chat.lastMessage?.attachments?.length} attachment ${
-        chat.lastMessage.attachments?.length > 1 ? "s" : ""
-      }`
-    : "No message yet";
+
+  if (!chat || !chat.lastMessage) {
+    const participant = chat.participants?.find((p) => p?._id !== user._id);
+
+    return {
+      title: chat?.name,
+      lastMessage: "No message yet",
+      description: chat?.isGroupChat
+        ? `${chat?.participants?.length || 0} members in the group`
+        : participant?.email,
+    };
+  }
+
+  const lastMessage = chat.lastMessage.content || "";
+
+  const attachmentText =
+    chat.lastMessage.attachments && chat.lastMessage.attachments.length > 0
+      && `${chat.lastMessage.attachments.length} ${
+          chat.lastMessage.attachments.length > 1 ? "s" : ""
+        }`
+      ;
 
   if (chat.isGroupChat) {
     return {
       title: chat.name,
-      lastMessage: chat.lastMessage
-        ? `${chat.lastMessage?.sender?.username} : ${lastMessage}`
+      lastMessage: chat.lastMessage.sender?.username
+        ? `${chat.lastMessage?.sender?.username}: ${lastMessage}${
+            attachmentText ? attachmentText : ""
+          }`
         : lastMessage,
       description: `${chat.participants?.length} members in the group`,
     };
@@ -141,10 +157,9 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
     const participant = chat.participants?.find((p) => p?._id !== user._id);
 
     return {
-      lastMessage,
       title: participant?.username,
+      lastMessage: lastMessage || "No message yet",
       description: participant?.email,
-      // avatar: participant?.avatar.url || undefined,
     };
   }
 };

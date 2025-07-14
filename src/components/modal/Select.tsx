@@ -44,7 +44,7 @@ export const SelectModalInput: React.FC<{
         </Combobox.Button>
 
         {(localOptions || [])?.length > 0 && (
-          <Combobox.Options className="outline outline-[1px] outline-zinc-400 bg-white absolute z-10 mt-2 p-2 max-h-60 w-full overflow-auto rounded-xl dark:bg-black dark:outline-white/10 text-base shadow-lg ring-opacity-5 focus:outline-none sm:text-sm">
+          <Combobox.Options className="outline outline-[1px] outline-zinc-400 bg-white absolute z-10 mt-2 p-2 max-h-60 w-full overflow-auto rounded-xl dark:bg-black dark:outline-white/10 text-base shadow-lg ring-opacity-5 focus:outline-none sm:text-sm space-y-1">
             {localOptions?.length === 0 && query !== "" ? (
               <div className="relative cursor-default select-none px-4 py-2 text-gray-700 dark:text-white">
                 Nothing found.
