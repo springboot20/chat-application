@@ -265,7 +265,7 @@ const MessageInput = ({
           className={classNames(
             "h-12 w-12 shrink-0 mb-1 rounded-lg flex items-center justify-center transition-all duration-200",
             canSend
-              ? "bg-inigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white"
+              ? "bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:text-white"
               : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
           )}
           onClick={handleSendMessageLocal}
