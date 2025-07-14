@@ -44,7 +44,7 @@ export const useMessage = () => {
     type: "document-file",
   });
   const [showMentionUserMenu, setShowMentionUserMenu] = useState<boolean>(false);
-  const messageInputRef = useRef<HTMLInputElement | null>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [showReply, setShowReply] = useState<boolean>(false);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const documentInputRef = useRef<HTMLInputElement | null>(null);
@@ -175,7 +175,7 @@ export const useMessage = () => {
     return { top, left };
   }, []);
 
-  const handleShowMentionUserMenu = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleShowMentionUserMenu = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     event.preventDefault();
     const target = event.target;
 
@@ -383,7 +383,7 @@ export const useMessage = () => {
     setOpenEmoji(false);
   }, []);
 
-  const handleOnMessageChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+  const handleOnMessageChange = (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(evt.target.value);
 
     if (!socket || !connected) return;

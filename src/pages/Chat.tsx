@@ -1,16 +1,8 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
-import {
-  PaperAirplaneIcon,
-  PaperClipIcon,
-  UserIcon,
-  ArrowLeftIcon,
-  FaceSmileIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { UserIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { AudioManager, classNames } from "../utils/index.ts";
 import { useSocketContext } from "../context/SocketContext.tsx";
-import EmojiPicker, { Theme } from "emoji-picker-react";
 import { MessageNavigation } from "../components/navigation/message-navigation.tsx";
 import SideNavigation from "../components/navigation/side-navigation.tsx";
 import { Link } from "react-router-dom";
@@ -40,12 +32,10 @@ import {
   useGetChatMessagesQuery,
   useSendMessageMutation,
 } from "../features/chats/chat.slice.ts";
-import { FileSelection } from "../components/file/FileSelection.tsx";
-import { DocumentPreview } from "../components/file/DocumentPreview.tsx";
 import { useTheme } from "../context/ThemeContext";
-import { MentionUserMenuComponent } from "../components/menu/MentionUserMenu.tsx";
 import { User } from "../types/auth.ts";
 import messageSound from "../assets/audio/send-message-notification.mp3";
+import MessageInput from "../components/inout/MessageInput.tsx";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -542,159 +532,31 @@ export const Chat = () => {
                         )}
                       </div>
 
-                      <div
-                        className={classNames(
-                          "fixed bottom-0 gap-2 left-16 sm:left-20 lg:left-[30rem] right-0 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30",
-                          (attachmentFiles.files && attachmentFiles?.files?.length) || showReply
-                            ? "h-auto"
-                            : "h-16"
-                        )}
-                      >
-                        {openEmoji && (
-                          <div className="bottom-24 absolute left-6 z-50">
-                            <EmojiPicker
-                              className="absolute min-w-[300px] sm:min-w-[500px]"
-                              searchPlaceHolder="search for emoji"
-                              theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
-                              onEmojiClick={(data, event) => handleEmojiSelect(data, event)}
-                            />
-                          </div>
-                        )}
-
-                        <MentionUserMenuComponent
-                          show={showMentionUserMenu}
-                          handleSelectUser={handleSelectUser}
-                          selectedUser={selectedUser}
-                          users={users}
-                        />
-
-                        {showReply &&
-                          (() => {
-                            return (
-                              <div className="dark:bg-black border-b dark:border-white/10 animate-in p-3 w-full">
-                                <div
-                                  className={classNames(
-                                    "dark:bg-white/5 relative before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full px-2 py-1.5 overflow-hidden rounded-lg",
-                                    isOwnedMessage ? "before:bg-[#615EF0]" : "before:bg-green-500"
-                                  )}
-                                >
-                                  <button
-                                    type="button"
-                                    onClick={handleSetCloseReply}
-                                    className="rounded-full h-6 w-6 dark:bg-white/10 right-2 absolute top-2 flex items-center justify-center ring-1 dark:ring-black/10"
-                                  >
-                                    <XMarkIcon className="dark:text-white h-4" strokeWidth={2} />
-                                  </button>
-                                  {(() => {
-                                    const message = reduxStateMessages.find(
-                                      (msg) => msg._id.toString() === messageToReply.toString()
-                                    );
-
-                                    return (
-                                      <>
-                                        <span className="text-xs font-bold font-nunito dark:text-white mb-2">
-                                          {message?.sender?.username}
-                                        </span>
-                                        <p className="text-lg font-normal font-nunito dark:text-white">
-                                          {message?.content}
-                                        </p>
-                                      </>
-                                    );
-                                  })()}
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                        {attachmentFiles?.files && attachmentFiles?.files?.length > 0 ? (
-                          <div className="grid gap-4 bg-white dark:bg-black grid-cols-5 p-4 justify-start">
-                            {attachmentFiles?.files?.map((file, i) => {
-                              return (
-                                <DocumentPreview
-                                  key={i}
-                                  index={i}
-                                  onRemove={handleRemoveFile}
-                                  file={file}
-                                />
-                              );
-                            })}
-                          </div>
-                        ) : null}
-
-                        <div className="flex items-center justify-between mx-auto max-w-8xl h-full relative z-20 px-2 sm:py-4">
-                          <button
-                            onClick={handleOpenAndCloseEmoji}
-                            className="cursor-pointer mr-1.5 h-12 w-12 shrink-0"
-                            type="button"
-                          >
-                            <span className="flex items-center justify-center h-full w-full dark:bg-transparent bg-gray-50 dark:hover:bg-white/10 rounded-lg ">
-                              <FaceSmileIcon className="h-9 dark:text-white/60" />
-                            </span>
-                          </button>
-
-                          <Disclosure>
-                            {({ close, open }) => {
-                              return (
-                                <>
-                                  <Disclosure.Button className="cursor-pointer mr-1.5 h-12 w-12 shrink-0">
-                                    <span className="sr-only">Open file menu</span>
-                                    <span className="flex items-center justify-center h-full w-full dark:bg-transparent bg-gray-50 dark:hover:bg-white/10 rounded-lg ">
-                                      <PaperClipIcon className="cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 transition" />
-                                    </span>
-                                  </Disclosure.Button>
-                                  <FileSelection
-                                    imageInputRef={imageInputRef}
-                                    documentInputRef={documentInputRef}
-                                    handleFileChange={handleFileChange}
-                                    close={close}
-                                    open={open}
-                                  />
-                                </>
-                              );
-                            }}
-                          </Disclosure>
-
-                          <input
-                            id="message-input"
-                            type="text"
-                            value={message}
-                            ref={messageInputRef}
-                            onChange={(event) => {
-                              handleShowMentionUserMenu(event);
-                              handleOnMessageChange(event);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleSendMessage;
-                              }
-                            }}
-                            className={classNames(
-                              "relative block px-4 py-3.5 focus:outline-none rounded-md border-0 flex-1 shrink-0 outline-none w-fit dark:bg-transparent dark:text-white"
-                              // message.length > 500 && "whitespace-pre-wrap"
-                            )}
-                            placeholder="Type a message..."
-                          />
-
-                          {message ||
-                            (attachmentFiles.files && (
-                              <button
-                                title="send message"
-                                disabled={!message && (attachmentFiles?.files || [])?.length <= 0}
-                                className="shadow-none"
-                                onClick={() => {
-                                  handleSendMessage();
-                                }}
-                              >
-                                <PaperAirplaneIcon
-                                  aria-hidden={true}
-                                  className="h-7 text-gray-500 dark:text-white"
-                                />
-                              </button>
-                            ))}
-                        </div>
-                      </div>
+                      <MessageInput
+                        message={message}
+                        handleOnMessageChange={handleOnMessageChange}
+                        handleShowMentionUserMenu={handleShowMentionUserMenu}
+                        handleEmojiSelect={handleEmojiSelect}
+                        handleFileChange={handleFileChange}
+                        handleOpenAndCloseEmoji={handleOpenAndCloseEmoji}
+                        handleRemoveFile={handleRemoveFile}
+                        handleSelectUser={handleSelectUser}
+                        selectedUser={selectedUser}
+                        attachmentFiles={attachmentFiles}
+                        showReply={showReply}
+                        messageToReply={messageToReply}
+                        reduxStateMessages={reduxStateMessages}
+                        isOwnedMessage={isOwnedMessage}
+                        users={users}
+                        theme={theme}
+                        textareaRef={messageInputRef}
+                        handleSendMessage={handleSendMessage}
+                        imageInputRef={imageInputRef}
+                        documentInputRef={documentInputRef}
+                        showMentionUserMenu={showMentionUserMenu}
+                        handleSetCloseReply={handleSetCloseReply}
+                        openEmoji={openEmoji}
+                      />
                     </div>
                   </>
                 ) : (
