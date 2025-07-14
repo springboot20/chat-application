@@ -312,7 +312,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
                 <XMarkIcon className="h-6 w-6 text-white" />
               </button>
 
-              {messageFiles.length > 1 && (
+              {messageFiles.length > 1 && !message.isDeleted && (
                 <>
                   <button
                     type="button"
@@ -551,7 +551,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
                 </div>
               )}
 
-              {message?.attachments?.length > 0 ? (
+              {message?.attachments?.length > 0 && !message.isDeleted ? (
                 <div
                   className={classNames(
                     "grid max-w-7xl gap-2",
@@ -579,7 +579,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
                 <div className="flex items-center">
                   <NoSymbolIcon className="text-red-500 h-6 mr-2" strokeWidth={2} />
                   <p className="text-xsm sm:text-sm italic font-normal text-gray-800 break-words">
-                  {user?._id === message.sender?._id ? "you" : message.sender?.username} deleted this message
+                    {user?._id === message.sender?._id ? "you" : message.sender?.username} deleted
+                    this message
                   </p>
                 </div>
               ) : (
