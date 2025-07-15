@@ -121,7 +121,6 @@ export class LocalStorage {
 }
 
 export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User) => {
-
   if (!chat || !chat.lastMessage) {
     const participant = chat.participants?.find((p) => p?._id !== user._id);
 
@@ -135,19 +134,17 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
   }
 
   const lastMessage = chat.lastMessage.content || "";
+  // const replyLastMessage = chat.lastMessage.content || "";
 
   const attachmentText =
-    chat.lastMessage.attachments && chat.lastMessage.attachments.length > 0
-      && `${chat.lastMessage.attachments.length} ${
-          chat.lastMessage.attachments.length > 1 ? "s" : ""
-        }`
-      ;
-
+    chat.lastMessage.attachments &&
+    chat.lastMessage.attachments.length > 0 &&
+    `${chat.lastMessage.attachments.length} ${chat.lastMessage.attachments.length > 1 ? "s" : ""}`;
   if (chat.isGroupChat) {
     return {
       title: chat.name,
       lastMessage: chat.lastMessage.sender?.username
-        ? `${chat.lastMessage?.sender?.username}: ${lastMessage}${
+        ? `${chat.lastMessage?.sender?.username}: ${truncate(lastMessage, 20)}${
             attachmentText ? attachmentText : ""
           }`
         : lastMessage,
@@ -162,4 +159,12 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
       description: participant?.email,
     };
   }
+};
+
+export const truncate = (text: string, length: number) => {
+  if (text.length > length) {
+    return `${text.slice(0, length)}...`;
+  }
+
+  return text;
 };

@@ -86,69 +86,124 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     const { user } = useAppSelector((state: RootState) => state.auth);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const messageFiles = message.attachments || [];
+    // const [menuOffset] = useState({
+    //   x: 0,
+    //   y: 0,
+    // });
     const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({
       x: 0,
       y: 0,
     });
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const [isGlowing, setIsGlowing] = useState(false);
     const [isAnimating, setIsAnimating] = useState(false);
+    const [contextMenuEvent, setContextMenuEvent] = useState<{
+      clientX: number;
+      clientY: number;
+    } | null>(null);
 
-    const handleContextMenu = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    const calculateMenuPosition = useCallback(() => {
+      if (!contextMenuEvent || !containerRef.current || !menuRef.current) return;
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const menuRect = menuRef.current.getBoundingClientRect();
+
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Get scroll offsets
+      const scrollX = containerRef.current.scrollLeft;
+      const scrollY = containerRef.current.scrollTop;
+
+      // Calculate initial position relative to viewport
+      let x = contextMenuEvent.clientX;
+      let y = contextMenuEvent.clientY;
+
+      // Adjust if menu would go off the right edge
+      if (x + menuRect.width > scrollX + viewportWidth) {
+        x = scrollX + viewportWidth - menuRect.width - 10; // 10px margin
+      }
+
+      console.log("menu width: ", menuRect.width);
+
+      // Adjust if menu would go off the bottom edge
+      if (y + menuRect.height > scrollY + viewportHeight) {
+        y = scrollY + viewportHeight - menuRect.height - 10; // 10px margin
+      }
+
+      console.log(menuRect.height);
+
+      // Adjust if menu would go off the left edge of container
+      if (x < containerRect.left + scrollX) {
+        x = containerRect.left + scrollX + 10; // 10px margin
+      }
+
+      // Adjust if menu would go off the top edge of container
+      if (y < containerRect.top + scrollY) {
+        y = containerRect.top + scrollY + 10; // 10px margin
+      }
+
+      // Convert to position relative to container
+      const relativeX = x - containerRect.left - scrollX;
+      const relativeY = y - containerRect.top - scrollY;
+
+      console.log(`Relative x position: ${relativeX}`);
+      console.log(`Relative y position: ${relativeY}`);
+      console.log(scrollX);
+
+      setMenuPosition({ x: relativeX, y: relativeY });
+    }, [contextMenuEvent]);
+
+    const handleContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       event.preventDefault();
       event.stopPropagation();
 
-      const clickX = event.clientX;
-      const clickY = event.clientY;
-
-      const screenHeight = window.innerHeight;
-      const screenWidth = window.innerWidth;
-
-      let menuWidth = 250;
-      let menuHeight = 160;
-
-      if (menuRef.current) {
-        const menuRect = menuRef.current.getBoundingClientRect();
-        menuWidth = menuRect.width;
-        menuHeight = menuRect.height;
-      }
-
-      let XPosition = clickX;
-      let YPosition = clickY;
-
-      if (XPosition + menuWidth > screenWidth) {
-        XPosition = screenWidth - menuWidth - 100;
-      }
-
-      if (YPosition + menuHeight > screenHeight) {
-        YPosition = screenHeight - menuHeight - 100;
-      }
-
-      if (XPosition < 20) XPosition = 100;
-      if (YPosition < 20) YPosition = 100;
+      // Store the event coordinates
+      setContextMenuEvent({
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
 
       setShowMenu(true);
-      setMenuPosition({ x: XPosition, y: YPosition });
-    };
+    }, []);
 
-    const handleClickOutside = (event: MouseEvent) => {
+    // Calculate menu position after it's rendered
+    useEffect(() => {
+      if (showMenu && contextMenuEvent) {
+        // Use requestAnimationFrame to ensure menu is rendered
+        requestAnimationFrame(() => {
+          calculateMenuPosition();
+        });
+      }
+    }, [showMenu, contextMenuEvent, calculateMenuPosition]);
+
+    const handleClickOutside = useCallback((event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as HTMLElement)) {
         setShowMenu(false);
       }
-    };
+    }, []);
+
+    const handleCloseMenu = useCallback(() => {
+      setShowMenu(false);
+      setContextMenuEvent(null);
+    }, []);
 
     useEffect(() => {
       if (showMenu) {
         document.addEventListener("mousedown", handleClickOutside);
         document.addEventListener("contextmenu", handleClickOutside);
+        // Also handle window resize to recalculate position
+        window.addEventListener("resize", calculateMenuPosition);
 
         return () => {
           document.removeEventListener("mousedown", handleClickOutside);
           document.removeEventListener("contextmenu", handleClickOutside);
+          window.removeEventListener("resize", calculateMenuPosition);
         };
       }
-    }, [showMenu]);
+    }, [showMenu, handleClickOutside, calculateMenuPosition]);
 
     const handleNextImage = useCallback(() => {
       setCurrentMessageImageIndex((prev) => (prev + 1) % messageFiles.length);
@@ -303,7 +358,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
         {messageFiles.length > 0 &&
           currentMessageImageIndex >= 0 &&
           currentMessageImageIndex < messageFiles.length && (
-            <div className="h-full z-30 p-8 overflow-y-auto w-full fixed inset-0 bg-black/80">
+            <div className="h-full z-50 p-8 overflow-y-auto w-full fixed inset-0 bg-black/80">
               <button
                 className="absolute top-4 right-4 z-60 p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
                 onClick={handleCloseModal}
@@ -374,7 +429,11 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
             getGlowClass(),
             isAnimating && (isOwnedMessage ? "slide-right" : "slide-left")
           )}
+          // onMouseDown={handleMouseDown}
+          ref={containerRef}
           onContextMenu={(event) => {
+            console.log(event);
+            console.log(showMenu);
             handleContextMenu(event);
           }}
         >
@@ -384,7 +443,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
               menuRef={menuRef}
               menuPosition={menuPosition}
               handleDeleteChatMessage={() => handleDeleteChatMessage(message._id)}
-              closeMenu={() => setShowMenu(false)}
+              closeMenu={handleCloseMenu}
               isMessageDeleted={message.isDeleted}
               handleSetOpenReply={() => handleSetOpenReply(message._id)}
             />
@@ -597,7 +656,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
                   isOwnedMessage ? "text-zinc-50" : "text-gray-800"
                 )}
               >
-                {message.attachments?.length > 0 ? (
+                {message.attachments?.length > 0 && !message.isDeleted ? (
                   <PaperClipIcon className="h-4 w-4 mr-2" />
                 ) : null}
                 {moment(message.updatedAt).add("TIME_ZONE", "hours").fromNow(true)} ago

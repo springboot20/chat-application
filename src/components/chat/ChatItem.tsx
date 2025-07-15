@@ -88,7 +88,7 @@ export const ChatItem: React.FC<{
                   className="flex dark:text-white text-gray-900"
                 >
                   <span className="sr-only">Open auth menu</span>
-                  <EllipsisVerticalIcon className="group-hover:h-4 h-0 group-hover:opacity-100 opacity-0 transition-all ease-in-out duration-100 text-gray-600 dark:text-white" />
+                  <EllipsisVerticalIcon className="group-hover:h-6 h-0 group-hover:opacity-100 opacity-0 transition-all ease-in-out duration-100 text-gray-600 dark:text-white" />
                 </Menu.Button>
               </div>
               <Transition
@@ -100,7 +100,7 @@ export const ChatItem: React.FC<{
                 leaveFrom="transform opacity-100 scale-100"
                 leaveTo="transform opacity-0 scale-95"
               >
-                <Menu.Items className="absolute left-5 z-40 mt-8 w-max origin-top-right rounded-md bg-white dark:bg-black/50 dark:ring-white/10 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <Menu.Items className="absolute left-5 z-40 mt-10 w-max sm:min-w-[20rem] origin-top-right rounded-md bg-white dark:bg-gray-700 dark:ring-white/10 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   {openOptions && (
                     <Menu.Item>
                       {({ active }) => (

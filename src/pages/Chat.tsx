@@ -453,7 +453,7 @@ export const Chat = () => {
                       </div>
                     </header>
 
-                    <div className="relative left-16 w-[calc(100%-4rem)] sm:left-20 sm:w-[calc(100%-5rem)] lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto mt-20 pb-16 transition-all duration-200">
+                    <div className="relative left-16 w-[calc(100%-4rem)] sm:left-20 sm:w-[calc(100%-5rem)] lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto overflow-x-hidden  mt-20 pb-16 transition-all duration-200">
                       <div
                         ref={bottomRef}
                         className="flex flex-col flex-grow px-5 overflow-y-auto gap-10 relative"

@@ -166,11 +166,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
       );
     };
 
+    console.log(attachment?.url.split("."));
+
     return (
       <div
         className={classNames(
           "relative aspect-square rounded-lg overflow-hidden group",
-          isModal ? "w-full h-auto max-w-xl" : "h-24 w-24 cursor-pointer"
+          isModal
+            ? "w-full h-auto max-w-xl"
+            : attachment?.url.split(".").includes("pdf")
+            ? "h-24 w-24"
+            : "cursor-pointer"
         )}
       >
         {isModal && attachment?.url && (

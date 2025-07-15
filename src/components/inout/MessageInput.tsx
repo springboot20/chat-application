@@ -79,7 +79,7 @@ const MessageInput = ({
     if (textarea) {
       textarea.style.height = "auto";
       const scrollHeight = textarea.scrollHeight;
-      const maxHeight = 120; // Maximum height in pixels (about 5 lines)
+      const maxHeight = 200; // Maximum height in pixels (about 5 lines)
       textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
     }
   }, [textareaRef]);
@@ -155,7 +155,7 @@ const MessageInput = ({
         <div className="dark:bg-black border-b dark:border-white/10 animate-in p-3 w-full">
           <div
             className={classNames(
-              "dark:bg-white/5 relative before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full px-2 py-1.5 overflow-hidden rounded-lg",
+              "dark:bg-white/5 border dark:border-white/5 relative before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full px-3 py-1.5 overflow-hidden rounded-lg",
               isOwnedMessage ? "before:bg-[#615EF0]" : "before:bg-green-500"
             )}
           >
@@ -173,7 +173,7 @@ const MessageInput = ({
 
               return (
                 <>
-                  <span className="text-xs font-bold font-nunito dark:text-white mb-2 block">
+                  <span className="text-sm font-bold font-nunito dark:text-white mb-2 block">
                     {replyMessage?.sender?.username}
                   </span>
                   <p className="text-lg font-normal font-nunito dark:text-white pr-8">
@@ -236,7 +236,7 @@ const MessageInput = ({
         </Disclosure>
 
         {/* Text Input */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative h-full">
           <textarea
             ref={textareaRef}
             value={message}
@@ -246,12 +246,12 @@ const MessageInput = ({
             }}
             onKeyDown={handleKeyDown}
             className={classNames(
-              "w-full px-4 py-3 resize-none focus:outline-none rounded-lg border-0 outline-none",
+              "w-full p-2 resize-none focus:outline-none rounded-lg border dark:border-white/5 outline-none",
               "dark:bg-white/5 bg-gray-50 dark:text-white text-gray-900",
               "placeholder-gray-400 dark:placeholder-gray-500",
-              "min-h-[48px] max-h-[120px] overflow-y-auto",
+              "min-h-[48px] overflow-y-auto",
               "transition-all duration-200",
-              "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600"
+              "text-sm placeholder:!mt-8"
             )}
             placeholder="Type a message... (Shift+Enter for new line)"
             rows={1}

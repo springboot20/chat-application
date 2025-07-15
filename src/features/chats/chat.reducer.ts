@@ -87,6 +87,7 @@ const ChatSlice = createSlice({
 
     updateChatLastMessage: (state, action: PayloadAction<ChatMessageUpdateInterface>) => {
       const { chatToUpdateId, message } = action.payload;
+      console.log(message)
 
       // Find the chat in the array
       const chatIndex = state.chats.findIndex((chat) => chat._id === chatToUpdateId);

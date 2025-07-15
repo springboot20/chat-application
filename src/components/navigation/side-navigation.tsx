@@ -82,7 +82,7 @@ const SideNavigation: React.FC = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-black dark:border-r-white/15 w-16 sm:w-20 z-10`}
+      className={`fixed top-0 left-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-black dark:border-r-white/15 w-16 sm:w-20 z-10 lg:z-0`}
     >
       <div className={`h-full flex justify-between p-5 flex-col items-center`}>
         <Disclosure.Button
