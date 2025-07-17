@@ -27,15 +27,24 @@ interface ChatItemProps {
   user: User | null;
 }
 
+// and also am unable to fix showing the typing effect when a user is typing
+
 const arePropsEqual = (prevProps: ChatItemProps, nextProps: ChatItemProps) => {
-  // Compare chat content, reactions, and attachments
-  const chatEqual = isEqual(prevProps.chat, nextProps.chat);
+  // Compare specific chat properties that affect rendering
+  const chatEqual =
+    prevProps.chat._id === nextProps.chat._id &&
+    prevProps.chat.name === nextProps.chat.name &&
+    prevProps.chat.isGroupChat === nextProps.chat.isGroupChat &&
+    prevProps.chat.updatedAt === nextProps.chat.updatedAt &&
+    isEqual(prevProps.chat.lastMessage, nextProps.chat.lastMessage) &&
+    isEqual(prevProps.chat.participants, nextProps.chat.participants);
 
   const isActiveEqual = isEqual(prevProps.isActive, nextProps.isActive);
   const unreadcountEqual = isEqual(prevProps.unreadCount, nextProps.unreadCount);
+  const userEqual = isEqual(prevProps.user?._id, nextProps.user?._id);
 
   // Only re-render if relevant props have changed
-  return isActiveEqual && chatEqual && unreadcountEqual;
+  return isActiveEqual && chatEqual && unreadcountEqual && userEqual;
 };
 
 export const ChatItem: React.FC<ChatItemProps> = memo(
@@ -79,7 +88,9 @@ export const ChatItem: React.FC<ChatItemProps> = memo(
           role="button"
           className={classNames(
             "hover:bg-gray-300/40 group flex items-start cursor-pointer bg-gray-100 px-1 py-2.5 justify-between dark:bg-white/5 dark:hover:bg-white/10",
-            isActive ? "bg-gray-300/40 border-[1.5px] border-zinc-300 dark:border-white/20 dark:bg-white/10" : "",
+            isActive
+              ? "bg-gray-300/40 border-[1.5px] border-zinc-300 dark:border-white/20 dark:bg-white/10"
+              : "",
             unreadCount > 0 ? "border-2 border-green-500 bg-green-100" : ""
           )}
           onClick={() => {

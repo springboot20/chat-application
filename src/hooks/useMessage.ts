@@ -71,7 +71,7 @@ export const useMessage = () => {
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const typingTimeOutRef = useRef<NodeJS.Timeout | null>(null);
+  // const typingTimeOutRef = useRef<NodeJS.Timeout | null>(null);
   const [isTyping, setIsTyping] = useState<boolean>(false);
   // const [userTyping, setUserTyping] = useState<boolean>(false);
 

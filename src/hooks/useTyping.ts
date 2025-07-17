@@ -1,48 +1,98 @@
 import { useMemo, useState, useRef, useCallback } from "react";
-// import { useAppSelector } from "../redux/redux.hooks";
-// import { RootState } from "../app/store";
+import { useAppSelector } from "../redux/redux.hooks";
+import { RootState } from "../app/store";
 
 export const useTyping = () => {
-  // const { currentChat } = useAppSelector((state: RootState) => state.chat);
+  const { currentChat } = useAppSelector((state: RootState) => state.chat);
+  const { user } = useAppSelector((state: RootState) => state.auth);
 
   const typingTimeOutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isTyping, setIsTyping] = useState<boolean>(false);
-  const [userTyping, setUserTyping] = useState<boolean>(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
-  const handleStartTyping = useCallback((data: any) => {
-    // console.log(chatId);
+  const handleStartTyping = useCallback(
+    (data: any) => {
+      console.log("Start typing data:", data);
 
-    // if (chatId === currentChat?._id) {
-    //   setIsTyping(true);
-    // }
+      // Check if the typing event is for the current chat
+      if (data.chatId === currentChat?._id) {
+        // Don't show typing indicator for current user
+        if (data.userId !== user?._id) {
+          setIsTyping(true);
 
-    // return;
+          // Add user to typing users if not already present
+          setTypingUsers((prev) => {
+            if (!prev.includes(data.userId)) {
+              return [...prev, data.userId];
+            }
+            return prev;
+          });
 
-    console.log(data);
-  }, []);
+          // Clear any existing timeout
+          if (typingTimeOutRef.current) {
+            clearTimeout(typingTimeOutRef.current);
+          }
 
-  const handleStopTyping = useCallback((data: any) => {
-    console.log(data);
+          // Set timeout to automatically stop typing indicator after 3 seconds
+          typingTimeOutRef.current = setTimeout(() => {
+            setIsTyping(false);
+            setTypingUsers((prev) => prev.filter((id) => id !== data.userId));
+          }, 3000);
+        }
+      }
+    },
+    [currentChat?._id, user?._id]
+  );
+
+  const handleStopTyping = useCallback(
+    (data: any) => {
+      console.log("Stop typing data:", data);
+
+      // Check if the stop typing event is for the current chat
+      if (data.chatId === currentChat?._id) {
+        // Remove user from typing users
+        setTypingUsers((prev) => {
+          const newTypingUsers = prev.filter((id) => id !== data.userId);
+
+          // If no users are typing, hide the typing indicator
+          if (newTypingUsers.length === 0) {
+            setIsTyping(false);
+          }
+
+          return newTypingUsers;
+        });
+
+        // Clear timeout if it exists
+        if (typingTimeOutRef.current) {
+          clearTimeout(typingTimeOutRef.current);
+          typingTimeOutRef.current = null;
+        }
+      }
+    },
+    [currentChat?._id]
+  );
+
+  // Reset typing state when chat changes
+  const resetTypingState = useCallback(() => {
+    setIsTyping(false);
+    setTypingUsers([]);
+    if (typingTimeOutRef.current) {
+      clearTimeout(typingTimeOutRef.current);
+      typingTimeOutRef.current = null;
+    }
   }, []);
 
   return useMemo(
     () => ({
       handleStartTyping,
       handleStopTyping,
+      resetTypingState,
       typingTimeOutRef,
       isTyping,
-      userTyping,
+      typingUsers,
       setIsTyping,
-      setUserTyping,
+      setTypingUsers,
     }),
-    [
-      handleStartTyping,
-      handleStopTyping,
-      typingTimeOutRef,
-      isTyping,
-      userTyping,
-      setIsTyping,
-      setUserTyping,
-    ]
+    [handleStartTyping, handleStopTyping, resetTypingState, typingTimeOutRef, isTyping, typingUsers]
   );
 };
