@@ -182,7 +182,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
         {isModal && attachment?.url && (
           <button
             onClick={handleDownload}
-            className="absolute top-2 left-2 z-30 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
+            className="absolute top-2 left-2 z-10 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
             aria-label={`Download ${fileName}`}
           >
             <ArrowDownTrayIcon className="h-6 w-6 text-white" />

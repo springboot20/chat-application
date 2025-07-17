@@ -1,7 +1,6 @@
 import { useAppDispatch } from "./../redux/redux.hooks";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useSocketContext } from "../context/SocketContext.tsx";
-import { useTyping } from "./useTyping.ts";
 import { STOP_TYPING_EVENT, TYPING_EVENT, JOIN_CHAT_EVENT } from "../enums/index.ts";
 import { RootState } from "../app/store.ts";
 import { useAppSelector } from "../redux/redux.hooks.ts";
@@ -38,7 +37,6 @@ export const useMessage = () => {
   const dispatch = useAppDispatch();
   const [message, setMessage] = useState<string>("");
   const { socket, connected } = useSocketContext();
-  const { typingTimeOutRef, setIsTyping, isTyping } = useTyping();
   const [attachmentFiles, setAttachmentFiles] = useState<FileType>({
     files: null,
     type: "document-file",
@@ -72,6 +70,10 @@ export const useMessage = () => {
   const reactionAudioManagerRef = useRef<AudioManager | null>(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+
+  const typingTimeOutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  // const [userTyping, setUserTyping] = useState<boolean>(false);
 
   // Initialize audio manager
   useEffect(() => {
@@ -386,26 +388,29 @@ export const useMessage = () => {
   const handleOnMessageChange = (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(evt.target.value);
 
+    console.log(evt);
+
     if (!socket || !connected) return;
 
     if (!isTyping) {
       setIsTyping(true);
-
       socket?.emit(TYPING_EVENT, currentChat?._id);
     }
 
-    if (typingTimeOutRef.current) {
-      clearTimeout(typingTimeOutRef.current);
-    }
+    // if (typingTimeOutRef.current) {
+    //   clearTimeout(typingTimeOutRef.current);
+    // }
 
-    const typingLength = 3000;
+    // const typingLength = 3000;
 
-    typingTimeOutRef.current = setTimeout(() => {
-      socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
+    // typingTimeOutRef.current = setTimeout(() => {
+    //   socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
 
-      setIsTyping(false);
-    }, typingLength);
+    //   setIsTyping(false);
+    // }, typingLength);
   };
+
+  console.log(isTyping);
 
   const getAllMessages = useCallback(async () => {
     // Early return checks

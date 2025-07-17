@@ -1,10 +1,4 @@
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  NoSymbolIcon,
-  PaperClipIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { NoSymbolIcon, PaperClipIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { ChatMessageInterface } from "../../types/chat";
 import { classNames } from "../../utils";
 import moment from "moment";
@@ -16,6 +10,7 @@ import { User } from "../../types/auth";
 import { isEqual } from "lodash"; // For deep comparison
 import { useAppSelector } from "../../redux/redux.hooks";
 import { RootState } from "../../app/store";
+import { FilePreviewModal } from "../modal/FilePreviewModal";
 
 const arePropsEqual = (prevProps: MessageItemProps, nextProps: MessageItemProps) => {
   // Compare message content, reactions, and attachments
@@ -206,7 +201,10 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     }, [showMenu, handleClickOutside, calculateMenuPosition]);
 
     const handleNextImage = useCallback(() => {
-      setCurrentMessageImageIndex((prev) => (prev + 1) % messageFiles.length);
+      setCurrentMessageImageIndex((prev) => {
+        console.log(prev);
+        return (prev + 1) % messageFiles.length;
+      });
     }, [messageFiles]);
 
     const handleImageChange = useCallback(
@@ -355,71 +353,20 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     return (
       <>
         {/* Image Modal */}
-        {messageFiles.length > 0 &&
-          currentMessageImageIndex >= 0 &&
-          currentMessageImageIndex < messageFiles.length && (
-            <div className="h-full z-50 p-8 overflow-y-auto w-full fixed inset-0 bg-black/80">
-              <button
-                className="absolute top-4 right-4 z-60 p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-                onClick={handleCloseModal}
-                aria-label="Close preview"
-              >
-                <XMarkIcon className="h-6 w-6 text-white" />
-              </button>
-
-              {messageFiles.length > 1 && !message.isDeleted && (
-                <>
-                  <button
-                    type="button"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 z-60 flex items-center justify-center rounded-full h-12 w-12 bg-white/20 hover:bg-white/30 transition-colors"
-                    onClick={handlePreviousImage}
-                    aria-label="Previous image"
-                  >
-                    <ArrowLeftIcon className="h-6 w-6 text-white" />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 z-60 flex items-center justify-center rounded-full h-12 w-12 bg-white/20 hover:bg-white/30 transition-colors"
-                    onClick={handleNextImage}
-                    aria-label="Next image"
-                  >
-                    <ArrowRightIcon className="h-6 w-6 text-white" />
-                  </button>
-                </>
-              )}
-
-              <div className="relative max-w-4xl mx-auto flex flex-col items-center gap-6 w-full">
-                <div className="w-full max-h-[80vh] flex items-center justify-center">
-                  <DocumentPreview
-                    attachment={messageFiles[currentMessageImageIndex]}
-                    index={currentMessageImageIndex}
-                    isModal={true}
-                  />
-                </div>
-
-                {messageFiles.length > 1 && (
-                  <div className="flex items-center gap-3 pb-2">
-                    {messageFiles.map((file, index) => (
-                      <button
-                        key={file._id}
-                        onClick={() => handleImageChange(index)}
-                        className={classNames(
-                          "h-24 w-24 rounded overflow-hidden transition-all flex-shrink-0",
-                          index === currentMessageImageIndex
-                            ? "ring-2 ring-white scale-110"
-                            : "hover:scale-105 opacity-70 hover:opacity-100"
-                        )}
-                        aria-label={`View attachment ${index + 1}`}
-                      >
-                        <DocumentPreview attachment={file} index={index} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+        <FilePreviewModal
+          open={
+            messageFiles.length > 0 &&
+            currentMessageImageIndex >= 0 &&
+            currentMessageImageIndex < messageFiles.length
+          }
+          handleCloseModal={handleCloseModal}
+          messageFiles={messageFiles}
+          message={message}
+          handleNextImage={handleNextImage}
+          handlePreviousImage={handlePreviousImage}
+          handleImageChange={handleImageChange}
+          currentMessageImageIndex={currentMessageImageIndex}
+        />
 
         {/* Message Content */}
         <div

@@ -130,7 +130,7 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
       description: chat?.isGroupChat
         ? `${chat?.participants?.length || 0} members in the group`
         : participant?.email,
-    };
+    }; 
   }
 
   const lastMessage = chat.lastMessage.content || "";

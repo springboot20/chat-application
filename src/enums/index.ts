@@ -9,3 +9,4 @@ export const LEAVE_CHAT_EVENT = "leaveChat";
 export const UPDATE_GROUP_NAME_EVENT = "updateGroupName";
 export const REACTION_RECEIVED_EVENT = "reaction-received";
 export const CHAT_MESSAGE_DELETE_EVENT = "chat-message-delete";
+export const NEW_GROUP_NAME = "newGroupName";

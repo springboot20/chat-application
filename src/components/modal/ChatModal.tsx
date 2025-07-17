@@ -89,7 +89,7 @@ export const ChatModal: React.FC<{
   return (
     <>
       <Transition.Root show={open} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={() => handleClose()}>
+        <Dialog as="div" className="relative z-20" onClose={() => handleClose()}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
