@@ -25,6 +25,7 @@ export const MessageNavigation: React.FC<{
   const { chats, isLoadingChats, refetch } = useChat();
 
   const [itemDeleted, setItemDeleted] = useState<boolean>(false);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
 
   const [localSearchQuery, setLocalSearchQuery] = useState<string>("");
   const [openChat, setOpenChat] = useState(false);
@@ -86,6 +87,12 @@ export const MessageNavigation: React.FC<{
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [handleClickOutside]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setIsSearching(false);
+    }, 1000);
+  });
 
   return (
     <>
@@ -150,16 +157,20 @@ export const MessageNavigation: React.FC<{
               <SearchInput
                 ref={inputRef}
                 placeholder="Search messages"
-                onChange={(e) => setLocalSearchQuery(e.target.value.toLowerCase())}
+                onChange={(e) => {
+                  setLocalSearchQuery(e.target.value.toLowerCase());
+                  setIsSearching(true);
+                }}
+                onBlur={() => setIsSearching(false)}
                 value={localSearchQuery}
                 className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder:text-white/60"
               />
             </div>
-            {isLoadingChats ? (
+            {isLoadingChats || isSearching ? (
               <div className="w-full mx-auto flex items-center justify-center mt-5">
                 <Loading />
               </div>
-            ) : (
+            ) : filteredChats.length > 0 ? (
               <div className="mt-3 flex flex-col">
                 {React.Children.toArray(
                   filteredChats.map((chat) => (
@@ -175,6 +186,13 @@ export const MessageNavigation: React.FC<{
                     />
                   ))
                 )}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col justify-center items-center">
+                <Loading />
+                <p className="font-nunito font-normal dark:text-white text-center mt-3">
+                  no chat found
+                </p>
               </div>
             )}
           </div>
@@ -240,11 +258,11 @@ export const MessageNavigation: React.FC<{
                 className="flex-1 h-full bg-transparent focus:ring-0 focus:outline-none dark:text-white dark:placeholder:text-white/60"
               />
             </div>
-            {isLoadingChats ? (
+            {isLoadingChats || isSearching ? (
               <div className="w-full mx-auto flex items-center justify-center mt-5">
                 <Loading />
               </div>
-            ) : (
+            ) : filteredChats ? (
               <div className="mt-3 flex flex-col">
                 {React.Children.toArray(
                   filteredChats.map((chat) => (
@@ -260,6 +278,13 @@ export const MessageNavigation: React.FC<{
                     />
                   ))
                 )}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col justify-center items-center">
+                <Loading />
+                <p className="font-nunito font-normal dark:text-white text-center mt-3">
+                  no chat found
+                </p>
               </div>
             )}
           </div>
