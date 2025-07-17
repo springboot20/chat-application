@@ -1,15 +1,20 @@
 import { ChatListItemInterface, ChatMessageInterface } from "../types/chat";
 import { useAppDispatch, useAppSelector } from "../redux/redux.hooks";
-import { RootState } from '../app/store.ts';
+import { RootState } from "../app/store.ts";
 import { useGetUserChatsQuery } from "../features/chats/chat.slice";
-import { newChat, onChatLeave, updateChatLastMessage } from "../features/chats/chat.reducer";
+import {
+  newChat,
+  onChatLeave,
+  updateChatLastMessage,
+  updateGroupName,
+} from "../features/chats/chat.reducer";
 import { toast } from "react-toastify";
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
   const { data, isLoading: isLoadingChats, refetch } = useGetUserChatsQuery();
 
-  const chatsFromState = useAppSelector((state:RootState) => state.chat.chats);
+  const chatsFromState = useAppSelector((state: RootState) => state.chat.chats);
   const chats = chatsFromState?.length > 0 ? chatsFromState : data?.data;
 
   const _updateChatLastMessage = (chatToUpdateId: string, message: ChatMessageInterface) => {
@@ -22,13 +27,19 @@ export const useChat = () => {
     dispatch(newChat({ chat }));
   };
 
+  const onGroupChatRename = (data: ChatListItemInterface) => {
+    console.log(data);
+
+    dispatch(updateGroupName({ chat: data }));
+  };
+
   const _onChatLeave = (chat: ChatListItemInterface) => {
     console.log(chat);
 
     dispatch(onChatLeave({ chat }));
 
     toast("A chat you were participating in has been deleted", {
-      type: "info"
+      type: "info",
     });
   };
 
@@ -39,5 +50,6 @@ export const useChat = () => {
     _onChatLeave,
     _updateChatLastMessage,
     refetch,
+    onGroupChatRename,
   };
 };

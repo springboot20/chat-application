@@ -87,7 +87,7 @@ const ChatSlice = createSlice({
 
     updateChatLastMessage: (state, action: PayloadAction<ChatMessageUpdateInterface>) => {
       const { chatToUpdateId, message } = action.payload;
-      console.log(message)
+      console.log(message);
 
       // Find the chat in the array
       const chatIndex = state.chats.findIndex((chat) => chat._id === chatToUpdateId);
@@ -112,6 +112,29 @@ const ChatSlice = createSlice({
         LocalStorage.set("chats", state.chats);
         if (state.currentChat?._id === chatToUpdateId) {
           LocalStorage.set("current-chat", updatedChat);
+        }
+      }
+    },
+
+    updateGroupName: (state, action: PayloadAction<{ chat: ChatListItemInterface }>) => {
+      const { chat } = action.payload;
+
+      // Find the chat in the array
+      const chatIndex = state.chats.findIndex((localChat) => localChat._id === chat._id);
+
+      if (chatIndex !== -1) {
+        // Update the chat in the state
+        state.chats[chatIndex] = chat;
+
+        // If this is the current chat, update that too
+        if (state.currentChat && state.currentChat._id === chat._id) {
+          state.currentChat = chat;
+        }
+
+        // Update localStorage
+        LocalStorage.set("chats", state.chats);
+        if (state.currentChat?._id === chat._id) {
+          LocalStorage.set("current-chat", chat);
         }
       }
     },
@@ -145,7 +168,7 @@ const ChatSlice = createSlice({
 
       const messageIndex = state.chatMessages.findIndex((message) => message._id === messageId);
 
-      console.log(message)
+      console.log(message);
 
       if (messageIndex !== -1) {
         state.chatMessages[messageIndex] = message;
@@ -231,4 +254,5 @@ export const {
   setUnreadMessages,
   onChatDelete,
   onChatMessageDelete,
+  updateGroupName,
 } = ChatSlice.actions;

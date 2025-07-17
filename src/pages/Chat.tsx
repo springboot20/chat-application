@@ -15,6 +15,7 @@ import {
   LEAVE_CHAT_EVENT,
   CHAT_MESSAGE_DELETE_EVENT,
   REACTION_RECEIVED_EVENT,
+  NEW_GROUP_NAME,
 } from "../enums/index.ts";
 import { useChat } from "../hooks/useChat.ts";
 import { useTyping } from "../hooks/useTyping.ts";
@@ -47,7 +48,7 @@ export const Chat = () => {
   const [sendMessage] = useSendMessageMutation();
   const { theme } = useTheme();
   const { socket } = useSocketContext();
-  const { onNewChat, _onChatLeave, chats } = useChat();
+  const { onNewChat, _onChatLeave, chats, onGroupChatRename } = useChat();
 
   const { isOnline } = useNetwork();
   const { data: availableUsers } = useGetAvailableUsersQuery();
@@ -233,6 +234,7 @@ export const Chat = () => {
     socket?.on(CHAT_MESSAGE_DELETE_EVENT, onChatMessageDeleted);
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
+    socket?.on(NEW_GROUP_NAME, onGroupChatRename);
 
     return () => {
       socket?.off(TYPING_EVENT, handleStartTyping);
@@ -242,10 +244,12 @@ export const Chat = () => {
       socket?.off(NEW_CHAT_EVENT, onNewChat);
       socket?.off(CHAT_MESSAGE_DELETE_EVENT, onChatMessageDeleted);
       socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);
+      socket?.off(NEW_GROUP_NAME, onGroupChatRename);
     };
   }, [
     socket,
     chats,
+    onGroupChatRename,
     handleStartTyping,
     handleStopTyping,
     onMessageReceive,
@@ -255,8 +259,29 @@ export const Chat = () => {
     onReactionUpdate,
   ]);
 
+  const processChat = (user: User) => {
+    const participants = currentChat?.participants;
+    const totalParticipant = participants?.length;
+    const isGroupChat = currentChat?.isGroupChat;
+    const chatName = isGroupChat
+      ? currentChat.name
+      : participants?.filter((p) => p._id !== user._id)[0]?.username;
+
+    const avatarUrl = isGroupChat
+      ? participants?.slice(0, 3)
+      : participants?.filter((p) => p._id !== user._id)[0]?.avatar;
+
+    console.log(avatarUrl);
+
+    return {
+      totalParticipant,
+      isGroupChat,
+      chatName,
+    };
+  };
+
   return (
-    <Disclosure as={"div"}>
+    <Disclosure as={Fragment}>
       {({ open, close }) => (
         <React.Fragment>
           <div
@@ -271,16 +296,16 @@ export const Chat = () => {
             </div>
             <main
               className={classNames(
-                "w-full sticky min-h-screen right-0 overflow-hidden transition-all",
-                "left-20 lg:left-[30rem] lg:w-[calc(100%-30rem)]"
+                "w-full min-h-screen right-0 overflow-hidden transition-all z-10",
+                "lg:ml-[30rem] lg:w-[calc(100%-30rem)]"
               )}
             >
-              <div className=" flex flex-col justify-between h-full">
+              <div className="relative flex flex-col justify-between h-full">
                 {currentChat && currentChat._id ? (
                   <>
                     <header
                       className={classNames(
-                        "fixed top-0 right-0 p-[0.9rem] left-16 sm:left-20 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-10 transition-all lg:left-[30rem]"
+                        "fixed top-0 right-0 p-[0.9rem] left-16 sm:left-20 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all lg:left-[30rem]"
                       )}
                     >
                       <div className={classNames("flex justify-between items-center h-full ml-6")}>
@@ -298,7 +323,7 @@ export const Chat = () => {
                           </button>
                           <div>
                             <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-                              Florencio Dorrance
+                              {processChat(user!)?.chatName}
                             </h3>
                             <p className="inline-flex items-center space-x-1.5">
                               <span
@@ -453,7 +478,7 @@ export const Chat = () => {
                       </div>
                     </header>
 
-                    <div className="relative left-16 w-[calc(100%-4rem)] sm:left-20 sm:w-[calc(100%-5rem)] lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto overflow-x-hidden  mt-20 pb-16 transition-all duration-200">
+                    <div className="relative left-16 w-[calc(100%-4rem)] sm:left-20 sm:w-[calc(100%-5rem)] lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto overflow-x-hidden mt-20 pb-20 transition-all duration-200">
                       <div
                         ref={bottomRef}
                         className="flex flex-col flex-grow px-5 overflow-y-auto gap-10 relative"

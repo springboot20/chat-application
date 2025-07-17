@@ -1,6 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { PencilIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useCallback, useState } from "react";
 import {
   useGetAvailableUsersQuery,
   useGetGroupChatQuery,
@@ -29,7 +29,7 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
   const { user } = useAppSelector((state: RootState) => state.auth);
 
   const { data: response, refetch: refetchGroupChatDetails } = useGetGroupChatQuery(
-    currentChat?._id!,
+    currentChat?._id as string,
     {
       skip: !currentChat?.isGroupChat,
     }
@@ -46,7 +46,7 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
 
     try {
       const response = await updateGroupChatDetails({
-        chatId: currentChat?._id!,
+        chatId: currentChat?._id as string,
         name: newGroupName,
       }).unwrap();
 
@@ -61,11 +61,16 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
     }
   };
 
+  const handleSetRenaming = useCallback(() => {
+    setRenamingName(true);
+    setNewGroupName(currentChat?.name || "");
+  }, [currentChat?.name]);
+
   return (
     <Transition.Root show={open} as={Fragment}>
       <Dialog
         as="div"
-        className="relative z-10"
+        className="relative z-40 group-navigation"
         onClose={() => {
           handleClose();
           dispatch(setCurrentChat({ chat: null }));
@@ -83,7 +88,7 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
           <div className="fixed inset-0 bg-black/25 dark:bg-black/70 bg-opacity-75 transition-opacity" />
         </Transition.Child>
 
-        <div className="fixed inset-0 z-10 overflow-hidden">
+        <div className="fixed inset-0 z-50 overflow-hidden">
           <div className="absolute inset-0 overflow-hidden">
             <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
               <Transition.Child
@@ -96,7 +101,7 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
                 leaveTo="translate-x-full"
               >
                 <Dialog.Panel className="pointer-events-auto w-screen max-w-2xl">
-                  <div className="flex h-full flex-col overflow-y-scroll bg-white border-l border-zinc-300">
+                  <div className="flex h-full flex-col overflow-y-scroll bg-white dark:bg-black dark:backdrop-blur-sm border-l border-zinc-300 dark:border-white/10">
                     <div className="flex items-start justify-between">
                       <div className="ml-2 mt-2 flex h-7 w-7 items-center justify-center">
                         <button
@@ -116,7 +121,7 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
                           {groupChatDetails?.participants.slice(0, 3).map((p) => {
                             return (
                               <img
-                                className="w-24 h-24 -ml-16 rounded-full outline outline-4 outline-zinc-300"
+                                className="w-24 h-24 -ml-16 rounded-full ring-2 ring-gray-300 dark:text-white"
                                 key={p?._id}
                                 src={p?.avatar?.url}
                                 alt="avatar"
@@ -135,27 +140,36 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
                               <input
                                 placeholder="Enter new group name..."
                                 value={newGroupName}
+                                className="w-2/3 px-3 rounded-md border-0 py-2.5 sm:py-4 md:py-3 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 outline-none dark:ring-white/10 dark:bg-black dark:text-white dark:placeholder:text-white/600"
                                 onChange={(e) => setNewGroupName(e.target.value)}
                               />
-                              <button title="save group name" onClick={handleGroupChatUpdate}>
+                              <button
+                                title="save group name"
+                                onClick={handleGroupChatUpdate}
+                                className="dark:bg-white/5 px-5 y-2.5 sm:py-4 md:py-3 rounded-md  ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm  outline-none dark:ring-white/10 dark:bg-black dark:text-white"
+                              >
                                 Save
                               </button>
 
                               <button
                                 title="cancle renaming name"
-                                onClick={() => setRenamingName(false)}
+                                onClick={() => {
+                                  setRenamingName(false);
+                                  setNewGroupName("");
+                                }}
+                                className="px-5 y-2.5 sm:py-4 md:py-3 rounded-md  ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm  outline-none dark:ring-white/10 dark:bg-black dark:text-white"
                               >
                                 Cancel
                               </button>
                             </div>
                           ) : (
                             <div className="w-full inline-flex justify-center items-center text-center mt-5">
-                              <h1 className="text-2xl font-semibold truncate-1">
+                              <h1 className="text-2xl font-semibold truncate-1 dark:text-white">
                                 {groupChatDetails?.name}
                               </h1>
                               {groupChatDetails?.admin === user?._id ? (
-                                <button onClick={() => setRenamingName(true)}>
-                                  <PencilIcon className="w-5 h-5 ml-4" />
+                                <button onClick={handleSetRenaming}>
+                                  <PencilIcon className="w-5 h-5 ml-4 dark:stroke-white" />
                                 </button>
                               ) : null}
                             </div>

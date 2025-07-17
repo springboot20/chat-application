@@ -1,14 +1,14 @@
 import { Disclosure } from "@headlessui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCaretDown, faClose } from "@fortawesome/free-solid-svg-icons";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeftIcon, MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { ChatModal } from "../modal/ChatModal.tsx";
 import { SearchInput } from "../panels/SearchInput.tsx";
 import { ChatItem } from "../chat/ChatItem.tsx";
 import { Loading } from "../Loading.tsx";
 import { useChat } from "../../hooks/useChat.ts";
-import { getMessageObjectMetaData } from "../../utils/index.ts";
+import { classNames, getMessageObjectMetaData } from "../../utils/index.ts";
 import { useMessage } from "../../hooks/useMessage.ts";
 import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks.ts";
 import { RootState } from "../../app/store.ts";
@@ -65,6 +65,28 @@ export const MessageNavigation: React.FC<{
       : true
   );
 
+  const handleCloseChat = () => {
+    setOpenChat(false);
+  };
+
+  const handleClickOutside = useCallback(
+    (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+
+      if (!target.closest(".mobile-navigation") && !target.closest(".group-navigation")) {
+        close();
+      }
+    },
+    [close]
+  );
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [handleClickOutside]);
+
   return (
     <>
       <ChatModal
@@ -72,7 +94,7 @@ export const MessageNavigation: React.FC<{
         onSuccess={() => {
           refetch();
         }}
-        onClose={() => setOpenChat(false)}
+        onClose={handleCloseChat}
       />
       <div
         className={`fixed left-20 w-[25rem] bg-white dark:bg-black flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen translate-x-0 hidden lg:block
@@ -89,7 +111,6 @@ export const MessageNavigation: React.FC<{
               aria-hidden={true}
             />
           </Disclosure.Button>
-
           <div className="flex justify-between items-center w-full p-3 border-b-[1.5px] border-b-gray-600/30">
             <div className="flex items-center">
               <span className="text-xl block text-gray-600 font-medium dark:text-white">
@@ -143,9 +164,10 @@ export const MessageNavigation: React.FC<{
                 {React.Children.toArray(
                   filteredChats.map((chat) => (
                     <ChatItem
-                      key={chat?._id}
+                      key={`chat-item-${chat?._id}`}
                       chat={chat?._id === currentChat?._id ? currentChat : chat}
                       isActive={chat?._id === currentChat?._id}
+                      user={user}
                       onClick={handleChatSelect}
                       onChatDelete={handleChatDelete}
                       close={close}
@@ -160,9 +182,11 @@ export const MessageNavigation: React.FC<{
       </div>
 
       <Disclosure.Panel
-        className={`fixed w-full sm:w-[25rem] bg-white dark:bg-black dark:border-r-white/15 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-10 translate-x-0 lg:hidden
-    ${open ? "translate-x-0 left-0" : "-translate-x-full"}
-  `}
+        className={classNames(
+          "fixed w-full sm:w-[25rem] bg-white dark:bg-black dark:border-r-white/15 flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-30 translate-x-0 lg:hidden",
+          "mobile-navigation",
+          open ? "translate-x-0 left-0" : "-translate-x-full"
+        )}
       >
         <Disclosure.Button
           className={
@@ -228,6 +252,7 @@ export const MessageNavigation: React.FC<{
                       key={chat?._id}
                       chat={chat?._id === currentChat?._id ? currentChat : chat}
                       isActive={chat?._id === currentChat?._id}
+                      user={user}
                       onClick={handleChatSelect}
                       onChatDelete={handleChatDelete}
                       unreadCount={getUnreadCount(chat._id)}
