@@ -1,29 +1,39 @@
 import { Disclosure } from "@headlessui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCaretDown, faClose } from "@fortawesome/free-solid-svg-icons";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeftIcon, MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { ChatModal } from "../modal/ChatModal.tsx";
 import { SearchInput } from "../panels/SearchInput.tsx";
 import { ChatItem } from "../chat/ChatItem.tsx";
 import { Loading } from "../Loading.tsx";
-import { useChat } from "../../hooks/useChat.ts";
 import { classNames, getMessageObjectMetaData } from "../../utils/index.ts";
-import { useMessage } from "../../hooks/useMessage.ts";
-import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks.ts";
-import { RootState } from "../../app/store.ts";
-import { setCurrentChat, onChatDelete } from "../../features/chats/chat.reducer.ts";
-import { ChatListItemInterface } from "../../types/chat.ts";
+import { ChatListItemInterface, ChatMessageInterface } from "../../types/chat.ts";
+import { User } from "../../types/auth.ts";
+import { useAppDispatch } from "../../redux/redux.hooks.ts";
+import { onChatDelete, setCurrentChat } from "../../features/chats/chat.reducer.ts";
 
 export const MessageNavigation: React.FC<{
   open: boolean;
   close: () => any;
-}> = ({ open, close }) => {
-  const { user } = useAppSelector((state: RootState) => state.auth);
-  const { currentChat } = useAppSelector((state: RootState) => state.chat);
-  const { unreadMessages, setMessage, getAllMessages } = useMessage();
-  const { chats, isLoadingChats, refetch } = useChat();
-
+  user: User | null;
+  currentChat: ChatListItemInterface;
+  chats: ChatListItemInterface[];
+  isLoadingChats: boolean;
+  unreadMessages: ChatMessageInterface[];
+  setMessage: React.Dispatch<React.SetStateAction<string>>;
+  getAllMessages: () => void;
+}> = ({
+  open,
+  close,
+  currentChat,
+  chats,
+  isLoadingChats,
+  unreadMessages,
+  user,
+  setMessage,
+  getAllMessages,
+}) => {
   const [itemDeleted, setItemDeleted] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
@@ -35,40 +45,53 @@ export const MessageNavigation: React.FC<{
 
   useEffect(() => {
     if (itemDeleted) {
-      refetch();
+      // refetch();
       setItemDeleted(false);
     }
-  }, [refetch, itemDeleted]);
+  }, [itemDeleted]);
 
-  const handleChatSelect = (chat: ChatListItemInterface) => {
-    if (currentChat && currentChat?._id === chat?._id) return;
+  const handleChatSelect = useCallback(
+    (chat: ChatListItemInterface) => {
+      if (currentChat && currentChat?._id === chat?._id) return;
 
-    dispatch(setCurrentChat({ chat }));
-    setMessage("");
-    getAllMessages();
+      dispatch(setCurrentChat({ chat }));
+      setMessage("");
+      getAllMessages();
 
-    close();
-  };
-
-  const handleChatDelete = (chatId: string) => {
-    setItemDeleted(true);
-    dispatch(onChatDelete({ chatId }));
-  };
-
-  // Consistent logic for calculating unread messages
-  const getUnreadCount = (chatId: string) => {
-    return unreadMessages?.filter((msg) => msg?.chat === chatId)?.length || 0;
-  };
-
-  const filteredChats = [...(chats || [])]?.filter((chat) =>
-    localSearchQuery
-      ? getMessageObjectMetaData(chat, user!).title?.toLowerCase().includes(localSearchQuery)
-      : true
+      close();
+    },
+    [close, currentChat, dispatch, getAllMessages, setMessage]
   );
 
-  const handleCloseChat = () => {
+  const handleChatDelete = useCallback(
+    (chatId: string) => {
+      setItemDeleted(true);
+      dispatch(onChatDelete({ chatId }));
+    },
+    [dispatch]
+  );
+
+  // Consistent logic for calculating unread messages
+  const getUnreadCount = useCallback(
+    (chatId: string) => {
+      return unreadMessages?.filter((msg) => msg?.chat === chatId)?.length || 0;
+    },
+    [unreadMessages]
+  );
+
+  const filteredChats = useMemo(
+    () =>
+      chats?.filter((chat) =>
+        localSearchQuery
+          ? getMessageObjectMetaData(chat, user!).title?.toLowerCase().includes(localSearchQuery)
+          : true
+      ) || [],
+    [chats, localSearchQuery, user]
+  );
+
+  const handleCloseChat = useCallback(() => {
     setOpenChat(false);
-  };
+  }, []);
 
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
@@ -89,20 +112,15 @@ export const MessageNavigation: React.FC<{
   }, [handleClickOutside]);
 
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setIsSearching(false);
     }, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <>
-      <ChatModal
-        open={openChat}
-        onSuccess={() => {
-          refetch();
-        }}
-        onClose={handleCloseChat}
-      />
+      <ChatModal open={openChat} onClose={handleCloseChat} />
       <div
         className={`fixed left-20 w-[25rem] bg-white dark:bg-black flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen translate-x-0 hidden lg:block
   `}

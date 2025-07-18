@@ -48,7 +48,7 @@ export const Chat = () => {
   const [sendMessage] = useSendMessageMutation();
   const { theme } = useTheme();
   const { socket } = useSocketContext();
-  const { onNewChat, _onChatLeave, chats, onGroupChatRename } = useChat();
+  const { onNewChat, _onChatLeave, chats, onGroupChatRename, isLoadingChats } = useChat();
 
   const { isOnline } = useNetwork();
   const { data: availableUsers } = useGetAvailableUsersQuery();
@@ -104,6 +104,7 @@ export const Chat = () => {
     handleReplyToChatMessage,
     scrollToBottom,
     showScrollButton,
+    unreadMessages,
   } = useMessage();
 
   const { handleStartTyping, isTyping, handleStopTyping, resetTypingState } = useTyping({
@@ -332,7 +333,17 @@ export const Chat = () => {
           >
             <div className="">
               <SideNavigation />
-              <MessageNavigation open={open} close={close} />
+              <MessageNavigation
+                open={open}
+                close={close}
+                user={user}
+                currentChat={currentChat!}
+                chats={chats}
+                getAllMessages={getAllMessages}
+                setMessage={setMessage}
+                isLoadingChats={isLoadingChats}
+                unreadMessages={unreadMessages}
+              />
             </div>
             <main
               className={classNames(

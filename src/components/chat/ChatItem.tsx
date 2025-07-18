@@ -54,7 +54,10 @@ const arePropsEqual = (prevProps: ChatItemProps, nextProps: ChatItemProps) => {
     prevProps.chat.participants.length === nextProps.chat.participants.length && // Compare length
     prevProps.isActive === nextProps.isActive &&
     prevProps.unreadCount === nextProps.unreadCount &&
-    prevProps.user?._id === nextProps.user?._id
+    prevProps.user?._id === nextProps.user?._id &&
+    prevProps.onClick === nextProps.onClick &&
+    prevProps.onChatDelete === nextProps.onChatDelete &&
+    prevProps.close === nextProps.close
   );
 };
 

@@ -10,46 +10,66 @@ import {
 } from "../features/chats/chat.reducer";
 import { toast } from "react-toastify";
 import { createSelector } from "@reduxjs/toolkit";
-
+import { useCallback, useMemo } from "react";
 
 const selectChatState = (state: RootState) => state.chat;
 const selectChats = createSelector(
-  [selectChatState, (_: RootState, queryData: { data: ChatListItemInterface[] | undefined }) => queryData.data],
-  (chatState, queryData) => chatState.chats?.length > 0 ? chatState.chats : queryData || []
+  [
+    selectChatState,
+    (_: RootState, queryData: { data: ChatListItemInterface[] | undefined }) => queryData.data,
+  ],
+  (chatState, queryData) => {
+    // Return a new array only if necessary to ensure stability
+    return chatState.chats?.length > 0 ? [...chatState.chats] : queryData || [];
+  }
 );
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
-  const { data, isLoading: isLoadingChats, refetch } = useGetUserChatsQuery();
+  const { data, isLoading: isLoadingChats } = useGetUserChatsQuery();
 
   const chatsFromState = useAppSelector((state) => selectChats(state, { data: data?.data }));
-  const chats = chatsFromState?.length > 0 ? chatsFromState : data?.data;
+  const chats = useMemo(() => {
+    return chatsFromState?.length > 0 ? [...chatsFromState] : data?.data || [];
+  }, [chatsFromState, data?.data]);
 
-  const _updateChatLastMessage = (chatToUpdateId: string, message: ChatMessageInterface) => {
-    dispatch(updateChatLastMessage({ chatToUpdateId, message }));
-  };
+  const _updateChatLastMessage = useCallback(
+    (chatToUpdateId: string, message: ChatMessageInterface) => {
+      dispatch(updateChatLastMessage({ chatToUpdateId, message }));
+    },
+    [dispatch]
+  );
 
-  const onNewChat = (chat: ChatListItemInterface) => {
-    console.log(chat);
+  const onNewChat = useCallback(
+    (chat: ChatListItemInterface) => {
+      console.log(chat);
 
-    dispatch(newChat({ chat }));
-  };
+      dispatch(newChat({ chat }));
+    },
+    [dispatch]
+  );
 
-  const onGroupChatRename = (data: ChatListItemInterface) => {
-    console.log(data);
+  const onGroupChatRename = useCallback(
+    (data: ChatListItemInterface) => {
+      console.log(data);
 
-    dispatch(updateGroupName({ chat: data }));
-  };
+      dispatch(updateGroupName({ chat: data }));
+    },
+    [dispatch]
+  );
 
-  const _onChatLeave = (chat: ChatListItemInterface) => {
-    console.log(chat);
+  const _onChatLeave = useCallback(
+    (chat: ChatListItemInterface) => {
+      console.log(chat);
 
-    dispatch(onChatLeave({ chat }));
+      dispatch(onChatLeave({ chat }));
 
-    toast("A chat you were participating in has been deleted", {
-      type: "info",
-    });
-  };
+      toast("A chat you were participating in has been deleted", {
+        type: "info",
+      });
+    },
+    [dispatch]
+  );
 
   return {
     isLoadingChats,
@@ -57,7 +77,7 @@ export const useChat = () => {
     onNewChat,
     _onChatLeave,
     _updateChatLastMessage,
-    refetch,
+    // refetch,
     onGroupChatRename,
   };
 };
