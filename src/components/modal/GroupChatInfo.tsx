@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 type GroupInfoProps = {
   open: boolean;
   handleClose: () => void;
+  refetchChats: () => void;
   user: User | null;
   currentChat: ChatListItemInterface;
 };
@@ -21,6 +22,7 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
   handleClose,
   user,
   currentChat,
+  refetchChats,
 }) => {
   const [updateGroupChatDetails] = useUpdateGroupChatDetailsMutation();
   const [newGroupName, setNewGroupName] = useState<string>("");
@@ -49,8 +51,13 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
       setNewGroupName(response?.data?.name);
       refetchGroupChatDetails();
       setRenamingName(false);
+      refetchChats();
 
       toast(response?.message, { type: "success" });
+
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
     } catch (error: any) {
       toast(error?.data?.message, { type: "error" });
     }

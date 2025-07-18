@@ -129,12 +129,15 @@ const ChatSlice = createSlice({
           { ...state.chats[chatIndex], name: chat.name },
           ...state.chats.slice(chatIndex + 1),
         ];
+
         if (state.currentChat?._id === chat._id) {
           state.currentChat = { ...state.currentChat, name: chat.name };
           LocalStorage.set("current-chat", state.currentChat);
         }
         LocalStorage.set("chats", state.chats);
       }
+
+      console.log(state.chats);
     },
 
     onChatDelete: (state, action: PayloadAction<{ chatId: string }>) => {
@@ -184,7 +187,7 @@ const ChatSlice = createSlice({
 
     builder.addMatcher(ChatApiSlice.endpoints.getChatMessages.matchFulfilled, (state, action) => {
       const { data } = action.payload;
-      console.log(data);
+
       state.chatMessages = data;
 
       LocalStorage.set("chatmessages", state.chatMessages);
@@ -217,28 +220,15 @@ const ChatSlice = createSlice({
       LocalStorage.set("chats", state.chats);
     });
 
-    builder.addMatcher(ChatApiSlice.endpoints.createGroupChat.matchFulfilled, (state, action) => {
-      const { data } = action.payload;
+    // builder.addMatcher(ChatApiSlice.endpoints.createGroupChat.matchFulfilled, (state, action) => {
+    //   const { data } = action.payload;
 
-      console.log(data);
+    //   console.log(data);
 
-      state.chats = [...state.chats, data];
+    //   state.chats = [...state.chats, data];
 
-      LocalStorage.set("chats", state.chats);
-    });
-
-    builder.addMatcher(
-      ChatApiSlice.endpoints.updateGroupChatDetails.matchFulfilled,
-      (state, action) => {
-        const { data } = action.payload;
-
-        console.log(data);
-
-        state.chats = [...state.chats, data];
-
-        LocalStorage.set("chats", state.chats);
-      }
-    );
+    //   LocalStorage.set("chats", state.chats);
+    // });
   },
 });
 

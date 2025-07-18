@@ -26,7 +26,7 @@ const selectChats = createSelector(
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
-  const { data, isLoading: isLoadingChats } = useGetUserChatsQuery();
+  const { data, isLoading: isLoadingChats, refetch: refetchChats } = useGetUserChatsQuery();
 
   const chatsFromState = useAppSelector((state) => selectChats(state, { data: data?.data }));
   const chats = useMemo(() => {
@@ -77,7 +77,7 @@ export const useChat = () => {
     onNewChat,
     _onChatLeave,
     _updateChatLastMessage,
-    // refetch,
+    refetchChats,
     onGroupChatRename,
   };
 };

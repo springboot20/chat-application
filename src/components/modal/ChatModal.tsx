@@ -15,7 +15,8 @@ import { User } from "../../types/auth";
 export const ChatModal: React.FC<{
   open: boolean;
   onClose: () => void;
-}> = ({ onClose, open }) => {
+  onSuccess: () => void;
+}> = ({ onClose, open, onSuccess }) => {
   const [userId, setUserId] = useState<string | null>(null);
   const [creatingChat, setCreatingChat] = useState<boolean>(false);
   const [groupName, setGroupName] = useState<string>("");
@@ -36,6 +37,8 @@ export const ChatModal: React.FC<{
       const response = await _createNewChat(userId).unwrap();
       const { message } = response;
       toast(message, { type: "success" });
+
+      onSuccess();
 
       // Optionally, you can handle the response here, e.g., update the chat list in the UI
       handleClose();
@@ -88,7 +91,7 @@ export const ChatModal: React.FC<{
   return (
     <>
       <Transition.Root show={open} as={Fragment}>
-        <Dialog as="div" className="relative z-20" onClose={() => handleClose()}>
+        <Dialog as="div" className="relative z-50" onClose={() => handleClose()}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"

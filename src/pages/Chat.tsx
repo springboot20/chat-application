@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import { UserIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { AudioManager, classNames } from "../utils/index.ts";
@@ -48,7 +48,8 @@ export const Chat = () => {
   const [sendMessage] = useSendMessageMutation();
   const { theme } = useTheme();
   const { socket } = useSocketContext();
-  const { onNewChat, _onChatLeave, chats, onGroupChatRename, isLoadingChats } = useChat();
+  const { onNewChat, _onChatLeave, chats, onGroupChatRename, isLoadingChats, refetchChats } =
+    useChat();
 
   const { isOnline } = useNetwork();
   const { data: availableUsers } = useGetAvailableUsersQuery();
@@ -63,6 +64,8 @@ export const Chat = () => {
   });
 
   console.log(_);
+
+  const messageHook = useMessage();
 
   const {
     message,
@@ -105,7 +108,7 @@ export const Chat = () => {
     scrollToBottom,
     showScrollButton,
     unreadMessages,
-  } = useMessage();
+  } = useMemo(() => messageHook, [messageHook]);
 
   const { handleStartTyping, isTyping, handleStopTyping, resetTypingState } = useTyping({
     currentChat: currentChat!,
@@ -343,6 +346,7 @@ export const Chat = () => {
                 setMessage={setMessage}
                 isLoadingChats={isLoadingChats}
                 unreadMessages={unreadMessages}
+                refetchChats={refetchChats}
               />
             </div>
             <main

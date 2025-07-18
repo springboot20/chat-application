@@ -25,6 +25,7 @@ interface ChatItemProps {
   unreadCount?: number;
   onChatDelete: (chatId: string) => void;
   close: () => any;
+  refetchChats: () => any;
   user: User | null;
 }
 
@@ -57,20 +58,19 @@ const arePropsEqual = (prevProps: ChatItemProps, nextProps: ChatItemProps) => {
     prevProps.user?._id === nextProps.user?._id &&
     prevProps.onClick === nextProps.onClick &&
     prevProps.onChatDelete === nextProps.onChatDelete &&
-    prevProps.close === nextProps.close
+    prevProps.close === nextProps.close &&
+    prevProps.refetchChats === nextProps.refetchChats
   );
 };
 
 export const ChatItem: React.FC<ChatItemProps> = memo(
-  ({ chat, onClick, unreadCount = 0, onChatDelete, isActive, close, user }) => {
+  ({ chat, onClick, unreadCount = 0, onChatDelete, isActive, close, user, refetchChats }) => {
     const [openGroupInfo, setOpenGroupInfo] = useState(false);
     const [openOptions, setOpenOptions] = useState<{ [key: string]: boolean }>({});
     const dispatch = useAppDispatch();
 
     const toggleOptions = (id: string, evt: React.MouseEvent) => {
       evt.stopPropagation();
-
-      console.log(openGroupInfo);
 
       setOpenOptions((prev) => {
         return {
@@ -96,6 +96,8 @@ export const ChatItem: React.FC<ChatItemProps> = memo(
         });
     };
 
+    console.log("ChatItem rendered", chat?._id);
+
     return (
       <>
         <GroupChatInfo
@@ -103,6 +105,7 @@ export const ChatItem: React.FC<ChatItemProps> = memo(
           currentChat={chat}
           handleClose={() => setOpenGroupInfo(false)}
           user={user}
+          refetchChats={refetchChats}
         />
         <div
           role="button"
