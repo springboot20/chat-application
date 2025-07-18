@@ -14,8 +14,9 @@ import { useDeleteOneOneChatMessageMutation } from "../../features/chats/chat.sl
 import { toast } from "react-toastify";
 import { Menu, Transition } from "@headlessui/react";
 import { GroupChatInfo } from "../modal/GroupChatInfo";
-import { isEqual } from "lodash";
 import { User } from "../../types/auth";
+import { setCurrentChat } from "../../features/chats/chat.reducer";
+import { useAppDispatch } from "../../redux/redux.hooks";
 
 interface ChatItemProps {
   chat: ChatListItemInterface;
@@ -30,27 +31,38 @@ interface ChatItemProps {
 // and also am unable to fix showing the typing effect when a user is typing
 
 const arePropsEqual = (prevProps: ChatItemProps, nextProps: ChatItemProps) => {
-  // Compare specific chat properties that affect rendering
-  const chatEqual =
+  // // Compare specific chat properties that affect rendering
+  // const chatEqual =
+  //   prevProps.chat._id === nextProps.chat._id &&
+  //   prevProps.chat.name === nextProps.chat.name &&
+  //   prevProps.chat.isGroupChat === nextProps.chat.isGroupChat &&
+  //   prevProps.chat.updatedAt === nextProps.chat.updatedAt &&
+  //   isEqual(prevProps.chat.lastMessage, nextProps.chat.lastMessage) &&
+  //   isEqual(prevProps.chat.participants, nextProps.chat.participants);
+
+  // const isActiveEqual = isEqual(prevProps.isActive, nextProps.isActive);
+  // const unreadcountEqual = isEqual(prevProps.unreadCount, nextProps.unreadCount);
+  // const userEqual = isEqual(prevProps.user?._id, nextProps.user?._id);
+
+  // Only re-render if relevant props have changed
+  return (
     prevProps.chat._id === nextProps.chat._id &&
     prevProps.chat.name === nextProps.chat.name &&
     prevProps.chat.isGroupChat === nextProps.chat.isGroupChat &&
     prevProps.chat.updatedAt === nextProps.chat.updatedAt &&
-    isEqual(prevProps.chat.lastMessage, nextProps.chat.lastMessage) &&
-    isEqual(prevProps.chat.participants, nextProps.chat.participants);
-
-  const isActiveEqual = isEqual(prevProps.isActive, nextProps.isActive);
-  const unreadcountEqual = isEqual(prevProps.unreadCount, nextProps.unreadCount);
-  const userEqual = isEqual(prevProps.user?._id, nextProps.user?._id);
-
-  // Only re-render if relevant props have changed
-  return isActiveEqual && chatEqual && unreadcountEqual && userEqual;
+    prevProps.chat.lastMessage?._id === nextProps.chat.lastMessage?._id && // Compare message ID
+    prevProps.chat.participants.length === nextProps.chat.participants.length && // Compare length
+    prevProps.isActive === nextProps.isActive &&
+    prevProps.unreadCount === nextProps.unreadCount &&
+    prevProps.user?._id === nextProps.user?._id
+  );
 };
 
 export const ChatItem: React.FC<ChatItemProps> = memo(
   ({ chat, onClick, unreadCount = 0, onChatDelete, isActive, close, user }) => {
     const [openGroupInfo, setOpenGroupInfo] = useState(false);
     const [openOptions, setOpenOptions] = useState<{ [key: string]: boolean }>({});
+    const dispatch = useAppDispatch();
 
     const toggleOptions = (id: string, evt: React.MouseEvent) => {
       evt.stopPropagation();
@@ -83,7 +95,12 @@ export const ChatItem: React.FC<ChatItemProps> = memo(
 
     return (
       <>
-        <GroupChatInfo open={openGroupInfo} handleClose={() => setOpenGroupInfo(false)} />
+        <GroupChatInfo
+          open={openGroupInfo}
+          currentChat={chat}
+          handleClose={() => setOpenGroupInfo(false)}
+          user={user}
+        />
         <div
           role="button"
           className={classNames(
@@ -160,7 +177,7 @@ export const ChatItem: React.FC<ChatItemProps> = memo(
                               e.stopPropagation();
                               setOpenGroupInfo(true);
 
-                              // dispatch(setCurrentChat({ chat }));
+                              dispatch(setCurrentChat({ chat }));
                             }}
                             role="button"
                           >

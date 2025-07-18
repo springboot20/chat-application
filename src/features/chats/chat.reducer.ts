@@ -123,19 +123,17 @@ const ChatSlice = createSlice({
       const chatIndex = state.chats.findIndex((localChat) => localChat._id === chat._id);
 
       if (chatIndex !== -1) {
-        // Update the chat in the state
-        state.chats[chatIndex] = chat;
-
-        // If this is the current chat, update that too
-        if (state.currentChat && state.currentChat._id === chat._id) {
-          state.currentChat = chat;
-        }
-
-        // Update localStorage
-        LocalStorage.set("chats", state.chats);
+        // Only update the name to avoid changing other properties
+        state.chats = [
+          ...state.chats.slice(0, chatIndex),
+          { ...state.chats[chatIndex], name: chat.name },
+          ...state.chats.slice(chatIndex + 1),
+        ];
         if (state.currentChat?._id === chat._id) {
-          LocalStorage.set("current-chat", chat);
+          state.currentChat = { ...state.currentChat, name: chat.name };
+          LocalStorage.set("current-chat", state.currentChat);
         }
+        LocalStorage.set("chats", state.chats);
       }
     },
 

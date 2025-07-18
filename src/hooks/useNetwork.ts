@@ -21,7 +21,7 @@ export const useNetwork = () => {
       window.removeEventListener("online", setOnline);
       window.removeEventListener("offline", setOffline);
     };
-  }, []);
+  }, [setOffline, setOnline]);
 
   return useMemo(
     () => ({

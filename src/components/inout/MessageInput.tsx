@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { classNames } from "../../utils";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { MentionUserMenuComponent } from "../menu/MentionUserMenu";
@@ -10,9 +10,11 @@ import {
 } from "@heroicons/react/24/outline";
 import { DocumentPreview } from "../file/DocumentPreview";
 import { Disclosure } from "@headlessui/react";
-import { ChatMessageInterface } from "../../types/chat";
+import { ChatListItemInterface, ChatMessageInterface } from "../../types/chat";
 import { User } from "../../types/auth";
 import { FileSelection } from "../file/FileSelection";
+import { STOP_TYPING_EVENT, TYPING_EVENT } from "../../enums";
+import socketio from "socket.io-client";
 
 type FileType = {
   files: File[] | null;
@@ -46,6 +48,9 @@ interface MessageInputProps {
     event: React.ChangeEvent<HTMLInputElement>
   ) => void;
   handleSetCloseReply: () => void;
+  currentChat: ChatListItemInterface;
+  user: User;
+  socket: ReturnType<typeof socketio> | null;
 }
 
 const MessageInput = ({
@@ -72,15 +77,19 @@ const MessageInput = ({
   showMentionUserMenu,
   handleSetCloseReply,
   openEmoji,
+  currentChat,
+  user,
+  socket,
 }: MessageInputProps) => {
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTypingRef = useRef(false);
+
   // Auto-resize textarea based on content
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
+    textarea!.rows = 1;
     if (textarea) {
-      textarea.style.height = "auto";
-      const scrollHeight = textarea.scrollHeight;
-      const maxHeight = 200; // Maximum height in pixels (about 5 lines)
-      textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+      textarea.rows = Math.ceil(textarea.value.length / 100);
     }
   }, [textareaRef]);
 
@@ -91,6 +100,21 @@ const MessageInput = ({
 
   // Optimized send message handler
   const handleSendMessageLocal = useCallback(() => {
+    // Stop typing before sending message
+    if (currentChat?._id && socket && isTypingRef.current) {
+      socket.emit(STOP_TYPING_EVENT, {
+        chatId: currentChat._id,
+        userId: user?._id,
+        username: user?.username,
+      });
+      isTypingRef.current = false;
+    }
+
+    // Clear timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
     if (message.trim() || (attachmentFiles?.files && attachmentFiles.files.length > 0)) {
       handleSendMessage();
       // Reset textarea height after sending
@@ -100,23 +124,84 @@ const MessageInput = ({
         }
       }, 0);
     }
-  }, [message, attachmentFiles.files, handleSendMessage, textareaRef]);
+  }, [
+    currentChat?._id,
+    socket,
+    message,
+    attachmentFiles.files,
+    user?._id,
+    user?.username,
+    handleSendMessage,
+    textareaRef,
+  ]);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.target.value;
+    handleOnMessageChange(event);
+    handleShowMentionUserMenu(event);
+
+    // Emit typing event when user starts typing
+    if (value.trim() && currentChat?._id && socket && !isTypingRef.current) {
+      socket.emit(TYPING_EVENT, {
+        chatId: currentChat._id,
+        userId: user?._id,
+        username: user?.username,
+      });
+      isTypingRef.current = true;
+    }
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set timeout to stop typing after 1 second of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      if (currentChat?._id && socket && isTypingRef.current) {
+        socket.emit(STOP_TYPING_EVENT, {
+          chatId: currentChat._id,
+          userId: user?._id,
+          username: user?.username,
+        });
+        isTypingRef.current = false;
+      }
+    }, 1000);
+  };
+
+  console.log(isTypingRef.current);
 
   // Handle keyboard events
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
         if (e.shiftKey) {
           // Allow new line with Shift+Enter
           return;
         }
-        e.preventDefault();
-        e.stopPropagation();
         handleSendMessageLocal();
       }
     },
     [handleSendMessageLocal]
   );
+
+  // Clean up on unmount or chat change
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (currentChat?._id && socket && isTypingRef.current) {
+        socket.emit(STOP_TYPING_EVENT, {
+          chatId: currentChat._id,
+          userId: user?._id,
+          username: user?.username,
+        });
+        isTypingRef.current = false;
+      }
+    };
+  }, [currentChat?._id, socket, user?._id, user?.username]);
 
   // Check if send button should be enabled
   const canSend = message.trim() || (attachmentFiles?.files && attachmentFiles.files.length > 0);
@@ -236,27 +321,23 @@ const MessageInput = ({
         </Disclosure>
 
         {/* Text Input */}
-        <div className="flex-1 relative h-full">
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(event) => {
-              handleOnMessageChange(event);
-              handleShowMentionUserMenu(event);
-            }}
-            onKeyDown={handleKeyDown}
-            className={classNames(
-              "w-full p-2 resize-none focus:outline-none rounded-lg border dark:border-white/5 outline-none",
-              "dark:bg-white/5 bg-gray-50 dark:text-white text-gray-900",
-              "placeholder-gray-400 dark:placeholder-gray-500",
-              "min-h-[48px] overflow-y-auto",
-              "transition-all duration-200",
-              "text-sm placeholder:!mt-8"
-            )}
-            placeholder="Type a message... (Shift+Enter for new line)"
-            rows={1}
-          />
-        </div>
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          className={classNames(
+            "w-full p-2 resize-none focus:outline-none rounded-lg border dark:border-white/5 outline-none",
+            "dark:bg-white/5 bg-gray-50 dark:text-white text-gray-900",
+            "placeholder-gray-400 dark:placeholder-gray-500",
+            "overflow-y-auto",
+            "transition-all duration-200",
+            "text-sm"
+          )}
+          rows={1}
+        >
+          Type a message... (Shift+Enter for new line)
+        </textarea>
 
         {/* Send Button */}
         <button

@@ -2,7 +2,6 @@ import React, { Fragment, useCallback, useEffect, useRef, useState } from "react
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import { UserIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { AudioManager, classNames } from "../utils/index.ts";
-import { useSocketContext } from "../context/SocketContext.tsx";
 import { MessageNavigation } from "../components/navigation/message-navigation.tsx";
 import SideNavigation from "../components/navigation/side-navigation.tsx";
 import { Link } from "react-router-dom";
@@ -37,6 +36,7 @@ import { useTheme } from "../context/ThemeContext";
 import { User } from "../types/auth.ts";
 import messageSound from "../assets/audio/send-message-notification.mp3";
 import MessageInput from "../components/inout/MessageInput.tsx";
+import { useSocketContext } from "../hooks/useSocket.ts";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -106,7 +106,10 @@ export const Chat = () => {
     showScrollButton,
   } = useMessage();
 
-  const { handleStartTyping, isTyping, handleStopTyping } = useTyping();
+  const { handleStartTyping, isTyping, handleStopTyping, resetTypingState } = useTyping({
+    currentChat: currentChat!,
+    user,
+  });
 
   const audioManagerRef = useRef<AudioManager | null>(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
@@ -155,7 +158,7 @@ export const Chat = () => {
   const sendChatMessage = async () => {
     if (!currentChat?._id || !socket) return;
 
-    socket?.emit(STOP_TYPING_EVENT, currentChat?._id);
+    socket.emit(STOP_TYPING_EVENT, currentChat._id);
 
     const processedMessage = processMentionsContent(message, users);
 
@@ -216,6 +219,43 @@ export const Chat = () => {
   }, [setOpenEmoji]);
 
   useEffect(() => {
+    let typingTimeout: NodeJS.Timeout | null = null;
+
+    const handleStopTypingTimeout = () => {
+      if (currentChat?._id && socket) {
+        socket.emit(STOP_TYPING_EVENT, {
+          chatId: currentChat._id,
+          userId: user?._id,
+          username: user?.username,
+        });
+      }
+    };
+
+    if (message.trim()) {
+      // Clear existing timeout
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+
+      // Set new timeout to stop typing after 1 second of inactivity
+      typingTimeout = setTimeout(handleStopTypingTimeout, 1000);
+    }
+
+    return () => {
+      // Clear existing timeout
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+    };
+  }, [message, currentChat?._id, socket, user?._id, user?.username]);
+
+  console.log(isTyping);
+
+  useEffect(() => {
+    resetTypingState();
+  }, [currentChat?._id, resetTypingState]);
+
+  useEffect(() => {
     // Run getChats only once when component mounts or socket changes
     if (currentChat?._id) {
       socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
@@ -267,11 +307,11 @@ export const Chat = () => {
       ? currentChat.name
       : participants?.filter((p) => p._id !== user._id)[0]?.username;
 
-    const avatarUrl = isGroupChat
-      ? participants?.slice(0, 3)
-      : participants?.filter((p) => p._id !== user._id)[0]?.avatar;
+    // const avatarUrl = isGroupChat
+    //   ? participants?.slice(0, 3)
+    //   : participants?.filter((p) => p._id !== user._id)[0]?.avatar;
 
-    console.log(avatarUrl);
+    // console.log(avatarUrl);
 
     return {
       totalParticipant,
@@ -581,6 +621,9 @@ export const Chat = () => {
                         showMentionUserMenu={showMentionUserMenu}
                         handleSetCloseReply={handleSetCloseReply}
                         openEmoji={openEmoji}
+                        socket={socket}
+                        currentChat={currentChat}
+                        user={user!}
                       />
                     </div>
                   </>

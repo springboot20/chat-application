@@ -9,12 +9,20 @@ import {
   updateGroupName,
 } from "../features/chats/chat.reducer";
 import { toast } from "react-toastify";
+import { createSelector } from "@reduxjs/toolkit";
+
+
+const selectChatState = (state: RootState) => state.chat;
+const selectChats = createSelector(
+  [selectChatState, (_: RootState, queryData: { data: ChatListItemInterface[] | undefined }) => queryData.data],
+  (chatState, queryData) => chatState.chats?.length > 0 ? chatState.chats : queryData || []
+);
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
   const { data, isLoading: isLoadingChats, refetch } = useGetUserChatsQuery();
 
-  const chatsFromState = useAppSelector((state: RootState) => state.chat.chats);
+  const chatsFromState = useAppSelector((state) => selectChats(state, { data: data?.data }));
   const chats = chatsFromState?.length > 0 ? chatsFromState : data?.data;
 
   const _updateChatLastMessage = (chatToUpdateId: string, message: ChatMessageInterface) => {

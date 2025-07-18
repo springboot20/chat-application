@@ -166,8 +166,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
       );
     };
 
-    console.log(attachment?.url.split("."));
-
     return (
       <div
         className={classNames(

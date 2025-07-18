@@ -92,7 +92,7 @@ export const MessageNavigation: React.FC<{
     setTimeout(() => {
       setIsSearching(false);
     }, 1000);
-  });
+  }, []);
 
   return (
     <>
@@ -176,7 +176,7 @@ export const MessageNavigation: React.FC<{
                   filteredChats.map((chat) => (
                     <ChatItem
                       key={`chat-item-${chat?._id}`}
-                      chat={chat?._id === currentChat?._id ? currentChat : chat}
+                      chat={chat}
                       isActive={chat?._id === currentChat?._id}
                       user={user}
                       onClick={handleChatSelect}
@@ -267,8 +267,8 @@ export const MessageNavigation: React.FC<{
                 {React.Children.toArray(
                   filteredChats.map((chat) => (
                     <ChatItem
-                      key={chat?._id}
-                      chat={chat?._id === currentChat?._id ? currentChat : chat}
+                      key={`chat-item-${chat._id}`}
+                      chat={chat}
                       isActive={chat?._id === currentChat?._id}
                       user={user}
                       onClick={handleChatSelect}

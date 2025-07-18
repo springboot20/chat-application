@@ -2,31 +2,31 @@ import { Dialog, Transition } from "@headlessui/react";
 import { PencilIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import React, { Fragment, useCallback, useState } from "react";
 import {
-  useGetAvailableUsersQuery,
   useGetGroupChatQuery,
   useUpdateGroupChatDetailsMutation,
 } from "../../features/chats/chat.slice";
-import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks";
 import { ChatListItemInterface } from "../../types/chat";
-import { RootState } from "../../app/store";
 import { User } from "../../types/auth";
 import { toast } from "react-toastify";
-import { setCurrentChat } from "../../features/chats/chat.reducer";
 
 type GroupInfoProps = {
   open: boolean;
   handleClose: () => void;
+  user: User | null;
+  currentChat: ChatListItemInterface;
 };
 
-export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) => {
+export const GroupChatInfo: React.FC<GroupInfoProps> = ({
+  open,
+  handleClose,
+  user,
+  currentChat,
+}) => {
   const [updateGroupChatDetails] = useUpdateGroupChatDetailsMutation();
   const [newGroupName, setNewGroupName] = useState<string>("");
   const [renamingName, setRenamingName] = useState<boolean>(false);
   // const [participantToBeAdded, setParticipantToBeAdded] = useState<string>("");
-
-  const dispatch = useAppDispatch();
-  const { currentChat } = useAppSelector((state: RootState) => state.chat);
-  const { user } = useAppSelector((state: RootState) => state.auth);
+  // const { currentChat } = useAppSelector((state: RootState) => state.chat);
 
   const { data: response, refetch: refetchGroupChatDetails } = useGetGroupChatQuery(
     currentChat?._id as string,
@@ -34,12 +34,8 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
       skip: !currentChat?.isGroupChat,
     }
   );
-  const { data: usersResponse, refetch: refetchUsers } = useGetAvailableUsersQuery();
 
   const groupChatDetails = response?.data as ChatListItemInterface;
-  const availableUsers = usersResponse?.data as User[];
-
-  console.log(availableUsers);
 
   const handleGroupChatUpdate = async () => {
     if (!newGroupName) toast("Group name is required", { type: "info" });
@@ -52,7 +48,6 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
 
       setNewGroupName(response?.data?.name);
       refetchGroupChatDetails();
-      refetchUsers();
       setRenamingName(false);
 
       toast(response?.message, { type: "success" });
@@ -68,14 +63,7 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({ open, handleClose }) =
 
   return (
     <Transition.Root show={open} as={Fragment}>
-      <Dialog
-        as="div"
-        className="relative z-40 group-navigation"
-        onClose={() => {
-          handleClose();
-          dispatch(setCurrentChat({ chat: null }));
-        }}
-      >
+      <Dialog as="div" className="relative z-40 group-navigation" onClose={handleClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"

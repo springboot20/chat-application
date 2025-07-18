@@ -1,11 +1,13 @@
-import { useMemo, useState, useRef, useCallback } from "react";
-import { useAppSelector } from "../redux/redux.hooks";
-import { RootState } from "../app/store";
+import { useState, useRef, useCallback } from "react";
+import { ChatListItemInterface } from "../types/chat";
+import { User } from "../types/auth";
 
-export const useTyping = () => {
-  const { currentChat } = useAppSelector((state: RootState) => state.chat);
-  const { user } = useAppSelector((state: RootState) => state.auth);
+interface useTypingProps {
+  currentChat: ChatListItemInterface;
+  user: User | null;
+}
 
+export const useTyping = ({ currentChat, user }: useTypingProps) => {
   const typingTimeOutRef = useRef<NodeJS.Timeout | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -13,7 +15,6 @@ export const useTyping = () => {
   const handleStartTyping = useCallback(
     (data: any) => {
       console.log("Start typing data:", data);
-
       // Check if the typing event is for the current chat
       if (data.chatId === currentChat?._id) {
         // Don't show typing indicator for current user
@@ -34,10 +35,10 @@ export const useTyping = () => {
           }
 
           // Set timeout to automatically stop typing indicator after 3 seconds
-          typingTimeOutRef.current = setTimeout(() => {
-            setIsTyping(false);
-            setTypingUsers((prev) => prev.filter((id) => id !== data.userId));
-          }, 3000);
+          // typingTimeOutRef.current = setTimeout(() => {
+          //   setIsTyping(false);
+          //   setTypingUsers((prev) => prev.filter((id) => id !== data.userId));
+          // }, 3000);
         }
       }
     },
@@ -82,17 +83,14 @@ export const useTyping = () => {
     }
   }, []);
 
-  return useMemo(
-    () => ({
-      handleStartTyping,
-      handleStopTyping,
-      resetTypingState,
-      typingTimeOutRef,
-      isTyping,
-      typingUsers,
-      setIsTyping,
-      setTypingUsers,
-    }),
-    [handleStartTyping, handleStopTyping, resetTypingState, typingTimeOutRef, isTyping, typingUsers]
-  );
+  return {
+    handleStartTyping,
+    handleStopTyping,
+    resetTypingState,
+    typingTimeOutRef,
+    isTyping,
+    typingUsers,
+    setIsTyping,
+    setTypingUsers,
+  };
 };
