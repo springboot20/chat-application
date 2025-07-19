@@ -114,6 +114,7 @@ export const Chat = () => {
     handleReplyToChatMessage,
     scrollToBottom,
     showScrollButton,
+    reactionRef,
     // unreadMessages,
   } = useMemo(() => messageHook, [messageHook]);
 
@@ -579,6 +580,7 @@ export const Chat = () => {
                                     setIsOwnedMessage(msg.sender && msg.sender?._id === user?._id);
                                     return (
                                       <MessageItem
+                                        reactionRef={reactionRef}
                                         message={msg}
                                         theme={theme}
                                         messageToReply={messageToReply}

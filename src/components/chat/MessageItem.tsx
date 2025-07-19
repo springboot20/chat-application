@@ -21,8 +21,8 @@ const arePropsEqual = (prevProps: MessageItemProps, nextProps: MessageItemProps)
     prevProps.showReactionPicker[nextProps.message._id] ===
     nextProps.showReactionPicker[nextProps.message._id];
   const reactionLocationEqual = isEqual(
-    prevProps.reactionLocation[nextProps.message._id],
-    nextProps.reactionLocation[nextProps.message._id]
+    prevProps.reactionLocation?.[nextProps.message._id],
+    nextProps.reactionLocation?.[nextProps.message._id]
   );
 
   // Only re-render if relevant props have changed
@@ -43,7 +43,8 @@ interface MessageItemProps {
   isGroupChatMessage?: boolean;
   message: ChatMessageInterface;
   messageItemRef: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
-  handleReactionPicker: (key: string) => void;
+  reactionRef: React.MutableRefObject<HTMLDivElement | null>;
+  handleReactionPicker: (key: string, event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
   showReactionPicker: Record<string, boolean>;
   handleSelectReactionEmoji: (key: string, emojiData: EmojiClickData, event: MouseEvent) => void;
   handleHideReactionPicker: (key: string) => void;
@@ -52,7 +53,7 @@ interface MessageItemProps {
   theme: string;
   messageToReply: string;
   users: User[];
-  reactionLocation: Record<string, { left: number; top: number }>;
+  reactionLocation: Record<string, { left: number; top: number }> | null;
   handleSetOpenReply: (messageId: string) => void;
   highlightedMessageId?: string; // Add this prop to track which message should glow
   onSetHighlightedMessage?: (messageId: string | undefined) => void;
@@ -76,15 +77,12 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     onSetHighlightedMessage,
     highlightedMessageId,
     messageToReply,
+    reactionRef,
   }) => {
     const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
     const { user } = useAppSelector((state: RootState) => state.auth);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const messageFiles = message.attachments || [];
-    // const [menuOffset] = useState({
-    //   x: 0,
-    //   y: 0,
-    // });
     const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({
       x: 0,
       y: 0,
@@ -98,6 +96,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       clientX: number;
       clientY: number;
     } | null>(null);
+
+    console.log(reactionLocation);
 
     const calculateMenuPosition = useCallback(() => {
       if (!contextMenuEvent || !containerRef.current || !menuRef.current) return;
@@ -399,12 +399,13 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           {/* Emoji Picker Portal */}
           {!message.isDeleted &&
             showReactionPicker[message._id] &&
-            reactionLocation[message._id] && (
+            reactionLocation?.[message._id] && (
               <div
+                ref={reactionRef}
                 className="fixed z-[100] animate-in fade-in-0 zoom-in-95 duration-200"
                 style={{
-                  top: `${reactionLocation[message._id].top}px`,
-                  left: `${reactionLocation[message._id].left}px`,
+                  top: `${reactionLocation?.[message._id].top}px`,
+                  left: `${reactionLocation?.[message._id].left}px`,
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -478,7 +479,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
               // Only trigger for non-owned messages
               e.preventDefault();
               e.stopPropagation();
-              handleReactionPicker(message._id);
+              handleReactionPicker(message._id, e);
             }}
             ref={(element) => {
               messageItemRef.current[message._id] = element;

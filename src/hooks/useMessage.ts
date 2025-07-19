@@ -47,6 +47,7 @@ export const useMessage = () => {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const documentInputRef = useRef<HTMLInputElement | null>(null);
   const messageItemRef = useRef<Record<string, HTMLDivElement | null>>({});
+  const reactionRef = useRef<HTMLDivElement | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState<Record<string, boolean>>({});
   const [reaction, setReaction] = useState<Record<string, any>>({});
   const [selectedUser, setSelectedUser] = useState<User>({} as User);
@@ -59,6 +60,11 @@ export const useMessage = () => {
       }
     >
   >({});
+  const [doubleClickPosition, setDoubleClickPosition] = useState<{
+    clientX: number;
+    clientY: number;
+    messageId: string;
+  } | null>(null);
   const [reactToMessage] = useReactToChatMessageMutation();
   const [deleteChatMessage] = useDeleteChatMessageMutation();
   const [replyToChatMessage] = useReplyToMessageMutation();
@@ -123,55 +129,64 @@ export const useMessage = () => {
     setShowMentionUserMenu(false);
   }, []);
 
-  const calculatePickerPosition = useCallback((messageId: string) => {
-    const messageElement = messageItemRef.current[messageId];
-    if (!messageElement) return { left: 0, top: 0 };
+  const calculatePickerPosition = useCallback(
+    (messageId: string) => {
+      const messageElement = messageItemRef.current[messageId];
 
-    const rect = messageElement.getBoundingClientRect();
-    const pickerWidth = window.innerWidth < 768 ? Math.min(350, window.innerWidth - 40) : 350;
-    const pickerHeight = window.innerWidth < 768 ? Math.min(400, window.innerHeight - 100) : 400;
+      if (!doubleClickPosition || !messageElement || !reactionRef.current) {
+        console.warn("Missing required elements for position calculation");
+        return;
+      }
 
-    const viewportWidth = innerWidth;
-    const viewportHeight = innerHeight;
+      // Get the message element's bounding rect
+      const messageRect = messageElement.getBoundingClientRect();
+      const reactionRect = reactionRef.current.getBoundingClientRect();
 
-    // Determine if the message is owned (right-aligned) or not (left-aligned)
-    const isOwned = messageElement.closest("justify-end") !== null;
+      // Get the viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
 
-    // Calculate horizontal position
-    let left;
-    if (isOwned) {
-      left = rect.right - pickerWidth;
-    } else {
-      left = rect.left;
-    }
+      // Constants for picker dimensions (you may need to adjust these)
+      const MARGIN = 10;
 
-    const rightEdge = left + pickerWidth;
-    const leftEdge = left;
+      let x = doubleClickPosition.clientX;
+      let y = doubleClickPosition.clientY;
 
-    if (rightEdge > viewportWidth - 20) {
-      left = viewportWidth - pickerWidth - 20;
-    }
+      // Ensure picker stays within viewport bounds
+      if (x + reactionRect.width > viewportWidth) {
+        x = viewportWidth - reactionRect.width - MARGIN;
+      }
 
-    if (leftEdge < 20) {
-      left = 20;
-    }
+      if (x < MARGIN) {
+        x = MARGIN;
+      }
 
-    let top = rect.top - pickerHeight - 20;
+      if (y + reactionRect.height > viewportHeight) {
+        y = viewportHeight - reactionRect.height - MARGIN;
+      }
+      if (y < MARGIN) {
+        y = MARGIN;
+      }
 
-    if (top < 20) {
-      top = rect.bottom + 10;
-    }
+      // Convert to position relative to the message element
+      const relativeX = x - messageRect.left;
+      const relativeY = y - messageRect.top;
 
-    if (top + pickerHeight > viewportHeight - 20) {
-      top = viewportHeight - pickerHeight - 20;
-    }
+      console.log({
+        left: relativeX,
+        top: relativeY,
+      });
 
-    if (top < 20) {
-      top = 20;
-    }
-
-    return { top, left };
-  }, []);
+      setReactionLocation((prev) => ({
+        ...prev,
+        [messageId]: {
+          left: Math.abs(relativeX),
+          top: Math.abs(relativeY),
+        },
+      }));
+    },
+    [doubleClickPosition]
+  );
 
   const handleShowMentionUserMenu = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     event.preventDefault();
@@ -186,23 +201,26 @@ export const useMessage = () => {
     }
   }, []);
 
-  const handleShowReactionPicker = useCallback(
-    (key: string) => {
-      const position = calculatePickerPosition(key);
-      setReactionLocation((prev) => ({ ...prev, [key]: position }));
-      setShowReactionPicker((prev) => ({ ...prev, [key]: true }));
-    },
-    [calculatePickerPosition]
-  );
+  const handleHideReactionPicker = useCallback((messageId: string) => {
+    setShowReactionPicker((prev) => ({
+      ...prev,
+      [messageId]: false,
+    }));
 
-  const handleHideReactionPicker = useCallback(
-    (key: string) => setShowReactionPicker((prev) => ({ ...prev, [key]: false })),
-    []
-  );
+    // Clean up position data when hiding
+    setReactionLocation((prev) => {
+      const { [messageId]: _, ...rest } = prev;
+      console.log(_);
+      return rest;
+    });
+  }, []);
 
   const handleSelectReactionEmoji = useCallback(
     async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
-      event.stopPropagation();
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
 
       setReaction((prev) => ({
         ...prev,
@@ -231,13 +249,46 @@ export const useMessage = () => {
   );
 
   const handleReactionPicker = useCallback(
-    (key: string) => {
-      handleShowReactionPicker(key);
+    (messageId: string, event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      setShowReactionPicker((prev) => {
+        const newState = Object.keys(prev).reduce((acc, key) => {
+          acc[key] = key === messageId;
+          return acc;
+        }, {} as Record<string, boolean>);
+        return { ...newState, [messageId]: true };
+      });
+
+      // Store click position with message ID
+      setDoubleClickPosition({
+        clientX: event.clientX,
+        clientY: event.clientY,
+        messageId,
+      });
     },
-    [handleShowReactionPicker]
+    []
   );
 
-  const handleHideAllReactionPickers = useCallback(() => setShowReactionPicker({}), []);
+  useEffect(() => {
+    if (doubleClickPosition && showReactionPicker[doubleClickPosition.messageId]) {
+      // Use requestAnimationFrame to ensure DOM is updated
+      const timeoutId = setTimeout(() => {
+        calculatePickerPosition(doubleClickPosition.messageId);
+      }, 0);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [doubleClickPosition, showReactionPicker, calculatePickerPosition]);
+
+  console.log(showReactionPicker);
+
+  const handleHideAllReactionPickers = useCallback(() => {
+    setShowReactionPicker({});
+    setReactionLocation({});
+    setDoubleClickPosition(null);
+  }, []);
 
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
@@ -257,8 +308,7 @@ export const useMessage = () => {
     // Recalculate positions for all open pickers
     Object.keys(showReactionPicker).forEach((messageId) => {
       if (showReactionPicker[messageId]) {
-        const position = calculatePickerPosition(messageId);
-        setReactionLocation((prev) => ({ ...prev, [messageId]: position }));
+        calculatePickerPosition(messageId);
       }
     });
   }, [showReactionPicker, calculatePickerPosition]);
@@ -668,5 +718,6 @@ export const useMessage = () => {
     showReply,
     messageToReply,
     showScrollButton,
+    reactionRef,
   };
 };
