@@ -12,26 +12,28 @@ import { toast } from "react-toastify";
 import { createSelector } from "@reduxjs/toolkit";
 import { useCallback, useMemo } from "react";
 
-const selectChatState = (state: RootState) => state.chat;
-const selectChats = createSelector(
-  [
-    selectChatState,
-    (_: RootState, queryData: { data: ChatListItemInterface[] | undefined }) => queryData.data,
-  ],
-  (chatState, queryData) => {
-    // Return a new array only if necessary to ensure stability
-    return chatState.chats?.length > 0 ? [...chatState.chats] : queryData || [];
-  }
-);
+const selectChats = createSelector([(state: RootState) => state.chat], (chatState) => ({
+  chats: chatState.chats,
+  currentChat: chatState.currentChat,
+  chatMessages: chatState.chatMessages,
+  unreadMessages: chatState.unreadMessages,
+}));
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
   const { data, isLoading: isLoadingChats, refetch: refetchChats } = useGetUserChatsQuery();
 
-  const chatsFromState = useAppSelector((state) => selectChats(state, { data: data?.data }));
+  const chatsFromState = useAppSelector(selectChats);
+
   const chats = useMemo(() => {
-    return chatsFromState?.length > 0 ? [...chatsFromState] : data?.data || [];
-  }, [chatsFromState, data?.data]);
+    if (chatsFromState.chats.length > 0) {
+      return [...chatsFromState.chats];
+    }
+
+    return data?.data ? [...data.data] : [];
+  }, [chatsFromState.chats, data?.data]);
+
+  console.log(chats);
 
   const _updateChatLastMessage = useCallback(
     (chatToUpdateId: string, message: ChatMessageInterface) => {
@@ -54,8 +56,9 @@ export const useChat = () => {
       console.log(data);
 
       dispatch(updateGroupName({ chat: data }));
+      refetchChats();
     },
-    [dispatch]
+    [dispatch, refetchChats]
   );
 
   const _onChatLeave = useCallback(
@@ -79,5 +82,8 @@ export const useChat = () => {
     _updateChatLastMessage,
     refetchChats,
     onGroupChatRename,
+    currentChat: chatsFromState.currentChat,
+    chatMessages: chatsFromState.chatMessages,
+    unreadMessages: chatsFromState.unreadMessages,
   };
 };

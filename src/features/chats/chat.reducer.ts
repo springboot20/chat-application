@@ -119,24 +119,24 @@ const ChatSlice = createSlice({
     updateGroupName: (state, action: PayloadAction<{ chat: ChatListItemInterface }>) => {
       const { chat } = action.payload;
 
+      console.log(chat);
+
       // Find the chat in the array
       const chatIndex = state.chats.findIndex((localChat) => localChat._id === chat._id);
 
       if (chatIndex !== -1) {
         // Only update the name to avoid changing other properties
-        state.chats = [
-          ...state.chats.slice(0, chatIndex),
-          { ...state.chats[chatIndex], name: chat.name },
-          ...state.chats.slice(chatIndex + 1),
-        ];
+        state.chats = state.chats.map((localChat, index) =>
+          index === chatIndex ? { ...localChat, name: chat.name } : localChat
+        );
 
         if (state.currentChat?._id === chat._id) {
           state.currentChat = { ...state.currentChat, name: chat.name };
           LocalStorage.set("current-chat", state.currentChat);
         }
-        LocalStorage.set("chats", state.chats);
       }
 
+      LocalStorage.set("chats", state.chats);
       console.log(state.chats);
     },
 

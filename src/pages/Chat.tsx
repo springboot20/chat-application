@@ -40,16 +40,22 @@ import { useSocketContext } from "../hooks/useSocket.ts";
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
-  const { currentChat, chatMessages: reduxStateMessages } = useAppSelector(
-    (state: RootState) => state.chat
-  );
   const dispatch = useAppDispatch();
   const [logout] = useLogoutMutation();
   const [sendMessage] = useSendMessageMutation();
   const { theme } = useTheme();
   const { socket } = useSocketContext();
-  const { onNewChat, _onChatLeave, chats, onGroupChatRename, isLoadingChats, refetchChats } =
-    useChat();
+  const {
+    onNewChat,
+    _onChatLeave,
+    chats,
+    onGroupChatRename,
+    isLoadingChats,
+    refetchChats,
+    currentChat,
+    chatMessages: reduxStateMessages,
+    unreadMessages,
+  } = useChat();
 
   const { isOnline } = useNetwork();
   const { data: availableUsers } = useGetAvailableUsersQuery();
@@ -58,6 +64,7 @@ export const Chat = () => {
   const {
     data: _,
     isLoading: loadingMessages,
+    isFetching,
     refetch: refetchMessages,
   } = useGetChatMessagesQuery(currentChat?._id ?? "", {
     skip: !currentChat?._id,
@@ -107,7 +114,7 @@ export const Chat = () => {
     handleReplyToChatMessage,
     scrollToBottom,
     showScrollButton,
-    unreadMessages,
+    // unreadMessages,
   } = useMemo(() => messageHook, [messageHook]);
 
   const { handleStartTyping, isTyping, handleStopTyping, resetTypingState } = useTyping({
@@ -559,7 +566,7 @@ export const Chat = () => {
                             </svg>
                           </button>
                         )}
-                        {loadingMessages ? (
+                        {loadingMessages || isFetching ? (
                           <div className="flex justify-center items-center min-h-[calc(100%-5rem)]">
                             <Typing />
                           </div>

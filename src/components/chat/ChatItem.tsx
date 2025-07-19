@@ -51,15 +51,13 @@ const arePropsEqual = (prevProps: ChatItemProps, nextProps: ChatItemProps) => {
     prevProps.chat.name === nextProps.chat.name &&
     prevProps.chat.isGroupChat === nextProps.chat.isGroupChat &&
     prevProps.chat.updatedAt === nextProps.chat.updatedAt &&
-    prevProps.chat.lastMessage?._id === nextProps.chat.lastMessage?._id && // Compare message ID
-    prevProps.chat.participants.length === nextProps.chat.participants.length && // Compare length
+    // Compare entire lastMessage object more thoroughly
+    JSON.stringify(prevProps.chat.lastMessage) === JSON.stringify(nextProps.chat.lastMessage) &&
+    prevProps.chat.participants.length === nextProps.chat.participants.length &&
     prevProps.isActive === nextProps.isActive &&
     prevProps.unreadCount === nextProps.unreadCount &&
-    prevProps.user?._id === nextProps.user?._id &&
-    prevProps.onClick === nextProps.onClick &&
-    prevProps.onChatDelete === nextProps.onChatDelete &&
-    prevProps.close === nextProps.close &&
-    prevProps.refetchChats === nextProps.refetchChats
+    prevProps.user?._id === nextProps.user?._id
+    // Remove function comparisons as they can cause issues with memoization
   );
 };
 

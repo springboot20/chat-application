@@ -48,10 +48,10 @@ export const MessageNavigation: React.FC<{
 
     useEffect(() => {
       if (itemDeleted) {
-        // refetch();
+        refetchChats();
         setItemDeleted(false);
       }
-    }, [itemDeleted]);
+    }, [itemDeleted, refetchChats]);
 
     const handleChatSelect = useCallback(
       (chat: ChatListItemInterface) => {
@@ -322,11 +322,14 @@ export const MessageNavigation: React.FC<{
     // Custom comparison function
     return (
       prevProps.open === nextProps.open &&
-      prevProps.refetchChats === nextProps.refetchChats &&
       prevProps.currentChat?._id === nextProps.currentChat?._id &&
+      prevProps.currentChat?.name === nextProps.currentChat?.name && // Add name comparison
       prevProps.chats.length === nextProps.chats.length &&
       prevProps.isLoadingChats === nextProps.isLoadingChats &&
-      prevProps.unreadMessages.length === nextProps.unreadMessages.length
+      prevProps.unreadMessages.length === nextProps.unreadMessages.length &&
+      // Check if any chat names have changed
+      JSON.stringify(prevProps.chats.map((c) => ({ id: c._id, name: c.name }))) ===
+        JSON.stringify(nextProps.chats.map((c) => ({ id: c._id, name: c.name })))
     );
   }
 );
