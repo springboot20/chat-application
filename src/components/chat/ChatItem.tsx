@@ -32,7 +32,7 @@ interface ChatItemProps {
 // and also am unable to fix showing the typing effect when a user is typing
 
 const arePropsEqual = (prevProps: ChatItemProps, nextProps: ChatItemProps) => {
-  // // Compare specific chat properties that affect rendering
+  // Compare specific chat properties that affect rendering
   // const chatEqual =
   //   prevProps.chat._id === nextProps.chat._id &&
   //   prevProps.chat.name === nextProps.chat.name &&
@@ -108,10 +108,10 @@ export const ChatItem: React.FC<ChatItemProps> = memo(
         <div
           role="button"
           className={classNames(
-            "hover:bg-gray-300/40 group flex items-start cursor-pointer bg-gray-100 px-1 py-2.5 justify-between dark:bg-white/5 dark:hover:bg-white/10",
+            "hover:bg-gray-300/40 group flex items-start cursor-pointer bg-gray-100 px-1 py-2.5 justify-between dark:hover:bg-white/10",
             isActive
               ? "bg-gray-300/40 border-[1.5px] border-zinc-300 dark:border-white/20 dark:bg-white/10"
-              : "",
+              : "dark:bg-white/5",
             unreadCount > 0 ? "border-2 border-green-500 bg-green-100" : ""
           )}
           onClick={() => {

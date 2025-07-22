@@ -1,33 +1,32 @@
-import { useAppDispatch } from "./../redux/redux.hooks";
-import { useRef, useState, useCallback, useEffect } from "react";
-import { STOP_TYPING_EVENT, TYPING_EVENT, JOIN_CHAT_EVENT } from "../enums/index.ts";
-import { RootState } from "../app/store.ts";
-import { useAppSelector } from "../redux/redux.hooks.ts";
-import { type EmojiClickData } from "emoji-picker-react";
-import messageSound from "../assets/audio/message-notification.mp3";
-import reactionSound from "../assets/audio/send-message-notification.mp3";
+import { useAppDispatch } from './../redux/redux.hooks';
+import { useRef, useState, useCallback, useEffect } from 'react';
+import { STOP_TYPING_EVENT, TYPING_EVENT, JOIN_CHAT_EVENT } from '../enums/index.ts';
+import { RootState } from '../app/store.ts';
+import { useAppSelector } from '../redux/redux.hooks.ts';
+import { type EmojiClickData } from 'emoji-picker-react';
+import messageSound from '../assets/audio/message-notification.mp3';
+import reactionSound from '../assets/audio/send-message-notification.mp3';
 
 import {
   onMessageReceived,
   updateChatLastMessage,
   setUnreadMessages,
   onChatMessageDelete,
-} from "../features/chats/chat.reducer.ts";
+} from '../features/chats/chat.reducer.ts';
 import {
   useDeleteChatMessageMutation,
   useGetAvailableUsersQuery,
-  useReactToChatMessageMutation,
   useReplyToMessageMutation,
-} from "../features/chats/chat.slice.ts";
-import { User } from "../types/auth.ts";
-import { AudioManager } from "../utils/index.ts";
-import { toast } from "react-toastify";
-import { useSocketContext } from "./useSocket.ts";
+} from '../features/chats/chat.slice.ts';
+import { User } from '../types/auth.ts';
+import { AudioManager } from '../utils/index.ts';
+import { toast } from 'react-toastify';
+import { useSocketContext } from './useSocket.ts';
 // import { toast } from "react-toastify";
 
 type FileType = {
   files: File[] | null;
-  type: "document-file" | "image-file";
+  type: 'document-file' | 'image-file';
 };
 
 export const useMessage = () => {
@@ -35,11 +34,11 @@ export const useMessage = () => {
   const { currentChat, unreadMessages } = useAppSelector((state: RootState) => state.chat);
   const { user: currentUser } = useAppSelector((state: RootState) => state.auth);
   const dispatch = useAppDispatch();
-  const [message, setMessage] = useState<string>("");
+  const [message, setMessage] = useState<string>('');
   const { socket } = useSocketContext();
   const [attachmentFiles, setAttachmentFiles] = useState<FileType>({
     files: null,
-    type: "document-file",
+    type: 'document-file',
   });
   const [showMentionUserMenu, setShowMentionUserMenu] = useState<boolean>(false);
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -47,31 +46,13 @@ export const useMessage = () => {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const documentInputRef = useRef<HTMLInputElement | null>(null);
   const messageItemRef = useRef<Record<string, HTMLDivElement | null>>({});
-  const reactionRef = useRef<HTMLDivElement | null>(null);
-  const [showReactionPicker, setShowReactionPicker] = useState<Record<string, boolean>>({});
-  const [reaction, setReaction] = useState<Record<string, any>>({});
   const [selectedUser, setSelectedUser] = useState<User>({} as User);
-  const [reactionLocation, setReactionLocation] = useState<
-    Record<
-      string,
-      {
-        left: number;
-        top: number;
-      }
-    >
-  >({});
-  const [doubleClickPosition, setDoubleClickPosition] = useState<{
-    clientX: number;
-    clientY: number;
-    messageId: string;
-  } | null>(null);
-  const [reactToMessage] = useReactToChatMessageMutation();
   const [deleteChatMessage] = useDeleteChatMessageMutation();
   const [replyToChatMessage] = useReplyToMessageMutation();
   const { data: availableUsers } = useGetAvailableUsersQuery();
   const users = availableUsers?.data as User[];
 
-  const [messageToReply, setMessageToReply] = useState("");
+  const [messageToReply, setMessageToReply] = useState('');
   const messageAudioManagerRef = useRef<AudioManager | null>(null);
   const reactionAudioManagerRef = useRef<AudioManager | null>(null);
   const [isAudioReady, setIsAudioReady] = useState(false);
@@ -90,20 +71,20 @@ export const useMessage = () => {
         setIsAudioReady(true);
 
         // Remove listeners after first interaction
-        document.removeEventListener("click", handleUserInteraction);
-        document.removeEventListener("keydown", handleUserInteraction);
-        document.removeEventListener("touchstart", handleUserInteraction);
+        document.removeEventListener('click', handleUserInteraction);
+        document.removeEventListener('keydown', handleUserInteraction);
+        document.removeEventListener('touchstart', handleUserInteraction);
       }
     };
 
-    document.addEventListener("click", handleUserInteraction);
-    document.addEventListener("keydown", handleUserInteraction);
-    document.addEventListener("touchstart", handleUserInteraction);
+    document.addEventListener('click', handleUserInteraction);
+    document.addEventListener('keydown', handleUserInteraction);
+    document.addEventListener('touchstart', handleUserInteraction);
 
     return () => {
-      document.removeEventListener("click", handleUserInteraction);
-      document.removeEventListener("keydown", handleUserInteraction);
-      document.removeEventListener("touchstart", handleUserInteraction);
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+      document.removeEventListener('touchstart', handleUserInteraction);
     };
   }, [isAudioReady]);
 
@@ -129,65 +110,6 @@ export const useMessage = () => {
     setShowMentionUserMenu(false);
   }, []);
 
-  const calculatePickerPosition = useCallback(
-    (messageId: string) => {
-      const messageElement = messageItemRef.current[messageId];
-
-      if (!doubleClickPosition || !messageElement || !reactionRef.current) {
-        console.warn("Missing required elements for position calculation");
-        return;
-      }
-
-      // Get the message element's bounding rect
-      const messageRect = messageElement.getBoundingClientRect();
-      const reactionRect = reactionRef.current.getBoundingClientRect();
-
-      // Get the viewport dimensions
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      // Constants for picker dimensions (you may need to adjust these)
-      const MARGIN = 10;
-
-      let x = doubleClickPosition.clientX;
-      let y = doubleClickPosition.clientY;
-
-      // Ensure picker stays within viewport bounds
-      if (x + reactionRect.width > viewportWidth) {
-        x = viewportWidth - reactionRect.width - MARGIN;
-      }
-
-      if (x < MARGIN) {
-        x = MARGIN;
-      }
-
-      if (y + reactionRect.height > viewportHeight) {
-        y = viewportHeight - reactionRect.height - MARGIN;
-      }
-      if (y < MARGIN) {
-        y = MARGIN;
-      }
-
-      // Convert to position relative to the message element
-      const relativeX = x - messageRect.left;
-      const relativeY = y - messageRect.top;
-
-      console.log({
-        left: relativeX,
-        top: relativeY,
-      });
-
-      setReactionLocation((prev) => ({
-        ...prev,
-        [messageId]: {
-          left: Math.abs(relativeX),
-          top: Math.abs(relativeY),
-        },
-      }));
-    },
-    [doubleClickPosition]
-  );
-
   const handleShowMentionUserMenu = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     event.preventDefault();
     const target = event.target;
@@ -201,139 +123,7 @@ export const useMessage = () => {
     }
   }, []);
 
-  const handleHideReactionPicker = useCallback((messageId: string) => {
-    setShowReactionPicker((prev) => ({
-      ...prev,
-      [messageId]: false,
-    }));
 
-    // Clean up position data when hiding
-    setReactionLocation((prev) => {
-      const { [messageId]: _, ...rest } = prev;
-      console.log(_);
-      return rest;
-    });
-  }, []);
-
-  const handleSelectReactionEmoji = useCallback(
-    async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
-      if (event) {
-        event.stopPropagation();
-        event.preventDefault();
-      }
-
-      setReaction((prev) => ({
-        ...prev,
-        [key]: emojiData.emoji, // Store the emoji string
-      }));
-
-      await reactToMessage({
-        chatId: currentChat?._id || "",
-        messageId: key,
-        emoji: emojiData.emoji,
-      })
-        .unwrap()
-        .then(() => {})
-        .catch((error: any) => {
-          console.error("Failed to send reaction:", error);
-          // Optionally revert local state on failure
-          setReaction((prev) => {
-            const { [key]: _, ...rest } = prev;
-            console.log(_);
-            return rest;
-          });
-        });
-      handleHideReactionPicker(key);
-    },
-    [currentChat?._id, handleHideReactionPicker, reactToMessage]
-  );
-
-  const handleReactionPicker = useCallback(
-    (messageId: string, event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      setShowReactionPicker((prev) => {
-        const newState = Object.keys(prev).reduce((acc, key) => {
-          acc[key] = key === messageId;
-          return acc;
-        }, {} as Record<string, boolean>);
-        return { ...newState, [messageId]: true };
-      });
-
-      // Store click position with message ID
-      setDoubleClickPosition({
-        clientX: event.clientX,
-        clientY: event.clientY,
-        messageId,
-      });
-    },
-    []
-  );
-
-  useEffect(() => {
-    if (doubleClickPosition && showReactionPicker[doubleClickPosition.messageId]) {
-      // Use requestAnimationFrame to ensure DOM is updated
-      const timeoutId = setTimeout(() => {
-        calculatePickerPosition(doubleClickPosition.messageId);
-      }, 0);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [doubleClickPosition, showReactionPicker, calculatePickerPosition]);
-
-  console.log(showReactionPicker);
-
-  const handleHideAllReactionPickers = useCallback(() => {
-    setShowReactionPicker({});
-    setReactionLocation({});
-    setDoubleClickPosition(null);
-  }, []);
-
-  const handleClickOutside = useCallback(
-    (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-
-      if (!target.closest(".EmojiPickerReact")) {
-        Object.keys(showReactionPicker).forEach((messageId) => {
-          setShowReactionPicker((prev) => ({ ...prev, [messageId]: false }));
-        });
-      }
-    },
-    [showReactionPicker]
-  );
-
-  // Handle window resize to recalculate positions
-  const handleResize = useCallback(() => {
-    // Recalculate positions for all open pickers
-    Object.keys(showReactionPicker).forEach((messageId) => {
-      if (showReactionPicker[messageId]) {
-        calculatePickerPosition(messageId);
-      }
-    });
-  }, [showReactionPicker, calculatePickerPosition]);
-
-  // Keyboard navigation handler
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        handleHideAllReactionPickers();
-      }
-    },
-    [handleHideAllReactionPickers]
-  );
-
-  useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [handleClickOutside, handleKeyDown, handleResize]);
 
   const checkScrollPosition = () => {
     if (bottomRef.current) {
@@ -349,13 +139,13 @@ export const useMessage = () => {
   useEffect(() => {
     const container = bottomRef.current;
     if (container) {
-      container.addEventListener("scroll", checkScrollPosition);
-      return () => container.removeEventListener("scroll", checkScrollPosition);
+      container.addEventListener('scroll', checkScrollPosition);
+      return () => container.removeEventListener('scroll', checkScrollPosition);
     }
   }, []);
 
   const handleFileChange = useCallback(
-    (fileType: "document-file" | "image-file", event: React.ChangeEvent<HTMLInputElement>) => {
+    (fileType: 'document-file' | 'image-file', event: React.ChangeEvent<HTMLInputElement>) => {
       const target = event.target;
       const files = target.files;
 
@@ -374,7 +164,7 @@ export const useMessage = () => {
         });
       }
 
-      target.value = "";
+      target.value = '';
     },
     []
   );
@@ -447,7 +237,7 @@ export const useMessage = () => {
   const getAllMessages = useCallback(async () => {
     // Early return checks
     if (!socket) {
-      console.log("No socket connection, cannot get reduxStateMessages");
+      console.log('No socket connection, cannot get reduxStateMessages');
       return;
     }
 
@@ -497,7 +287,7 @@ export const useMessage = () => {
   const handleDeleteChatMessage = useCallback(
     async (messageId: string) => {
       await deleteChatMessage({
-        chatId: currentChat?._id || "",
+        chatId: currentChat?._id || '',
         messageId,
       })
         .unwrap()
@@ -595,17 +385,17 @@ export const useMessage = () => {
         );
         scrollToBottom();
 
-        setMessage(""); // Move here
-        setAttachmentFiles({ files: null, type: "document-file" }); // Move here
+        setMessage(''); // Move here
+        setAttachmentFiles({ files: null, type: 'document-file' }); // Move here
         setShowReply(false); // Close reply UI after sending
-        setMessageToReply(""); // Reset messageToReply
+        setMessageToReply(''); // Reset messageToReply
 
         // Play sound when message is sent
         playMessageSound();
       })
       .catch((error: any) => {
         console.error(error);
-        toast("Failed to send message", { type: "error" });
+        toast('Failed to send message', { type: 'error' });
       });
   }, [
     currentChat?._id,
@@ -670,7 +460,7 @@ export const useMessage = () => {
 
   const handleSetCloseReply = useCallback(() => {
     setShowReply(false);
-    setMessageToReply("");
+    setMessageToReply('');
   }, []);
 
   return {
@@ -703,13 +493,6 @@ export const useMessage = () => {
     onReactionUpdate,
 
     // React Picker
-    handleSelectReactionEmoji,
-    handleReactionPicker,
-    reactionLocation,
-    reaction,
-    showReactionPicker,
-    handleHideReactionPicker,
-    handleHideAllReactionPickers,
     handleDeleteChatMessage,
     handleReplyToChatMessage,
     processMentionsContent,
@@ -718,6 +501,5 @@ export const useMessage = () => {
     showReply,
     messageToReply,
     showScrollButton,
-    reactionRef,
   };
 };

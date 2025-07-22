@@ -26,7 +26,7 @@ export const useChat = () => {
   const chatsFromState = useAppSelector(selectChats);
 
   const chats = useMemo(() => {
-    if (chatsFromState.chats.length > 0) {
+    if (chatsFromState.chats?.length > 0) {
       return [...chatsFromState.chats];
     }
 
