@@ -551,7 +551,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
 
       const reactionMap = new Map<string, CategorizedReaction>();
 
-      reactions.forEach(({ emoji, userIds, ...rest }) => {
+      reactions?.forEach(({ emoji, userIds, ...rest }) => {
         const mappedEmoji = reactionMap.get(emoji);
 
         if (reactionMap.has(emoji)) {
