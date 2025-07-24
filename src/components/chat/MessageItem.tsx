@@ -584,7 +584,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     };
 
     const hasUserReacted = (reaction: CategorizedReaction, currentUserId: string): boolean => {
-      return reaction.userIds.includes(currentUserId);
+      return reaction?.userIds?.includes(currentUserId);
     };
 
     const renderReactionsWithDuplicate = () => {
