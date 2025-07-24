@@ -565,13 +565,13 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           reactionMap.set(emoji, {
             ...existing,
             userIds: userIds,
-            count: userIds.length,
+            count: userIds?.length,
           });
         } else {
           reactionMap.set(emoji, {
             emoji,
             userIds: userIds || [],
-            count: userIds ? userIds.length : 1,
+            count: userIds ? userIds?.length : 1,
             ...rest,
           });
         }
