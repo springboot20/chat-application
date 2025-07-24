@@ -119,7 +119,7 @@ const ReactionTooltip: React.FC<{
                           title={`${reaction.count} ${
                             reaction.count === 1 ? "person" : "people"
                           } reacted with ${reaction.emoji}`}
-                          className="flex items-center justify-between mb-1 dark:bg-white/5 px-4 py-1 rounded-full hover:dark:bg-white/10 cursor-pointer"
+                          className="flex items-center justify-between mb-1 dark:bg-white/5 px-4 py-1 bg-gray-300/30 dark:border-white/10 dark:shadow-none shadow-sm border-[1.75px] rounded-full hover:dark:bg-white/10 cursor-pointer"
                         >
                           <div className="flex items-center gap-2">
                             <span className="text-lg">{reaction.emoji}</span>
@@ -139,13 +139,13 @@ const ReactionTooltip: React.FC<{
                           className="flex justify-between items-center gap-2 w-full"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="flex items-center justify-center h-10 w-10 rounded-full dark:bg-white/5 overflow-hidden">
+                            <span className="flex items-center justify-center h-10 w-10 rounded-full dark:bg-white/5 bg-gray-300/30 dark:border-white/10 dark:shadow-none shadow-sm overflow-hidden">
                               <UserIcon className="text-gray-400 h-5" />
                             </span>
                             <span className="dark:text-white">{reaction?.username}</span>
                           </div>
 
-                          <div className="dark:bg-white/5 px-4 py-1 rounded-full hover:dark:bg-white/10 cursor-pointer">
+                          <div className="dark:bg-white/5 px-4 py-1 rounded-full hover:dark:bg-white/10 bg-gray-300/30 dark:border-white/10 dark:shadow-none shadow-sm border-[1.75px] cursor-pointer">
                             <div className="flex items-center gap-2">
                               <span className="text-lg">{reaction.emoji}</span>
                             </div>

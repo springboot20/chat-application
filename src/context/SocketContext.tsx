@@ -58,8 +58,8 @@ export const SocketContextProvider: React.FC<{
   }, []);
 
   const onSocketError = useCallback((error: any) => {
-    console.error("Socket error:", error);
     setConnected(false);
+    console.error("Socket error:", error);
 
     // Handle specific authentication errors
     if (

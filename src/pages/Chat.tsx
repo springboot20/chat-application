@@ -573,7 +573,6 @@ export const Chat = () => {
                               {reduxStateMessages && reduxStateMessages?.length > 0 ? (
                                 React.Children.toArray(
                                   reduxStateMessages?.map((msg) => {
-                                    setIsOwnedMessage(msg.sender && msg.sender?._id === user?._id);
                                     return (
                                       <MessageItem
                                         message={msg}
@@ -586,6 +585,7 @@ export const Chat = () => {
                                         highlightedMessageId={highlightedMessageId}
                                         isGroupChatMessage={currentChat?.isGroupChat}
                                         isOwnedMessage={msg.sender?._id === user?._id}
+                                        setIsOwnedMessage={setIsOwnedMessage}
                                         handleDeleteChatMessage={handleDeleteChatMessage}
                                         onSetHighlightedMessage={handleSetHighlightedMessage}
                                       />

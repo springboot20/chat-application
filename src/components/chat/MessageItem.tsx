@@ -42,6 +42,7 @@ interface MessageItemProps {
   handleSetOpenReply: (messageId: string) => void;
   highlightedMessageId?: string; // Add this prop to track which message should glow
   onSetHighlightedMessage?: (messageId: string | undefined) => void;
+  setIsOwnedMessage: (value: React.SetStateAction<boolean>) => void;
 }
 
 type EmojiType = {
@@ -79,6 +80,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
     highlightedMessageId,
     containerRef: messagesContainerRef,
     messageToReply,
+    setIsOwnedMessage,
   }) => {
     const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
     const { user } = useAppSelector((state: RootState) => state.auth);
@@ -479,6 +481,10 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       }
     }, [highlightedMessageId, message._id, messageToReply]);
 
+    useEffect(() => {
+      setIsOwnedMessage(isOwnedMessage || message.sender?._id === user?._id);
+    }, [isOwnedMessage, message.sender?._id, setIsOwnedMessage, user?._id]);
+
     const renderMessageWithtMention = () => {
       const mentionRegex = /@([@\w\s]+?)(?=\s|$)/g;
       const parts = [];
@@ -552,21 +558,16 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       const reactionMap = new Map<string, CategorizedReaction>();
 
       reactions?.forEach(({ emoji, userIds, ...rest }) => {
-        const mappedEmoji = reactionMap.get(emoji);
-
         if (reactionMap.has(emoji)) {
           const existing = reactionMap.get(emoji)!;
-
-          // Add unique userIds and usernames
-          const uniqueUserIds = Array.from(new Set([...existing.userIds, ...userIds]));
+          console.log(existing);
 
           reactionMap.set(emoji, {
             ...existing,
-            userIds: uniqueUserIds,
-            count: uniqueUserIds.length,
+            userIds: userIds,
+            count: userIds.length,
           });
         } else {
-          console.log(mappedEmoji && mappedEmoji);
           reactionMap.set(emoji, {
             emoji,
             userIds: userIds || [],
@@ -576,7 +577,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
         }
       });
 
-      return Array.from(reactionMap.values()).sort((a, b) => {
+      return Array.from(reactionMap.values())?.sort((a, b) => {
         if (b.count !== a.count) return b.count - a.count;
         return a.emoji.localeCompare(b.emoji);
       });
