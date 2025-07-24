@@ -64,7 +64,12 @@ const ChatSlice = createSlice({
       } else if (data.chat === state.currentChat?._id) {
         // Add new message to chatMessages if it belongs to the current chat
         state.chatMessages.push(data);
+      } else {
+        state.unreadMessages.push(data);
       }
+
+      LocalStorage.set("chatMessages", state.unreadMessages);
+      LocalStorage.set("unreadMessages", state.unreadMessages);
     },
 
     setCurrentChat: (state, action: PayloadAction<{ chat: ChatListItemInterface | null }>) => {
@@ -80,9 +85,11 @@ const ChatSlice = createSlice({
     setUnreadMessages: (state, action: PayloadAction<{ chatId: string }>) => {
       const { chatId } = action.payload;
 
-      state.unreadMessages = state.chatMessages?.filter((msg) => msg?.chat !== chatId);
+      console.log(chatId);
+      console.log(state.chatMessages?.filter((msg) => msg?.chat === chatId));
 
-      LocalStorage.set("unreadMessages", state.unreadMessages);
+      state.unreadMessages = state.unreadMessages?.filter((msg) => msg?.chat !== chatId);
+      console.log(state.unreadMessages);
     },
 
     updateChatLastMessage: (state, action: PayloadAction<ChatMessageUpdateInterface>) => {

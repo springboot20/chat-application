@@ -22,7 +22,7 @@ interface ChatItemProps {
   chat: ChatListItemInterface;
   onClick: (chat: ChatListItemInterface) => void;
   isActive?: boolean;
-  unreadCount?: number;
+  unreadCount: number;
   onChatDelete: (chatId: string) => void;
   close: () => any;
   refetchChats: () => any;
@@ -62,10 +62,12 @@ const arePropsEqual = (prevProps: ChatItemProps, nextProps: ChatItemProps) => {
 };
 
 export const ChatItem: React.FC<ChatItemProps> = memo(
-  ({ chat, onClick, unreadCount = 0, onChatDelete, isActive, close, user, refetchChats }) => {
+  ({ chat, onClick, unreadCount, onChatDelete, isActive, close, user, refetchChats }) => {
     const [openGroupInfo, setOpenGroupInfo] = useState(false);
     const [openOptions, setOpenOptions] = useState<{ [key: string]: boolean }>({});
     const dispatch = useAppDispatch();
+
+    console.log(unreadCount);
 
     const toggleOptions = (id: string, evt: React.MouseEvent) => {
       evt.stopPropagation();
