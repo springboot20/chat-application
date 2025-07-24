@@ -270,7 +270,6 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
         if (event) {
           event.stopPropagation();
-          event.preventDefault();
         }
 
         setReaction((prev) => ({
