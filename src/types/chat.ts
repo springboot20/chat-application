@@ -17,7 +17,7 @@ export interface ChatMessageInterface {
     position: number;
   }>;
   isDeleted: boolean;
-  reactions: { emoji: string; _id: string; userId: string }[];
+  reactions: { emoji: string; _id: string; userId: string; userIds: string[] }[];
   chat: string;
   repliedMessage: ChatMessageInterface | null;
   createdAt: string;

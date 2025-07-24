@@ -47,7 +47,10 @@ type EmojiType = {
   _id: string;
   emoji: string;
   userId: string;
+  userIds: string[];
 };
+
+type CategorizedReaction = EmojiType & { count: number; users: string[] };
 
 export const MessageItem: React.FC<MessageItemProps> = React.memo(
   ({
@@ -526,15 +529,104 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
 
     console.log(reaction);
 
+    const categorizeReactions = (reactions: EmojiType[], users: User[]) => {
+      if (!reactions || !reactions.length) return [] as any;
+
+      console.log(reactions);
+
+      const reactionMap = new Map<string, CategorizedReaction>();
+
+      reactions.forEach(({ emoji, userId, userIds, ...rest }) => {
+        const userDetails = users.find((u) => u._id === userId);
+        const username = userDetails?.username;
+
+        const mappedEmoji = reactionMap.get(emoji);
+
+        if (reactionMap.has(emoji)) {
+          const existing = reactionMap.get(emoji)!;
+
+          // Add unique userIds and usernames
+          const uniqueUserIds = Array.from(new Set([...existing.userIds, ...userIds]));
+          const uniqueUsernames = Array.from(new Set([...existing.users, username]));
+
+          reactionMap.set(emoji, {
+            ...existing,
+            userIds: uniqueUserIds,
+            users: uniqueUsernames as string[],
+            count: uniqueUserIds.length,
+          });
+        } else {
+          console.log(mappedEmoji && mappedEmoji);
+          reactionMap.set(emoji, {
+            emoji,
+            userId,
+            userIds: userIds || [userId], // Use userIds if available, fallback to single userId
+            count: userIds ? userIds.length : 1,
+            users: [username as string],
+            ...rest,
+          });
+        }
+      });
+
+      return Array.from(reactionMap.values()).sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.emoji.localeCompare(b.emoji);
+      });
+    };
+
+    const hasUserReacted = (reaction: CategorizedReaction, currentUserId: string): boolean => {
+      return reaction.userIds.includes(currentUserId);
+    };
+
     const renderReactionsWithDuplicate = () => {
+      if (!message.reactions || message.reactions.length === 0) return null;
+
       const reactions = message.reactions;
-      const uniqueReactions = [
-        ...new Set(reactions?.flat()?.map((reaction: EmojiType) => reaction.emoji)),
-      ];
 
-      console.log(uniqueReactions);
+      const categorizedReactions: CategorizedReaction[] = categorizeReactions(
+        reactions,
+        users || []
+      );
+      const totalReactions = categorizedReactions.reduce((sum, r) => {
+        console.log(r);
+        return sum + r.count;
+      }, 0);
 
-      return <></>;
+      console.log(categorizedReactions);
+      console.log(totalReactions);
+
+      return (
+        <div
+          className={classNames(
+            "absolute z-10 -bottom-4 rounded-full px-2 py-1 justify-center flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity",
+            isOwnedMessage
+              ? "bg-[#615EF0] right-3 dark:bg-[#615EF0] dark:text-white border-2 dark:border-black"
+              : "bg-green-500 dark:bg-green-200 dark:text-green-700 border-2 dark:border-black left-3"
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            // You can add a handler here to show detailed reaction info
+            console.log("Reaction details:", categorizedReactions);
+          }}
+        >
+          {/* Show top 3 different emojis */}
+          {categorizedReactions.slice(0, 3).map((reaction: CategorizedReaction, index: number) => (
+            <span
+              key={`${reaction.emoji}-${index}`}
+              className={classNames(
+                "text-xs transition-transform hover:scale-110 inline-block" ,
+                hasUserReacted(reaction, user?._id || "") ? "animate-pulse" : ""
+              )}
+              title={`${reaction.emoji} ${reaction.count} - ${reaction.users.join(", ")}`}
+            >
+              {reaction.emoji}
+            </span>
+          ))}
+
+          {/* Show total count */}
+          <span className="text-xs font-medium ml-1">{totalReactions}</span>
+        </div>
+      );
     };
 
     return (
@@ -607,27 +699,10 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
             </div>
           )}
 
-          {!message.isDeleted && message.reactions && message.reactions.length > 0 && (
-            <div
-              className={classNames(
-                "absolute z-10 -bottom-4 rounded-full px-3 py-1 justify-center flex items-center gap-1",
-                isOwnedMessage
-                  ? "bg-[#615EF0] right-3 dark:bg-[#615EF0] dark:text-white border-2 dark:border-black"
-                  : "bg-green-500 dark:bg-green-200 dark:text-green-700 border-2 dark:border-black left-3"
-              )}
-            >
-              {message.reactions.slice(0, 3).map((reaction, index) => {
-                return (
-                  <span key={`${reaction.userId}-${reaction.emoji}-${index}`} className="text-xs">
-                    {reaction.emoji}
-                  </span>
-                );
-              })}
-              <span className="text-xs">{message.reactions.length}</span>{" "}
-              {renderReactionsWithDuplicate()}
-              {/* Placeholder for reaction count */}
-            </div>
-          )}
+          {!message.isDeleted &&
+            message.reactions &&
+            message.reactions.length > 0 &&
+            renderReactionsWithDuplicate()}
 
           <img
             src={message.sender?.avatar ? message.sender?.avatar?.url : ""}
