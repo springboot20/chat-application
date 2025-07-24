@@ -12,6 +12,7 @@ import { useAppSelector } from "../../redux/redux.hooks";
 import { RootState } from "../../app/store";
 import { FilePreviewModal } from "../modal/FilePreviewModal";
 import { useReactToChatMessageMutation } from "../../features/chats/chat.slice";
+import ReactionTooltip from "../modal/ReactionTooltip";
 
 const arePropsEqual = (prevProps: MessageItemProps, nextProps: MessageItemProps) => {
   // Compare message content, reactions, and attachments
@@ -46,11 +47,23 @@ interface MessageItemProps {
 type EmojiType = {
   _id: string;
   emoji: string;
-  userId: string;
   userIds: string[];
+  users: {
+    avatar?: { url: string; localPath: string; _id: string };
+    _id: string;
+    username: string;
+  }[];
 };
 
-type CategorizedReaction = EmojiType & { count: number; users: string[] };
+type ReactionStats = {
+  totalReactions: number;
+  uniqueEmojis: number;
+  topReaction: null;
+  userHasReacted: boolean;
+  categorizedReactions: CategorizedReaction[];
+};
+
+type CategorizedReaction = EmojiType & { count: number };
 
 export const MessageItem: React.FC<MessageItemProps> = React.memo(
   ({
@@ -101,6 +114,8 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
       clientX: number;
       clientY: number;
     } | null>(null);
+
+    const [showReactionTooltip, setShowReactionTooltip] = useState(false);
 
     const calculateMenuPosition = useCallback(() => {
       if (
@@ -529,17 +544,14 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
 
     console.log(reaction);
 
-    const categorizeReactions = (reactions: EmojiType[], users: User[]) => {
+    const categorizeReactions = (reactions: EmojiType[]) => {
       if (!reactions || !reactions.length) return [] as any;
 
       console.log(reactions);
 
       const reactionMap = new Map<string, CategorizedReaction>();
 
-      reactions.forEach(({ emoji, userId, userIds, ...rest }) => {
-        const userDetails = users.find((u) => u._id === userId);
-        const username = userDetails?.username;
-
+      reactions.forEach(({ emoji, userIds, ...rest }) => {
         const mappedEmoji = reactionMap.get(emoji);
 
         if (reactionMap.has(emoji)) {
@@ -547,22 +559,18 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
 
           // Add unique userIds and usernames
           const uniqueUserIds = Array.from(new Set([...existing.userIds, ...userIds]));
-          const uniqueUsernames = Array.from(new Set([...existing.users, username]));
 
           reactionMap.set(emoji, {
             ...existing,
             userIds: uniqueUserIds,
-            users: uniqueUsernames as string[],
             count: uniqueUserIds.length,
           });
         } else {
           console.log(mappedEmoji && mappedEmoji);
           reactionMap.set(emoji, {
             emoji,
-            userId,
-            userIds: userIds || [userId], // Use userIds if available, fallback to single userId
+            userIds: userIds || [],
             count: userIds ? userIds.length : 1,
-            users: [username as string],
             ...rest,
           });
         }
@@ -583,10 +591,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
 
       const reactions = message.reactions;
 
-      const categorizedReactions: CategorizedReaction[] = categorizeReactions(
-        reactions,
-        users || []
-      );
+      const categorizedReactions: CategorizedReaction[] = categorizeReactions(reactions);
       const totalReactions = categorizedReactions.reduce((sum, r) => {
         console.log(r);
         return sum + r.count;
@@ -607,6 +612,7 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
             e.stopPropagation();
             // You can add a handler here to show detailed reaction info
             console.log("Reaction details:", categorizedReactions);
+            setShowReactionTooltip(true);
           }}
         >
           {/* Show top 3 different emojis */}
@@ -614,10 +620,12 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
             <span
               key={`${reaction.emoji}-${index}`}
               className={classNames(
-                "text-xs transition-transform hover:scale-110 inline-block" ,
+                "text-xs transition-transform hover:scale-110 inline-block",
                 hasUserReacted(reaction, user?._id || "") ? "animate-pulse" : ""
               )}
-              title={`${reaction.emoji} ${reaction.count} - ${reaction.users.join(", ")}`}
+              title={`${reaction.emoji} ${reaction.count} - ${reaction.users
+                ?.map((user) => user.username)
+                .join(", ")}`}
             >
               {reaction.emoji}
             </span>
@@ -627,6 +635,26 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           <span className="text-xs font-medium ml-1">{totalReactions}</span>
         </div>
       );
+    };
+
+    // Helper function to get reaction statistics
+    const getReactionStats = (): ReactionStats => {
+      const categorizedReactions = categorizeReactions(message.reactions || []);
+      const totalReactions = categorizedReactions.reduce(
+        (sum: number, r: CategorizedReaction) => sum + r.count,
+        0
+      );
+      const userHasReacted: boolean = categorizedReactions.some((r: CategorizedReaction) =>
+        hasUserReacted(r, user?._id || "")
+      );
+
+      return {
+        totalReactions,
+        uniqueEmojis: categorizedReactions.length,
+        topReaction: categorizedReactions[0] || null,
+        userHasReacted,
+        categorizedReactions,
+      };
     };
 
     return (
@@ -645,6 +673,12 @@ export const MessageItem: React.FC<MessageItemProps> = React.memo(
           handlePreviousImage={handlePreviousImage}
           handleImageChange={handleImageChange}
           currentMessageImageIndex={currentMessageImageIndex}
+        />
+
+        <ReactionTooltip
+          open={showReactionTooltip}
+          onClose={() => setShowReactionTooltip(false)}
+          stats={getReactionStats()!}
         />
 
         {/* Message Content */}

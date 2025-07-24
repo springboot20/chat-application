@@ -17,7 +17,16 @@ export interface ChatMessageInterface {
     position: number;
   }>;
   isDeleted: boolean;
-  reactions: { emoji: string; _id: string; userId: string; userIds: string[] }[];
+  reactions: {
+    emoji: string;
+    _id: string;
+    userIds: string[];
+    users: {
+      avatar?: { url: string; localPath: string; _id: string };
+      _id: string;
+      username: string;
+    }[];
+  }[];
   chat: string;
   repliedMessage: ChatMessageInterface | null;
   createdAt: string;
