@@ -77,7 +77,7 @@ export const FileSelection: React.FC<FileSelectionProps> = ({
               <label htmlFor="image-files">
                 <div className="flex items-center gap-3">
                   <PhotoIcon className="h-6 dark:stroke-white" />
-                  <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
+                  <span className="font-nunito font-medium text-sm sm:text-base dark:text-white">
                     Upload Image
                   </span>
                 </div>
@@ -98,7 +98,7 @@ export const FileSelection: React.FC<FileSelectionProps> = ({
               <label htmlFor="document-files">
                 <div className="flex items-center gap-3">
                   <DocumentIcon className="h-6 dark:stroke-white" />
-                  <span className="font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white">
+                  <span className="font-nunito font-medium text-sm sm:text-base dark:text-white">
                     Document
                   </span>
                 </div>

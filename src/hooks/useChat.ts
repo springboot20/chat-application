@@ -1,19 +1,20 @@
-import { ChatListItemInterface, ChatMessageInterface } from "../types/chat";
-import { useAppDispatch, useAppSelector } from "../redux/redux.hooks";
-import { RootState } from "../app/store.ts";
-import { useGetUserChatsQuery } from "../features/chats/chat.slice";
+import { ChatListItemInterface, ChatMessageInterface } from '../types/chat';
+import { useAppDispatch, useAppSelector } from '../redux/redux.hooks';
+import { RootState } from '../app/store.ts';
+import { useGetUserChatsQuery } from '../features/chats/chat.slice';
 import {
   newChat,
   onChatLeave,
   updateChatLastMessage,
   updateGroupName,
-} from "../features/chats/chat.reducer";
-import { toast } from "react-toastify";
-import { createSelector } from "@reduxjs/toolkit";
-import { useCallback, useMemo } from "react";
+} from '../features/chats/chat.reducer';
+import { toast } from 'react-toastify';
+import { createSelector } from '@reduxjs/toolkit';
+import { useCallback, useMemo } from 'react';
+import { getMessageObjectMetaData } from '../utils/index.ts';
 
 const selectChats = createSelector([(state: RootState) => state.chat], (chatState) => ({
-  chats: chatState.chats,
+  chats: chatState?.chats?.map((chat) => ({ ...chat })),
   currentChat: chatState.currentChat,
   chatMessages: chatState.chatMessages,
   unreadMessages: chatState.unreadMessages,
@@ -21,19 +22,32 @@ const selectChats = createSelector([(state: RootState) => state.chat], (chatStat
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
+  const { user: currentUser } = useAppSelector((state: RootState) => state.auth);
+
   const { data, isLoading: isLoadingChats, refetch: refetchChats } = useGetUserChatsQuery();
 
   const chatsFromState = useAppSelector(selectChats);
 
   const chats = useMemo(() => {
     if (chatsFromState.chats?.length > 0) {
-      return [...chatsFromState.chats];
+      return chatsFromState.chats;
     }
 
-    return data?.data ? [...data.data] : [];
+    return data?.data;
   }, [chatsFromState.chats, data?.data]);
 
-  console.log(chats);
+  const chatsWithMeta = useMemo(() => {
+    return chats?.map((chat: ChatListItemInterface) => {
+      const meta = getMessageObjectMetaData(chat, currentUser!);
+      return {
+        ...chat,
+        lastMessageText: meta.lastMessage, // explicitly computed
+        title: meta.title,
+        description: meta.description,
+        lastMessageId: chat.lastMessage?._id || 'no-msg', // for memoization
+      };
+    });
+  }, [chats, currentUser]);
 
   const _updateChatLastMessage = useCallback(
     (chatToUpdateId: string, message: ChatMessageInterface) => {
@@ -44,8 +58,6 @@ export const useChat = () => {
 
   const onNewChat = useCallback(
     (chat: ChatListItemInterface) => {
-      console.log(chat);
-
       dispatch(newChat({ chat }));
     },
     [dispatch]
@@ -53,8 +65,6 @@ export const useChat = () => {
 
   const onGroupChatRename = useCallback(
     (data: ChatListItemInterface) => {
-      console.log(data);
-
       dispatch(updateGroupName({ chat: data }));
       refetchChats();
     },
@@ -63,12 +73,10 @@ export const useChat = () => {
 
   const _onChatLeave = useCallback(
     (chat: ChatListItemInterface) => {
-      console.log(chat);
-
       dispatch(onChatLeave({ chat }));
 
-      toast("A chat you were participating in has been deleted", {
-        type: "info",
+      toast('A chat you were participating in has been deleted', {
+        type: 'info',
       });
     },
     [dispatch]
@@ -85,5 +93,6 @@ export const useChat = () => {
     currentChat: chatsFromState.currentChat,
     chatMessages: chatsFromState.chatMessages,
     unreadMessages: chatsFromState.unreadMessages,
+    chatsWithMeta,
   };
 };

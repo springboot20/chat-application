@@ -1,5 +1,5 @@
-import { ApiService } from "../../app/services/api.service";
-import { ChatListItemInterface, ChatMessageInterface } from "../../types/chat";
+import { ApiService } from '../../app/services/api.service';
+import { ChatListItemInterface, ChatMessageInterface } from '../../types/chat';
 
 interface Response {
   data: any;
@@ -22,65 +22,65 @@ export const ChatApiSlice = ApiService.injectEndpoints({
   endpoints: (builder) => ({
     getUserChats: builder.query<Response, void>({
       query: () => ({
-        url: "/chat-app/chats/",
+        url: '/chat-app/chats/',
       }),
       providesTags: (result) =>
-        result?.data?.length
+        result?.data?.message?.length
           ? [
               // eslint-disable-next-line no-unsafe-optional-chaining
-              ...result?.data.map((chat: ChatListItemInterface) => ({
-                type: "Chat" as const,
+              ...result?.data?.message?.map((chat: ChatListItemInterface) => ({
+                type: 'Chat' as const,
                 id: chat._id,
               })),
-              { type: "Chat", id: "CHAT" },
+              { type: 'Chat', id: 'CHAT' },
             ]
-          : [{ type: "Chat", id: "CHAT" }],
+          : [{ type: 'Chat', id: 'CHAT' }],
     }),
 
     createUserChat: builder.mutation<Response, string>({
       query: (receiverId) => ({
         url: `/chat-app/chats/create-chat/${receiverId}`,
-        method: "POST",
+        method: 'POST',
         body: {},
       }),
     }),
 
     getAvailableUsers: builder.query<Response, void>({
       query: () => ({
-        url: "/chat-app/chats/available-users",
+        url: '/chat-app/chats/available-users',
       }),
       providesTags: (result) =>
         result?.data?.length
           ? [
               // eslint-disable-next-line no-unsafe-optional-chaining
               ...result?.data.map((chat: ChatListItemInterface) => ({
-                type: "User" as const,
+                type: 'User' as const,
                 id: chat._id,
               })),
-              { type: "User", id: "USER" },
+              { type: 'User', id: 'USER' },
             ]
-          : [{ type: "User", id: "USER" }],
+          : [{ type: 'User', id: 'USER' }],
     }),
 
     createGroupChat: builder.mutation<Response, GroupChatInterface>({
       query: ({ name, participants }) => {
         return {
-          url: "/chat-app/chats/group-chat",
+          url: '/chat-app/chats/group-chat',
           body: { name, participants },
-          method: "POST",
+          method: 'POST',
         };
       },
     }),
 
     getGroupChat: builder.query<Response, string>({
       query: (chatId) => `/chat-app/chats/group-chat/${chatId}`,
-      providesTags: (_, __, chatId) => [{ type: "Chat", chatId }],
+      providesTags: (_, __, chatId) => [{ type: 'Chat', chatId }],
     }),
 
     updateGroupChatDetails: builder.mutation<Response, { name: string; chatId: string }>({
       query: ({ chatId, name }) => ({
         url: `/chat-app/chats/group-chat/${chatId}`,
-        method: "PATCH",
+        method: 'PATCH',
         body: { name },
       }),
     }),
@@ -88,7 +88,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     deleteGroupChatDetails: builder.mutation<Response, string>({
       query: (chatId) => ({
         url: `/chat-app/chats/group-chat/${chatId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
     }),
 
@@ -98,7 +98,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     >({
       query: ({ chatId, participantId }) => ({
         url: `/chat-app/chats/group-chat/${chatId}/${participantId}`,
-        method: "POST",
+        method: 'POST',
       }),
     }),
 
@@ -108,21 +108,21 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     >({
       query: ({ chatId, participantId }) => ({
         url: `/chat-app/chats/group-chat/${chatId}/${participantId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
     }),
 
     leaveChatGroup: builder.mutation<Response, string>({
       query: (chatId) => ({
         url: `/chat-app/chats/leave/group-chat/${chatId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
     }),
 
     deleteOneOneChatMessage: builder.mutation<Response, string>({
       query: (chatId) => ({
         url: `/chat-app/chats/delete-one-on-one/${chatId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
     }),
 
@@ -135,12 +135,12 @@ export const ChatApiSlice = ApiService.injectEndpoints({
           ? [
               // eslint-disable-next-line no-unsafe-optional-chaining
               ...result?.data.map((message: ChatMessageInterface) => ({
-                type: "Message" as const,
+                type: 'Message' as const,
                 id: message._id,
               })),
-              { type: "Message", id: "MESSAGE" },
+              { type: 'Message', id: 'MESSAGE' },
             ]
-          : [{ type: "Message", id: "MESSAGE" }],
+          : [{ type: 'Message', id: 'MESSAGE' }],
     }),
 
     reactToChatMessage: builder.mutation<
@@ -149,7 +149,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     >({
       query: ({ chatId, messageId, ...rest }) => ({
         url: `/chat-app/messages/${chatId}/${messageId}/react`,
-        method: "PATCH",
+        method: 'PATCH',
         body: { ...rest },
       }),
     }),
@@ -157,7 +157,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     deleteChatMessage: builder.mutation<Response, { chatId: string; messageId: string }>({
       query: ({ chatId, messageId }) => ({
         url: `/chat-app/messages/${chatId}/${messageId}/delete`,
-        method: "DELETE",
+        method: 'DELETE',
         body: {},
       }),
     }),
@@ -169,20 +169,20 @@ export const ChatApiSlice = ApiService.injectEndpoints({
         const formData = new FormData();
 
         Object.keys(data).forEach((key) => {
-          if (key === "attachments" && Array.isArray(data[key])) {
+          if (key === 'attachments' && Array.isArray(data[key])) {
             // Handle attachments array by appending each file individually
             for (let i = 0; i < data[key].length; i++) {
               console.log(data[key][i]);
-              formData.append("attachments", data[key][i]);
+              formData.append('attachments', data[key][i]);
             }
-          } else if (typeof data[key] === "object" && !(data[key] instanceof File)) {
+          } else if (typeof data[key] === 'object' && !(data[key] instanceof File)) {
             // Handle other objects by stringifying them
             formData.append(key, JSON.stringify(data[key]));
-          } else if (key === "mentions" && Array.isArray(data[key])) {
+          } else if (key === 'mentions' && Array.isArray(data[key])) {
             // Handle mentions array by appending each mentioned user individually
             for (let i = 0; i < data[key].length; i++) {
               console.log(data[key][i]);
-              formData.append("mentions", data[key][i]);
+              formData.append('mentions', data[key][i]);
             }
           } else {
             // Handle primitive values and File objects
@@ -193,7 +193,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
         return {
           url: `/chat-app/messages/${chatId}`,
           body: formData,
-          method: "POST",
+          method: 'POST',
         };
       },
     }),
@@ -205,20 +205,20 @@ export const ChatApiSlice = ApiService.injectEndpoints({
         const formData = new FormData();
 
         Object.keys(data).forEach((key) => {
-          if (key === "attachments" && Array.isArray(data[key])) {
+          if (key === 'attachments' && Array.isArray(data[key])) {
             // Handle attachments array by appending each file individually
             for (let i = 0; i < data[key].length; i++) {
               console.log(data[key][i]);
-              formData.append("attachments", data[key][i]);
+              formData.append('attachments', data[key][i]);
             }
-          } else if (typeof data[key] === "object" && !(data[key] instanceof File)) {
+          } else if (typeof data[key] === 'object' && !(data[key] instanceof File)) {
             // Handle other objects by stringifying them
             formData.append(key, JSON.stringify(data[key]));
-          } else if (key === "mentions" && Array.isArray(data[key])) {
+          } else if (key === 'mentions' && Array.isArray(data[key])) {
             // Handle mentions array by appending each mentioned user individually
             for (let i = 0; i < data[key].length; i++) {
               console.log(data[key][i]);
-              formData.append("mentions", data[key][i]);
+              formData.append('mentions', data[key][i]);
             }
           } else {
             // Handle primitive values and File objects
@@ -229,9 +229,17 @@ export const ChatApiSlice = ApiService.injectEndpoints({
         return {
           url: `/chat-app/messages/${chatId}/${messageId}/reply`,
           body: formData,
-          method: "PATCH",
+          method: 'PATCH',
         };
       },
+    }),
+
+    markMessagesAsSeen: builder.mutation<Response, string>({
+      query: (chatId) => ({
+        url: `/chat-app/messages/${chatId}/messages/seen`,
+        method: 'PUT',
+        body: {},
+      }),
     }),
   }),
 });
@@ -253,4 +261,5 @@ export const {
   useReactToChatMessageMutation,
   useDeleteChatMessageMutation,
   useReplyToMessageMutation,
+  useMarkMessagesAsSeenMutation,
 } = ChatApiSlice;

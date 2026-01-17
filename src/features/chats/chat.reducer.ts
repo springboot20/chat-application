@@ -1,24 +1,24 @@
-import { ChatListItemInterface } from "./../../types/chat";
-import { ChatMessageInterface } from "../../types/chat";
-import { LocalStorage } from "./../../utils/index";
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ChatApiSlice } from "./chat.slice";
-import { User } from "../../types/auth";
+import { ChatListItemInterface } from './../../types/chat';
+import { ChatMessageInterface } from '../../types/chat';
+import { LocalStorage } from './../../utils/index';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { ChatApiSlice } from './chat.slice';
+import { User } from '../../types/auth';
 
 interface InitialState {
   chats: ChatListItemInterface[];
-  chatMessages: ChatMessageInterface[];
+  chatMessages: Record<string, ChatMessageInterface[]>; // key = chat._id
   unreadMessages: ChatMessageInterface[];
   currentChat: ChatListItemInterface | null;
   users: User[];
 }
 
 const initialState: InitialState = {
-  chats: LocalStorage.get("chats") as ChatListItemInterface[],
-  currentChat: (LocalStorage.get("current-chat") as ChatListItemInterface) || null,
-  users: (LocalStorage.get("users") as User[]) || [],
-  chatMessages: LocalStorage.get("chatmessages") as ChatMessageInterface[],
-  unreadMessages: LocalStorage.get("unreadMessages") as ChatMessageInterface[],
+  chats: LocalStorage.get('chats') as ChatListItemInterface[],
+  currentChat: (LocalStorage.get('current-chat') as ChatListItemInterface) || null,
+  users: (LocalStorage.get('users') as User[]) || [],
+  chatMessages: LocalStorage.get('chatmessages') || {}, // empty object per chat
+  unreadMessages: LocalStorage.get('unreadMessages') as ChatMessageInterface[],
 };
 
 interface ChatMessageUpdateInterface {
@@ -27,7 +27,7 @@ interface ChatMessageUpdateInterface {
 }
 
 const ChatSlice = createSlice({
-  name: "chat",
+  name: 'chat',
   initialState,
   reducers: {
     newChat: (state, action: PayloadAction<{ chat: ChatListItemInterface }>) => {
@@ -36,7 +36,7 @@ const ChatSlice = createSlice({
       console.log(chat);
 
       state.chats = [chat, ...state.chats];
-      LocalStorage.set("chats", state.chats);
+      LocalStorage.set('chats', state.chats);
     },
 
     onChatLeave: (state, action: PayloadAction<{ chat: ChatListItemInterface }>) => {
@@ -45,88 +45,137 @@ const ChatSlice = createSlice({
       if (chat?._id === state.currentChat?._id) {
         state.currentChat = null;
 
-        LocalStorage.remove("current-chat");
+        LocalStorage.remove('current-chat');
       }
 
       state.chats = state.chats?.filter((ch) => ch?._id !== chat?._id);
 
-      LocalStorage.set("chats", state.chats);
+      LocalStorage.set('chats', state.chats);
     },
 
-    onMessageReceived: (state, action) => {
-      const { data } = action.payload;
+    onMessageReceived: (state, action: PayloadAction<{ data: ChatMessageInterface }>) => {
+      const message = action.payload.data;
+      const chatId = message.chat;
 
-      const existingMessageIndex = state.chatMessages.findIndex((msg) => msg._id === data._id);
+      if (!state.chatMessages[chatId]) state.chatMessages[chatId] = [];
 
-      if (existingMessageIndex !== -1) {
-        // Update only the reactions for existing messages
-        state.chatMessages[existingMessageIndex].reactions = data.reactions;
-      } else if (data.chat === state.currentChat?._id) {
-        // Add new message to chatMessages if it belongs to the current chat
-        state.chatMessages.push(data);
+      const existingIndex = state.chatMessages[chatId].findIndex((msg) => msg._id === message._id);
+
+      if (existingIndex !== -1) {
+        state.chatMessages[chatId][existingIndex] = {
+          ...state.chatMessages[chatId][existingIndex],
+          ...message,
+        };
       } else {
-        state.unreadMessages.push(data);
+        state.chatMessages[chatId].push(message);
       }
 
-      LocalStorage.set("chatMessages", state.unreadMessages);
-      LocalStorage.set("unreadMessages", state.unreadMessages);
+      // Remove duplicates
+      const uniqueMessages = state.chatMessages[chatId].reduce((acc, current) => {
+        if (!acc.some((msg) => msg._id === current._id)) acc.push(current);
+        return acc;
+      }, [] as ChatMessageInterface[]);
+
+      state.chatMessages[chatId] = uniqueMessages;
+
+      state.chatMessages[chatId].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
+      LocalStorage.set('chatmessages', state.chatMessages);
     },
 
-    setCurrentChat: (state, action: PayloadAction<{ chat: ChatListItemInterface | null }>) => {
-      const { chat } = action.payload;
+    // Add this new action
+    updateMessageReactions: (
+      state,
+      action: PayloadAction<{ messageId: string; reactions: any[]; chatId: string }>
+    ) => {
+      const { messageId, reactions, chatId } = action.payload;
 
-      state.currentChat = chat;
-      state.chatMessages = [];
+      console.log({ messageId, reactions, chatId });
 
-      LocalStorage.set("current-chat", chat);
-      LocalStorage.set("chatmessages", state.chatMessages);
+      if (!state.chatMessages[chatId]) return;
+
+      const messageIndex = state.chatMessages[chatId].findIndex((msg) => msg._id === messageId);
+      if (messageIndex !== -1) {
+        state.chatMessages[chatId][messageIndex] = {
+          ...state.chatMessages[chatId][messageIndex],
+          reactions: reactions.map((r) => ({ ...r })), // Deep copy reactions
+        };
+      }
+
+      // Update lastMessage in chat array
+      const chatIndex = state.chats.findIndex((chat) => chat.lastMessage?._id === messageId);
+      if (chatIndex !== -1 && state.chats[chatIndex].lastMessage) {
+        state.chats[chatIndex] = {
+          ...state.chats[chatIndex],
+          lastMessage: {
+            ...state.chats[chatIndex].lastMessage!,
+            reactions: reactions.map((r) => ({ ...r })),
+          },
+        };
+      }
+
+      // Update current chat if needed
+      if (state.currentChat?.lastMessage?._id === messageId) {
+        state.currentChat = {
+          ...state.currentChat,
+          lastMessage: {
+            ...state.currentChat.lastMessage!,
+            reactions: reactions.map((r) => ({ ...r })),
+          },
+        };
+      }
+
+      LocalStorage.set('chatmessages', state.chatMessages);
+    },
+
+    setCurrentChat: (state, action) => {
+      state.currentChat = action.payload.chat;
+      LocalStorage.set('current-chat', action.payload.chat);
     },
 
     setUnreadMessages: (state, action: PayloadAction<{ chatId: string }>) => {
       const { chatId } = action.payload;
 
-      console.log(chatId);
-      console.log(state.chatMessages?.filter((msg) => msg?.chat === chatId));
-
       state.unreadMessages = state.unreadMessages?.filter((msg) => msg?.chat !== chatId);
-      console.log(state.unreadMessages);
     },
 
     updateChatLastMessage: (state, action: PayloadAction<ChatMessageUpdateInterface>) => {
       const { chatToUpdateId, message } = action.payload;
-      console.log(message);
 
-      // Find the chat in the array
       const chatIndex = state.chats.findIndex((chat) => chat._id === chatToUpdateId);
 
       if (chatIndex !== -1) {
-        // Create a new chat object with updated properties
+        // Create completely new objects to ensure reference changes
         const updatedChat = {
           ...state.chats[chatIndex],
-          lastMessage: message,
+          lastMessage: { ...message }, // Create new message object reference
           updatedAt: message?.updatedAt || new Date().toISOString(),
         };
 
-        // Update the chat in the state
-        state.chats[chatIndex] = updatedChat;
+        // Create new array with updated chat
+        state.chats = [
+          ...state.chats.slice(0, chatIndex),
+          updatedChat,
+          ...state.chats.slice(chatIndex + 1),
+        ];
 
-        // If this is the current chat, update that too
+        // Update current chat if needed
         if (state.currentChat && state.currentChat._id === chatToUpdateId) {
-          state.currentChat = updatedChat;
+          state.currentChat = { ...updatedChat };
         }
 
         // Update localStorage
-        LocalStorage.set("chats", state.chats);
+        LocalStorage.set('chats', state.chats);
         if (state.currentChat?._id === chatToUpdateId) {
-          LocalStorage.set("current-chat", updatedChat);
+          LocalStorage.set('current-chat', updatedChat);
         }
       }
     },
 
     updateGroupName: (state, action: PayloadAction<{ chat: ChatListItemInterface }>) => {
       const { chat } = action.payload;
-
-      console.log(chat);
 
       // Find the chat in the array
       const chatIndex = state.chats.findIndex((localChat) => localChat._id === chat._id);
@@ -139,49 +188,130 @@ const ChatSlice = createSlice({
 
         if (state.currentChat?._id === chat._id) {
           state.currentChat = { ...state.currentChat, name: chat.name };
-          LocalStorage.set("current-chat", state.currentChat);
+          LocalStorage.set('current-chat', state.currentChat);
         }
       }
 
-      LocalStorage.set("chats", state.chats);
-      console.log(state.chats);
+      LocalStorage.set('chats', state.chats);
     },
 
     onChatDelete: (state, action: PayloadAction<{ chatId: string }>) => {
       const { chatId } = action.payload;
 
-      state.chats = state.chats.filter((chat) => chat?._id !== chatId);
-      state.chatMessages = [];
-
-      state.unreadMessages = state.unreadMessages.filter((msg) => msg?.chat !== chatId);
+      state.chats = state.chats.filter((chat) => chat._id !== chatId);
+      state.unreadMessages = state.unreadMessages.filter((msg) => msg.chat !== chatId);
 
       if (state.currentChat?._id === chatId) {
         state.currentChat = null;
-        LocalStorage.remove("current-chat");
+        LocalStorage.remove('current-chat');
       }
 
-      LocalStorage.set("chats", state.chats);
-      LocalStorage.set("chatmessages", state.chatMessages);
-      LocalStorage.set("unreadMessages", state.unreadMessages);
+      LocalStorage.set('chats', state.chats);
+      LocalStorage.set('chatmessages', state.chatMessages);
+      LocalStorage.set('unreadMessages', state.unreadMessages);
     },
 
     onChatMessageDelete: (
       state,
-      action: PayloadAction<{
-        messageId: string;
-        message: ChatMessageInterface;
-      }>
+      action: PayloadAction<{ messageId: string; message: ChatMessageInterface }>
     ) => {
       const { messageId, message } = action.payload;
+      const chatId = message.chat;
 
-      const messageIndex = state.chatMessages.findIndex((message) => message._id === messageId);
+      if (!chatId || !state.chatMessages[chatId]) return;
 
-      console.log(message);
+      const messageIndex = state.chatMessages[chatId].findIndex((msg) => msg._id === messageId);
 
       if (messageIndex !== -1) {
-        state.chatMessages[messageIndex] = message;
+        // Instead of removing, just mark it as deleted
+        state.chatMessages[chatId][messageIndex] = {
+          ...state.chatMessages[chatId][messageIndex],
+          isDeleted: true,
+          content: '', // optional: clear the text
+          attachments: [], // optional: remove attachments
+        };
       }
-      LocalStorage.set("chatmessages", state.chatMessages);
+
+      // Also update lastMessage in chat if needed
+      const chatIndex = state.chats.findIndex((chat) => chat.lastMessage?._id === messageId);
+
+      if (chatIndex !== -1) {
+        state.chats[chatIndex].lastMessage = {
+          ...state.chats[chatIndex].lastMessage!,
+          isDeleted: true,
+          content: '',
+          attachments: [],
+        };
+      }
+
+      LocalStorage.set('chatmessages', state.chatMessages);
+    },
+
+    updateMessageDelivery: (
+      state,
+      action: PayloadAction<{ chatId: string; messageId: string; deliveredTo: string[] }>
+    ) => {
+      const { chatId, messageId, deliveredTo } = action.payload;
+      console.log({ chatId, messageId });
+
+      if (!state.chatMessages[chatId]) return;
+
+      state.chatMessages[chatId] = state.chatMessages[chatId].map((msg) =>
+        messageId === msg._id
+          ? {
+              ...msg,
+              deliveredTo: [...(msg.deliveredTo || []), ...deliveredTo],
+              status: 'delivered',
+            }
+          : msg
+      );
+
+      // Update lastMessage if needed
+      const chatIndex = state.chats.findIndex((chat) => chat._id === chatId);
+      if (chatIndex !== -1) {
+        const lastMessage = state.chats[chatIndex].lastMessage;
+        if (lastMessage && messageId === lastMessage._id) {
+          state.chats[chatIndex].lastMessage = {
+            ...lastMessage,
+            deliveredTo: [...(lastMessage.deliveredTo || []), ...deliveredTo],
+            status: 'delivered',
+          };
+        }
+      }
+    },
+
+    markMessagesAsSeen: (
+      state,
+      action: PayloadAction<{ chatId: string; messageIds: string[]; seenBy: string }>
+    ) => {
+      const { chatId, messageIds, seenBy } = action.payload;
+      if (!state.chatMessages[chatId]) return;
+
+      // ✅ Only update messages that are in messageIds array
+      state.chatMessages[chatId] = state.chatMessages[chatId].map((msg) => {
+        if (!messageIds.includes(msg._id)) return msg; // Skip messages not in the list
+        if (msg.sender._id === seenBy) return msg; // Don't mark own messages as seen
+
+        if (!msg.seenBy) msg.seenBy = [];
+        if (!msg.seenBy.includes(seenBy)) msg.seenBy.push(seenBy);
+
+        return { ...msg, status: 'seen' };
+      });
+
+      // Update lastMessage if it's in the seen list
+      const chatIndex = state.chats.findIndex((chat) => chat._id === chatId);
+      if (chatIndex !== -1 && state.chats[chatIndex].lastMessage) {
+        const lastMessage = state.chats[chatIndex].lastMessage!;
+
+        if (messageIds.includes(lastMessage._id) && lastMessage.sender._id !== seenBy) {
+          if (!lastMessage.seenBy) lastMessage.seenBy = [];
+          if (!lastMessage.seenBy.includes(seenBy)) lastMessage.seenBy.push(seenBy);
+          lastMessage.status = 'seen';
+          state.chats[chatIndex].lastMessage = { ...lastMessage };
+        }
+      }
+
+      LocalStorage.set('chatmessages', state.chatMessages);
     },
   },
   extraReducers: (builder) => {
@@ -189,24 +319,15 @@ const ChatSlice = createSlice({
       const { data } = action.payload;
       state.chats = data;
 
-      LocalStorage.set("chats", state.chats);
+      LocalStorage.set('chats', state.chats);
     });
 
     builder.addMatcher(ChatApiSlice.endpoints.getChatMessages.matchFulfilled, (state, action) => {
-      const { data } = action.payload;
+      const { data } = action.payload; // make sure your API returns chatId
 
-      state.chatMessages = data;
-
-      LocalStorage.set("chatmessages", state.chatMessages);
-    });
-
-    builder.addMatcher(ChatApiSlice.endpoints.sendMessage.matchFulfilled, (state, action) => {
-      const { data } = action.payload;
-
-      // Add the new message to chatMessages
-      state.chatMessages = [...state.chatMessages, data];
-
-      LocalStorage.set("chatmessages", state.chatMessages);
+      const { chatId, messages } = data;
+      state.chatMessages[chatId] = messages; // store messages only for that chat
+      LocalStorage.set('chatmessages', state.chatMessages);
     });
 
     builder.addMatcher(ChatApiSlice.endpoints.getAvailableUsers.matchFulfilled, (state, action) => {
@@ -214,7 +335,7 @@ const ChatSlice = createSlice({
 
       state.users = data;
 
-      LocalStorage.set("users", state.users);
+      LocalStorage.set('users', state.users);
     });
 
     builder.addMatcher(ChatApiSlice.endpoints.createUserChat.matchFulfilled, (state, action) => {
@@ -224,18 +345,18 @@ const ChatSlice = createSlice({
 
       state.chats = [...state.chats, data];
 
-      LocalStorage.set("chats", state.chats);
+      LocalStorage.set('chats', state.chats);
     });
 
-    // builder.addMatcher(ChatApiSlice.endpoints.createGroupChat.matchFulfilled, (state, action) => {
-    //   const { data } = action.payload;
+    builder.addMatcher(ChatApiSlice.endpoints.createGroupChat.matchFulfilled, (state, action) => {
+      const { data } = action.payload;
 
-    //   console.log(data);
+      console.log(data);
 
-    //   state.chats = [...state.chats, data];
+      state.chats = [...state.chats, data];
 
-    //   LocalStorage.set("chats", state.chats);
-    // });
+      LocalStorage.set('chats', state.chats);
+    });
   },
 });
 
@@ -250,4 +371,8 @@ export const {
   onChatDelete,
   onChatMessageDelete,
   updateGroupName,
+  updateMessageReactions,
+
+  markMessagesAsSeen,
+  updateMessageDelivery,
 } = ChatSlice.actions;

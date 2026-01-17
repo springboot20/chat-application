@@ -29,7 +29,7 @@ export const ChatModal: React.FC<{
   const users = availableUsers?.data as User[];
 
   const createNewChat = async () => {
-    if (!userId) return toast.error("Plase select a user");
+    if (!userId) return toast.error("Please select a user");
 
     setCreatingChat(true);
 

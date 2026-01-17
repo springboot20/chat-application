@@ -1,8 +1,8 @@
-import { UserType } from "./user";
+import { UserType } from './user';
 
 export interface ChatMessageInterface {
   _id: string;
-  sender: Pick<UserType, "_id" | "username" | "avatar" | "email">;
+  sender: Pick<UserType, '_id' | 'username' | 'avatar' | 'email'>;
   content: string;
   attachments: Array<{
     url: string;
@@ -22,13 +22,16 @@ export interface ChatMessageInterface {
     _id: string;
     userIds: string[];
     users: {
-      avatar?: { url: string; localPath: string; _id: string };
+      avatar?: { url?: string; localPath?: string; _id: string };
       _id: string;
       username: string;
     }[];
   }[];
   chat: string;
   repliedMessage: ChatMessageInterface | null;
+  status: 'sent' | 'delivered' | 'seen' | 'queued';
+  deliveredTo: string[]; // userIds
+  seenBy: string[]; // userIds
   createdAt: string;
   updatedAt: string;
 }

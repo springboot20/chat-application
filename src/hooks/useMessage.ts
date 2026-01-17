@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useAppDispatch } from './../redux/redux.hooks';
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { STOP_TYPING_EVENT, TYPING_EVENT, JOIN_CHAT_EVENT } from '../enums/index.ts';
+import { JOIN_CHAT_EVENT } from '../enums/index.ts';
 import { RootState } from '../app/store.ts';
 import { useAppSelector } from '../redux/redux.hooks.ts';
 import { type EmojiClickData } from 'emoji-picker-react';
@@ -12,16 +13,22 @@ import {
   updateChatLastMessage,
   setUnreadMessages,
   onChatMessageDelete,
+  updateMessageReactions,
 } from '../features/chats/chat.reducer.ts';
 import {
   useDeleteChatMessageMutation,
   useGetAvailableUsersQuery,
   useReplyToMessageMutation,
+  useSendMessageMutation,
 } from '../features/chats/chat.slice.ts';
 import { User } from '../types/auth.ts';
 import { AudioManager } from '../utils/index.ts';
 import { toast } from 'react-toastify';
 import { useSocketContext } from './useSocket.ts';
+import { ChatListItemInterface, ChatMessageInterface } from '../types/chat.ts';
+import { useNetwork } from './useNetwork.ts';
+import { messageQueue } from '../utils/messageQueue.ts';
+import { useTyping } from './useTyping.ts';
 // import { toast } from "react-toastify";
 
 type FileType = {
@@ -47,16 +54,29 @@ export const useMessage = () => {
   const documentInputRef = useRef<HTMLInputElement | null>(null);
   const messageItemRef = useRef<Record<string, HTMLDivElement | null>>({});
   const [selectedUser, setSelectedUser] = useState<User>({} as User);
+
+  const [sendMessage] = useSendMessageMutation();
   const [deleteChatMessage] = useDeleteChatMessageMutation();
   const [replyToChatMessage] = useReplyToMessageMutation();
   const { data: availableUsers } = useGetAvailableUsersQuery();
-  const users = availableUsers?.data as User[];
 
   const [messageToReply, setMessageToReply] = useState('');
   const messageAudioManagerRef = useRef<AudioManager | null>(null);
   const reactionAudioManagerRef = useRef<AudioManager | null>(null);
+
+  const { emitStopTyping, typingTimeoutRef } = useTyping({
+    currentChat: currentChat!,
+    user: currentUser!,
+  });
+
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const users = availableUsers?.data as User[];
+
+  const { isOnline } = useNetwork();
+
+  // Add visual indicator for queued messages
+  const [queuedMessageIds, setQueuedMessageIds] = useState<string[]>([]);
 
   // Initialize audio manager
   useEffect(() => {
@@ -95,12 +115,6 @@ export const useMessage = () => {
     }
   }, []);
 
-  const playReactionSound = useCallback(async () => {
-    if (reactionAudioManagerRef.current) {
-      await reactionAudioManagerRef.current.playSound();
-    }
-  }, []);
-
   const handleSelectUser = useCallback((user: User) => {
     setMessage((prev) => {
       return prev + user.username;
@@ -122,8 +136,6 @@ export const useMessage = () => {
       setShowMentionUserMenu(false);
     }
   }, []);
-
-
 
   const checkScrollPosition = () => {
     if (bottomRef.current) {
@@ -224,14 +236,6 @@ export const useMessage = () => {
   const handleOnMessageChange = (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = evt.target.value;
     setMessage(value);
-
-    if (socket && currentChat?._id && value.trim()) {
-      socket.emit(TYPING_EVENT, {
-        chatId: currentChat?._id,
-        userId: currentUser?._id,
-        username: currentUser?.username,
-      });
-    }
   };
 
   const getAllMessages = useCallback(async () => {
@@ -241,13 +245,10 @@ export const useMessage = () => {
       return;
     }
 
-    // if (!currentChat?._id) {
-    //   console.log("No chat selected, cannot get reduxStateMessages");
-    //   setTimeout(() => {
-    //     toast("No chat selected", { type: "warning" });
-    //   }, 9000);
-    //   return;
-    // }
+    if (!currentChat?._id) {
+      console.log('No chat selected, cannot get reduxStateMessages');
+      return;
+    }
 
     // Join the chat room
     socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
@@ -256,18 +257,24 @@ export const useMessage = () => {
     dispatch(setUnreadMessages({ chatId: currentChat!._id! }));
   }, [currentChat, dispatch, socket]);
 
+  const onUpdateChatLastMessage = (updatedChat: ChatListItemInterface) => {
+    // Update the last message of the chat
+    dispatch(
+      updateChatLastMessage({ chatToUpdateId: updatedChat._id, message: updatedChat.lastMessage })
+    );
+  };
+
   const onMessageReceive = (data: any) => {
     // Always dispatch the received message to the Redux store
     dispatch(onMessageReceived({ data }));
 
-    // Update the last message of the chat
     dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
 
     // Determine when to play sound
     const isCurrentChat = data.chat === currentChat?._id;
     const isFromCurrentUser = data.sender._id === currentUser?._id;
 
-    // scrollToBottom();
+    scrollToBottom();
 
     // Play sound for messages from other users in the current chat
     // Only play if:
@@ -280,7 +287,6 @@ export const useMessage = () => {
   };
 
   const onChatMessageDeleted = (data: any) => {
-    console.log(data);
     dispatch(onChatMessageDelete({ messageId: data._id, message: data }));
   };
 
@@ -354,12 +360,6 @@ export const useMessage = () => {
   const handleReplyToChatMessage = useCallback(async () => {
     if (!currentChat?._id || !socket) return;
 
-    socket?.emit(STOP_TYPING_EVENT, {
-      chatId: currentChat?._id,
-      userId: currentUser?._id,
-      username: currentUser?.username,
-    });
-
     const processedMessage = processMentionsContent(message, users);
 
     const payload = {
@@ -377,12 +377,7 @@ export const useMessage = () => {
       .then((response) => {
         // Update the Redux store
         console.log(response);
-        dispatch(
-          updateChatLastMessage({
-            chatToUpdateId: currentChat._id!,
-            message: response.data,
-          })
-        );
+
         scrollToBottom();
 
         setMessage(''); // Move here
@@ -400,14 +395,11 @@ export const useMessage = () => {
   }, [
     currentChat?._id,
     socket,
-    currentUser?._id,
-    currentUser?.username,
     message,
     users,
     messageToReply,
     attachmentFiles.files,
     replyToChatMessage,
-    dispatch,
     playMessageSound,
   ]);
 
@@ -419,28 +411,12 @@ export const useMessage = () => {
 
   const onReactionUpdate = useCallback(
     (data: any) => {
+      console.log(data);
+
       // Update only the reactions for the specific message
-      dispatch(
-        onMessageReceived({
-          data: {
-            ...data,
-            reactions: data.reactions, // Only update reactions
-          },
-        })
-      );
-
-      const isCurrentChat = data.chat === currentChat?._id;
-      const isFromCurrentUser = data.sender._id === currentUser?._id;
-
-      if (isCurrentChat && !isFromCurrentUser) {
-        playMessageSound();
-      }
-
-      if (isCurrentChat && isFromCurrentUser) {
-        playReactionSound();
-      }
+      dispatch(updateMessageReactions(data));
     },
-    [dispatch, currentChat?._id, currentUser?._id, playMessageSound, playReactionSound]
+    [dispatch]
   );
 
   const handleRemoveFile = (indexToRemove: number) => {
@@ -462,6 +438,83 @@ export const useMessage = () => {
     setShowReply(false);
     setMessageToReply('');
   }, []);
+
+  const sendChatMessage = async () => {
+    if (!currentChat?._id || !socket) return;
+
+    emitStopTyping();
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    const processedMessage = processMentionsContent(message, users);
+
+    // Clear input fields immediately for better UX
+    const files = attachmentFiles.files;
+
+    setMessage('');
+    setAttachmentFiles({} as any);
+
+    // ✅ Check if user is offline
+    if (!isOnline) {
+      // Queue the message
+      const queuedId = messageQueue.add({
+        chatId: currentChat._id,
+        content: processedMessage.content,
+        attachments: files || undefined,
+        mentions: processedMessage.mentions,
+      });
+
+      setQueuedMessageIds((prev) => [...prev, queuedId]);
+
+      toast.info('You are offline. Message will be sent when you reconnect.', {
+        autoClose: 3000,
+      });
+
+      // Add optimistic UI update with "queued" status
+      const tempMessage = {
+        _id: queuedId,
+        content: processedMessage.content,
+        sender: currentUser!,
+        chat: currentChat._id,
+        status: 'queued', // Custom status
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      dispatch(onMessageReceived({ data: tempMessage as unknown as ChatMessageInterface }));
+
+      return;
+    }
+
+    // ✅ User is online - send normally
+    await sendMessage({
+      chatId: currentChat._id,
+      data: {
+        content: processedMessage.content,
+        attachments: files,
+        mentions: processedMessage.mentions,
+      },
+    })
+      .unwrap()
+      .then(() => {
+        playMessageSound();
+        scrollToBottom();
+      })
+      .catch((error: any) => {
+        console.error(error);
+        toast.error('Failed to send message');
+
+        // Re-queue on failure
+        messageQueue.add({
+          chatId: currentChat._id,
+          content: processedMessage.content,
+          attachments: files || undefined,
+          mentions: processedMessage.mentions,
+        });
+      });
+  };
 
   return {
     handleOnMessageChange,
@@ -491,6 +544,7 @@ export const useMessage = () => {
     handleSelectUser,
     selectedUser,
     onReactionUpdate,
+    onUpdateChatLastMessage,
 
     // React Picker
     handleDeleteChatMessage,
@@ -501,5 +555,8 @@ export const useMessage = () => {
     showReply,
     messageToReply,
     showScrollButton,
+    sendChatMessage,
+
+    queuedMessageIds,
   };
 };
