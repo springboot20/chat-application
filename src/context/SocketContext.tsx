@@ -1,136 +1,82 @@
-import React, { createContext, useCallback, useEffect, useRef, useState } from "react";
-import { SocketContextType } from "../types/context";
-import socketio from "socket.io-client";
-import { Token } from "../types/auth";
-import { CONNECTED_EVENT, DISCONNECT_EVENT, SOCKET_ERROR_EVENT } from "../enums";
-import { useAppSelector } from "../redux/redux.hooks";
+import React, { createContext, useEffect, useRef, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { useAppSelector } from '../redux/redux.hooks';
+import { CONNECTED_EVENT, DISCONNECT_EVENT, SOCKET_ERROR_EVENT } from '../enums';
 
-export const SocketContext = createContext<SocketContextType>({
-  socket: null,
+export const SocketContext = createContext({
+  socket: null as Socket | null,
   connected: false,
-  onConnect: () => {},
-  onDisconnect: () => {},
 });
 
-const getSocket = (tokens: Token | null) => {
+const createSocket = (accessToken: string) => {
   const env = import.meta.env;
   const url =
-    env.MODE === "production" ? env.VITE_CHAT_APP_SOCKET_URL : env.VITE_CHAT_APP_SOCKET_LOCAL_URL;
+    env.MODE === 'production' ? env.VITE_CHAT_APP_SOCKET_URL : env.VITE_CHAT_APP_SOCKET_LOCAL_URL;
 
-  return socketio(url, {
-    auth: { tokens },
+  return io(url, {
+    auth: {
+      tokens: { accessToken },
+    },
+    transports: ['websocket'], // 🔑 VERY IMPORTANT
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    timeout: 20000,
-    autoConnect: true,
-    transports: ["websocket"],
   });
 };
 
-export const SocketContextProvider: React.FC<{
-  children: React.ReactNode;
-}> = ({ children }) => {
-  const [socket, setSocket] = useState<ReturnType<typeof socketio> | null>(null);
-  const [reconnecting, setReconnecting] = useState<boolean>(false);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const socketRef = useRef<ReturnType<typeof socketio> | null>(null);
-  const { tokens } = useAppSelector((state) => state.auth);
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+export const SocketContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
 
-  const onConnect = useCallback(() => {
-    setConnected(true);
-    setReconnecting(false);
-
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-  }, []);
-
-  console.log(reconnecting, "reconnecting");
-
-  const onDisconnect = useCallback(() => {
-    setConnected(false);
-    setReconnecting(true);
-  }, []);
-
-  const onSocketError = useCallback((error: any) => {
-    setConnected(false);
-    console.error("Socket error:", error);
-
-    // Handle specific authentication errors
-    if (
-      error.message?.includes("Authentication failed") ||
-      error.message?.includes("Unauthorized")
-    ) {
-      console.warn("🚫 Authentication failed, cleaning up socket");
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        setSocket(null);
-        socketRef.current = null;
-      }
-    }
-  }, []);
+  const { isAuthenticated, tokens } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    if (!socket) return;
+    // 🔒 Only create socket when authenticated
+    if (!isAuthenticated || !tokens?.accessToken) return;
 
-    socket?.on(CONNECTED_EVENT, onConnect);
-    socket?.on(DISCONNECT_EVENT, onDisconnect);
-    socket?.on(SOCKET_ERROR_EVENT, onSocketError);
+    // ✅ Prevent duplicate socket creation
+    if (socketRef.current) return;
 
+    console.log('🚀 Creating socket connection');
+
+    const socket = createSocket(tokens.accessToken);
     socketRef.current = socket;
 
-    return () => {
-      socket?.off(CONNECTED_EVENT, onConnect);
-      socket?.off(SOCKET_ERROR_EVENT, onSocketError);
-      socket?.off(DISCONNECT_EVENT, onDisconnect);
-    };
-  }, [setSocket, socket, onConnect, onDisconnect, onSocketError]);
+    socket.on(CONNECTED_EVENT, () => {
+      console.log('🟢 Socket connected');
+      setConnected(true);
+    });
 
+    socket.on(DISCONNECT_EVENT, (reason) => {
+      console.log('🔴 Socket disconnected:', reason);
+      setConnected(false);
+    });
+
+    socket.on(SOCKET_ERROR_EVENT, (error) => {
+      console.error('❌ Socket error:', error);
+    });
+
+    return () => {
+      // ❌ DO NOT DISCONNECT HERE
+    };
+  }, [isAuthenticated, tokens?.accessToken]);
+
+  // 🔐 Explicit logout cleanup
   useEffect(() => {
-    // Clean up existing socket
-    if (socketRef.current) {
-      console.log("🧹 Cleaning up existing socket");
+    if (!isAuthenticated && socketRef.current) {
+      console.log('🧹 Disconnecting socket on logout');
       socketRef.current.disconnect();
       socketRef.current = null;
-      setSocket(null);
       setConnected(false);
-      setReconnecting(false);
     }
-
-    // Only create socket if authenticated with valid tokens
-    if (isAuthenticated && tokens?.accessToken) {
-      console.log("🚀 Initializing new socket connection");
-      const newSocket = getSocket(tokens);
-
-      if (newSocket) {
-        setSocket(newSocket);
-
-        // Connect after a small delay to ensure proper setup
-        setTimeout(() => {
-          if (newSocket && !newSocket.connected) {
-            newSocket.connect();
-          }
-        }, 100);
-      }
-    } else {
-      console.log("❌ No valid authentication, skipping socket initialization");
-    }
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-    };
-  }, [isAuthenticated, tokens]);
+  }, [isAuthenticated]);
 
   return (
-    <SocketContext.Provider value={{ socket, connected, onConnect, onDisconnect }}>
+    <SocketContext.Provider
+      value={{
+        socket: socketRef.current,
+        connected,
+      }}>
       {children}
     </SocketContext.Provider>
   );

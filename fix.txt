@@ -1,0 +1,8 @@
+feat: update user avatar structure and add message queue utility
+
+- Modified User interface in auth.ts to allow optional avatar properties and added localPath.
+- Updated AcceptedRoles enum to use single quotes for consistency.
+- Changed import statements in chat.ts to use single quotes.
+- Enhanced ChatMessageInterface in chat.ts with new properties for message status and user visibility.
+- Introduced formatMessageTime utility in index.ts to format message timestamps intelligently.
+- Added messageQueue utility to manage offline message queuing with localStorage support.

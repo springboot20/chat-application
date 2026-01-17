@@ -4,8 +4,9 @@ export interface User {
   username: string;
   isEmailVerified: boolean;
   avatar?: {
-    url: string;
-    public_id: string;
+    url?: string;
+    localPath?: string;
+    _id: string;
   };
   updatedAt: string;
   createdAt: string;
@@ -26,7 +27,7 @@ export type Token = {
 };
 
 export enum AcceptedRoles {
-  ADMIN = "ADMIN",
-  USER = "USER",
-  MODERATOR = "MODERATOR",
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+  MODERATOR = 'MODERATOR',
 }
