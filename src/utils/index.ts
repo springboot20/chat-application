@@ -198,3 +198,18 @@ export const truncate = (text: string, length: number) => {
 
   return text;
 };
+
+export function removeCircularReferences(obj: any) {
+  const seen = new WeakSet();
+  return JSON.parse(
+    JSON.stringify(obj, (_, value) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) {
+          return;
+        }
+        seen.add(value);
+      }
+      return value;
+    })
+  );
+}

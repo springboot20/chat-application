@@ -11,7 +11,7 @@ export const useNetwork = () => {
     setIsOnline(true);
 
     // ✅ Notify backend that user is online
-    if (socket?.connected && connected) {
+    if (socket?.connected && connected) { 
       socket.emit(USER_WENT_ONLINE_EVENT);
       console.log('🟢 Notified backend: User is ONLINE');
     }

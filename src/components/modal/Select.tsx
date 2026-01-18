@@ -5,11 +5,10 @@ import { classNames } from '../../utils';
 
 export const SelectModalInput: React.FC<{
   value: string;
-  options:
-    | {
-        value: string;
-        label: string;
-      }[];
+  options: {
+    value: string;
+    label: string;
+  }[];
   onChange: (value: { value: string; label: string }) => void;
   placeholder: string;
 }> = ({ options, value, onChange, placeholder }) => {
@@ -20,19 +19,42 @@ export const SelectModalInput: React.FC<{
     setLocalOptions(options);
   }, [options]);
 
+  // ✅ Find the selected option, with proper fallback
+  const selectedOption = options?.find((opt) => opt.value === value) || null;
+
   return (
     <Combobox
       className='w-full'
       as='div'
-      onChange={(val) => onChange(val)}
-      value={options?.find((opt) => opt.value === value)}>
+      nullable
+      onChange={(val) => {
+        if (val) {
+          onChange(val);
+          setQuery(''); // ✅ Clear query after selection
+        }
+      }}
+      value={selectedOption}>
       <div className='relative mt-4'>
         <Combobox.Button className='w-full'>
           <Combobox.Input
-            displayValue={(option: (typeof options)[0]) => option?.label}
+            displayValue={(option: (typeof options)[0] | null) => {
+              // ✅ Always return a string (never undefined)
+              return option?.label || '';
+            }}
             onChange={(event) => {
-              setLocalOptions(options?.filter((opt) => opt.label.includes(event.target.value)));
-              setQuery(event.target.value);
+              const searchValue = event.target.value;
+              setQuery(searchValue);
+
+              // ✅ Filter options based on search
+              if (searchValue.trim() === '') {
+                setLocalOptions(options || []);
+              } else {
+                setLocalOptions(
+                  (options || []).filter((opt) =>
+                    opt.label.toLowerCase().includes(searchValue.toLowerCase()),
+                  ),
+                );
+              }
             }}
             placeholder={placeholder}
             className='w-full px-5 py-4 bg-gray-200 dark:bg-black dark:text-white dark:outline-white/10 text-gray-800 font-medium text-base block rounded-xl border-0 outline outline-[1px] outline-zinc-400 placeholder:text-gray-700 focus:ring-[1px] focus:ring-white dark:focus:ring-white/10'
@@ -57,7 +79,7 @@ export const SelectModalInput: React.FC<{
                     className={({ active }) =>
                       classNames(
                         'cursor-pointer relative rounded-lg select-none py-4 pl-3 pr-9 dark:text-white dark:hover:bg-white/10 dark:bg-white/5',
-                        active ? 'bg-gray-200 text-gray-700 ' : 'text-gray-800'
+                        active ? 'bg-gray-200 text-gray-700 ' : 'text-gray-800',
                       )
                     }>
                     {({ active, selected }) => (
@@ -70,9 +92,9 @@ export const SelectModalInput: React.FC<{
                           <span
                             className={classNames(
                               'absolute inset-y-0 right-0 flex items-center pr-4',
-                              active ? 'text-green-700' : 'text-green-600'
+                              active ? 'text-green-700' : 'text-green-600',
                             )}>
-                            <CheckIcon className='h-6' strokeWidth={3} aria-hidden='true' />
+                            <CheckIcon className='h-4' strokeWidth={3} aria-hidden='true' />
                           </span>
                         )}
                       </>
