@@ -99,41 +99,30 @@ const ChatSlice = createSlice({
 
       if (!state.chatMessages[chatId]) return;
 
+      // ✅ Update message in chatMessages
       const messageIndex = state.chatMessages[chatId].findIndex((msg) => msg._id === messageId);
 
       if (messageIndex !== -1) {
-        state.chatMessages[chatId][messageIndex] = {
-          ...state.chatMessages[chatId][messageIndex],
-          reactions: reactions,
-        };
+        // Direct assignment (Immer handles immutability)
+        state.chatMessages[chatId][messageIndex].reactions = reactions;
       }
 
-      // Update lastMessage in chat array
+      // ✅ Update lastMessage in chats array
       const chatIndex = state.chats.findIndex((chat) => chat.lastMessage?._id === messageId);
+
       if (chatIndex !== -1 && state.chats[chatIndex].lastMessage) {
-        state.chats[chatIndex] = {
-          ...state.chats[chatIndex],
-          lastMessage: {
-            ...state.chats[chatIndex].lastMessage!,
-            reactions: reactions,
-          },
-        };
+        // Direct assignment (Immer handles it)
+        state.chats[chatIndex].lastMessage!.reactions = reactions;
       }
 
-      // Update current chat if needed
+      // ✅ Update current chat
       if (state.currentChat?.lastMessage?._id === messageId) {
-        state.currentChat = {
-          ...state.currentChat,
-          lastMessage: {
-            ...state.currentChat.lastMessage!,
-            reactions: reactions,
-          },
-        };
+        state.currentChat.lastMessage.reactions = reactions;
+        LocalStorage.set('current-chat', current(state.currentChat));
       }
 
       LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
     },
-
     setCurrentChat: (state, action) => {
       state.currentChat = action.payload.chat;
       LocalStorage.set('current-chat', action.payload.chat);
