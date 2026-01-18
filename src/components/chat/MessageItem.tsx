@@ -311,7 +311,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         calculatePickerPosition();
       });
     },
-    [calculatePickerPosition, hasInternet, message.status]
+    [calculatePickerPosition, hasInternet, message.status],
   );
 
   const handleHideReactionPicker = useCallback(() => {
@@ -319,318 +319,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     setDoubleClickPosition(null);
   }, []);
 
-  // const handleSelectReactionEmoji = useCallback(
-  //   async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
-  //     if (event) {
-  //       event.stopPropagation();
-  //     }
-
-  //     // Optimistic update
-  //     const optimisticReaction = {
-  //       emoji: emojiData.emoji,
-  //       userIds: [user?._id],
-  //       messageId: key,
-  //       users: [
-  //         {
-  //           _id: user?._id,
-  //           username: user?.username,
-  //           avatar: user?.avatar,
-  //         },
-  //       ],
-  //     };
-
-  //     dispatch(
-  //       updateMessageReactions({
-  //         chatId: currentChat?._id || '',
-  //         messageId: key,
-  //         reactions: (() => {
-  //           const existing = message.reactions || [];
-
-  //           // remove user's previous reaction
-  //           const cleaned = existing.filter((r) => !r.userIds?.includes(String(user?._id)));
-
-  //           return [...cleaned, optimisticReaction];
-  //         })(),
-  //       })
-  //     );
-
-  //     try {
-  //       await reactToMessage({
-  //         chatId: currentChat?._id || '',
-  //         messageId: key,
-  //         emoji: emojiData.emoji,
-  //       }).unwrap();
-  //     } catch (error) {
-  //       console.error('Failed to send reaction:', error);
-  //       dispatch(
-  //         updateMessageReactions({
-  //           chatId: currentChat?._id || '',
-  //           messageId: key,
-  //           reactions: message.reactions || [],
-  //         })
-  //       );
-  //     }
-
-  //     handleHideReactionPicker();
-  //   },
-  //   [
-  //     currentChat?._id,
-  //     handleHideReactionPicker,
-  //     reactToMessage,
-  //     dispatch,
-  //     user,
-  //     message.reactions,
-  //   ]
-  // );
-
-  // const handleSelectReactionEmoji = useCallback(
-  //   async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
-  //     if (event) {
-  //       event.stopPropagation();
-  //     }
-
-  //     // ✅ Calculate the correct optimistic reactions (don't just add, toggle properly)
-  //     const currentReactions = message.reactions || [];
-  //     const optimisticReactions = [...currentReactions];
-
-  //     // Find if this emoji already exists
-  //     const existingReactionIndex = optimisticReactions.findIndex(
-  //       (r) => r.emoji === emojiData.emoji
-  //     );
-
-  //     if (existingReactionIndex !== -1) {
-  //       // Emoji exists, toggle user's reaction
-  //       const reaction = optimisticReactions[existingReactionIndex];
-  //       const userHasReacted = reaction.userIds?.some((id: string) => id === user?._id);
-
-  //       if (userHasReacted) {
-  //         // Remove user from this reaction
-  //         reaction.userIds = reaction.userIds.filter((id: string) => id !== user?._id);
-  //         reaction.users = reaction.users?.filter((u: any) => u._id !== user?._id);
-
-  //         // Remove reaction entirely if no users left
-  //         if (reaction.userIds.length === 0) {
-  //           optimisticReactions.splice(existingReactionIndex, 1);
-  //         }
-  //       } else {
-  //         // Add user to this reaction
-  //         reaction.userIds.push(String(user?._id));
-  //         reaction.users = reaction.users || [];
-  //         reaction.users.push({
-  //           _id: String(user?._id),
-  //           username: String(user?.username),
-  //           avatar: String(user?.avatar),
-  //         });
-  //       }
-  //     } else {
-  //       // New emoji, add it
-  //       optimisticReactions.push({
-  //         emoji: emojiData.emoji,
-  //         userIds: [String(user?._id)],
-  //         messageId: key,
-  //         users: [
-  //           {
-  //             _id: String(user?._id),
-  //             username: String(user?.username),
-  //             avatar: String(user?.avatar),
-  //           },
-  //         ],
-  //       });
-  //     }
-
-  //     // ✅ Dispatch optimistic update
-  //     dispatch(
-  //       updateMessageReactions({
-  //         chatId: currentChat?._id || '',
-  //         messageId: key,
-  //         reactions: optimisticReactions,
-  //       })
-  //     );
-
-  //     try {
-  //       // Send to backend
-  //       const response = await reactToMessage({
-  //         chatId: currentChat?._id || '',
-  //         messageId: key,
-  //         emoji: emojiData.emoji,
-  //       }).unwrap();
-
-  //       // ✅ Update with server response (to ensure consistency)
-  //       dispatch(
-  //         updateMessageReactions({
-  //           chatId: currentChat?._id || '',
-  //           messageId: key,
-  //           reactions: response.data.reactions || [],
-  //         })
-  //       );
-  //     } catch (error) {
-  //       console.error('Failed to send reaction:', error);
-  //       // ✅ Revert to original reactions on error
-  //       dispatch(
-  //         updateMessageReactions({
-  //           chatId: currentChat?._id || '',
-  //           messageId: key,
-  //           reactions: currentReactions,
-  //         })
-  //       );
-  //     }
-
-  //     handleHideReactionPicker();
-  //   },
-  //   [
-  //     currentChat?._id,
-  //     handleHideReactionPicker,
-  //     reactToMessage,
-  //     dispatch,
-  //     user,
-  //     message.reactions,
-  //   ] );
-
-  // const handleSelectReactionEmoji = useCallback(
-  //   async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
-  //     if (event) {
-  //       event.stopPropagation();
-  //     }
-
-  //     // ✅ Double-check online status before sending
-  //     if (!hasInternet) {
-  //       toast.error('You are offline. Cannot react to messages.', {
-  //         position: 'top-center',
-  //         autoClose: 2000,
-  //       });
-  //       handleHideReactionPicker();
-  //       return;
-  //     }
-
-  //     // ✅ Check if message is queued
-  //     if (message.status === 'queued') {
-  //       toast.error('Cannot react to queued messages.', {
-  //         position: 'top-center',
-  //         autoClose: 2000,
-  //       });
-  //       handleHideReactionPicker();
-  //       return;
-  //     }
-
-  //     const currentReactions = message.reactions || [];
-  //     // const isGroupChat = currentChat?.isGroupChat || false;
-  //     let optimisticReactions = [...currentReactions];
-
-  //     // 🔹 Step 1: Remove user from ALL reactions first (user can only have one reaction)
-  //     optimisticReactions = optimisticReactions
-  //       .map((reaction) => ({
-  //         ...reaction,
-  //         userIds: reaction.userIds.filter((id: string) => id !== user?._id),
-  //         users: reaction.users?.filter((u: any) => u._id !== user?._id) || [],
-  //       }))
-  //       .filter((reaction) => reaction.userIds.length > 0); // Remove empty reactions
-
-  //     // 🔹 Step 2: Check if user previously reacted with this SAME emoji
-  //     const userPreviouslyUsedThisEmoji = currentReactions.some(
-  //       (r) => r.emoji === emojiData.emoji && r.userIds?.includes(String(user?._id))
-  //     );
-
-  //     // 🔹 Step 3: If NOT toggling off, add new reaction
-  //     if (!userPreviouslyUsedThisEmoji) {
-  //       // Check if this emoji already exists (from other users)
-  //       const existingEmojiIndex = optimisticReactions.findIndex(
-  //         (r) => r.emoji === emojiData.emoji
-  //       );
-
-  //       if (existingEmojiIndex !== -1) {
-  //         // Emoji exists, add user to it
-  //         optimisticReactions[existingEmojiIndex].userIds.push(String(user?._id));
-
-  //         optimisticReactions[existingEmojiIndex].users =
-  //           optimisticReactions[existingEmojiIndex].users || [];
-
-  //         optimisticReactions[existingEmojiIndex].users.push({
-  //           _id: String(user?._id),
-  //           username: String(user?.username),
-  //           avatar: user?.avatar,
-  //         });
-  //       } else {
-  //         // New emoji, create it
-  //         optimisticReactions.push({
-  //           emoji: emojiData.emoji,
-  //           userIds: [String(user?._id)],
-  //           users: [
-  //             {
-  //               _id: String(user?._id),
-  //               username: String(user?.username),
-  //               avatar: user?.avatar,
-  //             },
-  //           ],
-  //           _id: '',
-  //         });
-  //       }
-  //     }
-  //     // If toggling off (same emoji), we already removed it in Step 1
-
-  //     console.log('🎭 Optimistic reactions:', optimisticReactions);
-
-  //     // Dispatch optimistic update
-  //     dispatch(
-  //       updateMessageReactions({
-  //         chatId: currentChat?._id || '',
-  //         messageId: key,
-  //         reactions: optimisticReactions,
-  //       })
-  //     );
-
-  //     try {
-  //       // Send to backend
-  //       const response = await reactToMessage({
-  //         chatId: currentChat?._id || '',
-  //         messageId: key,
-  //         emoji: emojiData.emoji,
-  //       }).unwrap();
-
-  //       console.log('✅ Reaction response:', response);
-
-  //       // Update with server response (to ensure consistency)
-  //       dispatch(
-  //         updateMessageReactions({
-  //           chatId: currentChat?._id || '',
-  //           messageId: key,
-  //           reactions: response.data.reactions || [],
-  //         })
-  //       );
-  //     } catch (error) {
-  //       console.error('❌ Failed to send reaction:', error);
-  //       // Revert to original reactions on error
-  //       dispatch(
-  //         updateMessageReactions({
-  //           chatId: currentChat?._id || '',
-  //           messageId: key,
-  //           reactions: currentReactions,
-  //         })
-  //       );
-  //     }
-
-  //     handleHideReactionPicker();
-  //   },
-  //   [
-  //     hasInternet,
-  //     message.status,
-  //     message.reactions,
-  //     dispatch,
-  //     currentChat?._id,
-  //     handleHideReactionPicker,
-  //     user?._id,
-  //     user?.username,
-  //     user?.avatar,
-  //     reactToMessage,
-  //   ]
-  // );
-
   const handleSelectReactionEmoji = useCallback(
     async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
       if (event) {
         event.stopPropagation();
       }
 
-      // ✅ Double-check online status before sending
       if (!hasInternet) {
         toast.error('You are offline. Cannot react to messages.', {
           position: 'top-center',
@@ -640,7 +334,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         return;
       }
 
-      // ✅ Check if message is queued
       if (message.status === 'queued') {
         toast.error('Cannot react to queued messages.', {
           position: 'top-center',
@@ -652,59 +345,67 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
       const currentReactions = message.reactions || [];
 
-      // ✅ Create a deep copy to avoid mutations
-      let optimisticReactions = currentReactions.map((r) => ({
-        ...r,
-        userIds: [...(r.userIds || [])],
-        users: [...(r.users || [])],
-      }));
-
-      // 🔹 Step 1: Remove user from ALL reactions first (user can only have one reaction)
-      optimisticReactions = optimisticReactions
-        .map((reaction) => ({
-          ...reaction,
-          userIds: reaction.userIds.filter((id: string) => id !== String(user?._id)),
-          users: reaction.users?.filter((u: any) => u._id !== String(user?._id)) || [],
-        }))
-        .filter((reaction) => reaction.userIds.length > 0); // Remove empty reactions
-
-      // 🔹 Step 2: Check if user previously reacted with this SAME emoji
+      // 🔹 Step 1: Check if user previously reacted with this SAME emoji
       const userPreviouslyUsedThisEmoji = currentReactions.some(
-        (r) => r.emoji === emojiData.emoji && r.userIds?.includes(String(user?._id))
+        (r) => r.emoji === emojiData.emoji && r.userIds?.includes(String(user?._id)),
       );
 
-      // 🔹 Step 3: If NOT toggling off, add new reaction
+      // 🔹 Step 2: Remove user from ALL reactions first
+      let optimisticReactions = currentReactions
+        .map((r) => ({
+          ...r,
+          userIds: [...(r.userIds || [])].filter((id: string) => id !== String(user?._id)),
+          users: [...(r.users || [])].filter((u: any) => u._id !== String(user?._id)),
+        }))
+        .filter((reaction) => reaction.userIds.length > 0);
+
+      // 🔹 Step 3: Consolidate duplicate emojis
+      const emojiMap = new Map<string, any>();
+
+      for (const reaction of optimisticReactions) {
+        if (emojiMap.has(reaction.emoji)) {
+          const existing = emojiMap.get(reaction.emoji);
+          // Merge userIds
+          reaction.userIds.forEach((userId: string) => {
+            if (!existing.userIds.includes(userId)) {
+              existing.userIds.push(userId);
+            }
+          });
+          // Merge users
+          reaction.users?.forEach((user: any) => {
+            if (!existing.users.some((u: any) => u._id === user._id)) {
+              existing.users.push(user);
+            }
+          });
+        } else {
+          emojiMap.set(reaction.emoji, {
+            ...reaction,
+            userIds: [...reaction.userIds],
+            users: [...(reaction.users || [])],
+          });
+        }
+      }
+
+      optimisticReactions = Array.from(emojiMap.values());
+
+      // 🔹 Step 4: If NOT toggling off, add new reaction
       if (!userPreviouslyUsedThisEmoji) {
-        // Check if this emoji already exists (from other users)
         const existingEmojiIndex = optimisticReactions.findIndex(
-          (r) => r.emoji === emojiData.emoji
+          (r) => r.emoji === emojiData.emoji,
         );
 
         if (existingEmojiIndex !== -1) {
-          // ✅ Emoji exists from other users, add current user to it
-          const existingReaction = optimisticReactions[existingEmojiIndex];
-
-          // Add user ID
-          existingReaction.userIds = [...existingReaction.userIds, String(user?._id)];
-
-          // Add user object
-          existingReaction.users = [
-            ...(existingReaction.users || []),
-            {
-              _id: String(user?._id),
-              username: String(user?.username),
-              avatar: user?.avatar,
-            },
-          ];
-
-          console.log(`✅ Added user to existing emoji reaction:`, existingReaction);
+          optimisticReactions[existingEmojiIndex].userIds.push(String(user?._id));
+          optimisticReactions[existingEmojiIndex].users.push({
+            _id: String(user?._id),
+            username: String(user?.username),
+            avatar: user?.avatar,
+          });
         } else {
-          // ✅ New emoji, create it
           optimisticReactions.push({
-            // _id: `temp_${Date.now()}`, // Temporary ID for optimistic update
+            _id: key,
             emoji: emojiData.emoji,
             userIds: [String(user?._id)],
-            _id: key,
             users: [
               {
                 _id: String(user?._id),
@@ -713,26 +414,20 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               },
             ],
           });
-
-          console.log(`✅ Created new emoji reaction`);
         }
-      } else {
-        console.log(`🔄 Toggling off reaction - already removed in Step 1`);
       }
 
       console.log('🎭 Optimistic reactions:', optimisticReactions);
 
-      // Dispatch optimistic update
       dispatch(
         updateMessageReactions({
           chatId: currentChat?._id || '',
           messageId: key,
           reactions: optimisticReactions,
-        })
+        }),
       );
 
       try {
-        // Send to backend
         const response = await reactToMessage({
           chatId: currentChat?._id || '',
           messageId: key,
@@ -741,13 +436,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
         console.log('✅ Reaction response from server:', response);
 
-        // ✅ Update with server response (to ensure consistency)
         dispatch(
           updateMessageReactions({
             chatId: currentChat?._id || '',
             messageId: key,
             reactions: response.data.reactions || [],
-          })
+          }),
         );
       } catch (error) {
         console.error('❌ Failed to send reaction:', error);
@@ -757,13 +451,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           autoClose: 2000,
         });
 
-        // Revert to original reactions on error
         dispatch(
           updateMessageReactions({
             chatId: currentChat?._id || '',
             messageId: key,
             reactions: currentReactions,
-          })
+          }),
         );
       }
 
@@ -780,7 +473,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       user?.username,
       user?.avatar,
       reactToMessage,
-    ]
+    ],
   );
 
   const handleReactionClickOutside = useCallback((event: MouseEvent) => {
@@ -833,7 +526,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         calculateMenuPosition(event.clientX, event.clientY);
       });
     },
-    [calculateMenuPosition]
+    [calculateMenuPosition],
   );
 
   const handleCloseMenu = useCallback(() => {
@@ -884,7 +577,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         }
       }
     },
-    [currentMessageImageIndex, handleCloseModal, handlePreviousImage, handleNextImage]
+    [currentMessageImageIndex, handleCloseModal, handlePreviousImage, handleNextImage],
   );
 
   useEffect(() => {
@@ -935,7 +628,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     while ((match = mentionRegex.exec(message.content)) !== null) {
       const username = match[1];
       const mentionedUser = (users || [])?.find(
-        (user) => user.username.toLowerCase() === username.toLowerCase()
+        (user) => user.username.toLowerCase() === username.toLowerCase(),
       );
 
       if (match.index > lastIndex) {
@@ -949,10 +642,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             onClick={() => console.log(mentionedUser.username)}
             className={classNames(
               isOwnedMessage ? 'text-gray-800' : 'text-indigo-500',
-              'hover:underline !font-bold font-nunito cursor-pointer'
+              'hover:underline !font-bold font-nunito cursor-pointer',
             )}>
             @{mentionedUser.username}
-          </span>
+          </span>,
         );
       } else {
         parts.push(
@@ -960,10 +653,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             key={`not-mention-${username}`}
             className={classNames(
               isOwnedMessage ? 'text-gray-800' : 'text-indigo-500',
-              'hover:underline !font-bold font-nunito'
+              'hover:underline !font-bold font-nunito',
             )}>
             @{username}
-          </span>
+          </span>,
         );
       }
 
@@ -975,7 +668,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     }
 
     return parts.map((part, index) =>
-      typeof part === 'string' ? <span key={index}>{part}</span> : part
+      typeof part === 'string' ? <span key={index}>{part}</span> : part,
     );
   };
 
@@ -1029,7 +722,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           'absolute z-10 -bottom-4 rounded-full px-2 py-1 justify-center flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity',
           isOwnedMessage
             ? 'bg-[#615EF0] right-3 dark:bg-[#615EF0] dark:text-white border-2 dark:border-black'
-            : 'bg-green-500 dark:bg-green-200 dark:text-green-700 border-2 dark:border-black left-3'
+            : 'bg-green-500 dark:bg-green-200 dark:text-green-700 border-2 dark:border-black left-3',
         )}
         onClick={(e) => {
           e.stopPropagation();
@@ -1040,7 +733,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             key={`${reaction.emoji}-${index}`}
             className={classNames(
               'text-xs transition-transform hover:scale-110 inline-block',
-              hasUserReacted(reaction, user?._id || '') ? 'animate-pulse' : ''
+              hasUserReacted(reaction, user?._id || '') ? 'animate-pulse' : '',
             )}
             title={`${reaction.emoji} ${reaction.count} - ${reaction.users
               ?.map((u) => u.username)
@@ -1057,10 +750,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     const categorizedReactions = categorizeReactions(message.reactions || []);
     const totalReactions = categorizedReactions.reduce(
       (sum: number, r: CategorizedReaction) => sum + r.count,
-      0
+      0,
     );
     const userHasReacted: boolean = categorizedReactions.some((r: CategorizedReaction) =>
-      hasUserReacted(r, user?._id || '')
+      hasUserReacted(r, user?._id || ''),
     );
 
     // Normalize reactions to ensure all required fields are present
@@ -1116,7 +809,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           isOwnedMessage ? 'justify-end' : 'justify-start',
           getGlowClass(),
           isAnimating && (isOwnedMessage ? 'slide-right' : 'slide-left'),
-          !hasInternet && 'opacity-70 cursor-not-allowed'
+          !hasInternet && 'opacity-70 cursor-not-allowed',
         )}
         ref={containerRef}
         onDoubleClick={handleReactionPicker}
@@ -1168,7 +861,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           alt={message.sender?.username}
           className={classNames(
             'h-10 w-10 object-cover rounded-full items-center justify-center flex flex-shrink-0 bg-white border-2',
-            isOwnedMessage ? 'order-1' : 'order-2'
+            isOwnedMessage ? 'order-1' : 'order-2',
           )}
           onError={(e) => {
             e.currentTarget.style.display = 'none';
@@ -1182,7 +875,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             isOwnedMessage ? 'order-1' : 'order-2',
             isOwnedMessage
               ? "before:absolute before:content-[''] before:border-[#615EF0] before:-right-5 before:-z-10 before:top-0 before:border-t-[15px] before:border-b-[15px] before:border-b-transparent before:border-l-[25px] before:border-r-[25px] before:border-r-transparent bg-[#615EF0] rounded-xl rounded-tr-none"
-              : "bg-green-500 before:absolute before:content-[''] before:-left-5 before:-z-10 before:top-0 before:border-b-[25px] before:border-t-transparent before:border-b-transparent before:border-r-[40px] before:border-green-500 rounded-xl rounded-tl-none"
+              : "bg-green-500 before:absolute before:content-[''] before:-left-5 before:-z-10 before:top-0 before:border-b-[25px] before:border-t-transparent before:border-b-transparent before:border-r-[40px] before:border-green-500 rounded-xl rounded-tl-none",
           )}
           ref={(element) => {
             messageItemRef.current[message._id] = element;
@@ -1206,7 +899,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 <span
                   className={classNames(
                     'text-sm font-semibold mb-0.5',
-                    ['text-gray-800', 'text-[#615EF0]'][message?.sender?.username?.length % 2]
+                    ['text-gray-800', 'text-[#615EF0]'][message?.sender?.username?.length % 2],
                   )}>
                   ~{message.sender?.username}
                 </span>
@@ -1219,7 +912,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   "mb-2 p-2 rounded-lg overflow-hidden before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full cursor-pointer relative",
                   isOwnedMessage
                     ? 'bg-indigo-300/50 before:bg-indigo-100'
-                    : 'bg-green-100/50 before:bg-green-100'
+                    : 'bg-green-100/50 before:bg-green-100',
                 )}
                 onClick={() => {
                   if (message.repliedMessage && message.replyId) {
@@ -1233,7 +926,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 <p
                   className={classNames(
                     'text-xs font-semibold',
-                    !isOwnedMessage ? 'dark:text-gray-700' : 'dark:text-gray-300'
+                    !isOwnedMessage ? 'dark:text-gray-700' : 'dark:text-gray-300',
                   )}>
                   Replying to {message.repliedMessage?.sender?.username}
                 </p>
@@ -1244,7 +937,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     <p
                       className={classNames(
                         'text-xs truncate',
-                        !isOwnedMessage ? 'dark:text-gray-100' : 'dark:text-gray-200'
+                        !isOwnedMessage ? 'dark:text-gray-100' : 'dark:text-gray-200',
                       )}>
                       {message.repliedMessage.content || 'Attachment'}
                     </p>
@@ -1259,7 +952,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   message.attachments?.length === 1 ? 'grid-cols-1' : '',
                   message.attachments?.length === 2 ? 'grid-cols-2' : '',
                   message.attachments?.length >= 3 ? 'grid-cols-3' : '',
-                  message.content ? 'mb-6' : ''
+                  message.content ? 'mb-6' : '',
                 )}>
                 {message.attachments?.map((file, index) => (
                   <DocumentPreview
@@ -1293,7 +986,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               <p
                 className={classNames(
                   'mt-1.5 self-end text-xs inline-flex items-center dark:text-white',
-                  isOwnedMessage ? 'text-zinc-50' : 'text-gray-800'
+                  isOwnedMessage ? 'text-zinc-50' : 'text-gray-800',
                 )}>
                 {message.attachments?.length > 0 && !message.isDeleted && (
                   <PaperClipIcon className='h-4 w-4 mr-2' />
