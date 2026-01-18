@@ -43,15 +43,17 @@ const ReactionTooltip: React.FC<{
         username: user.username,
         avatar: user.avatar,
         emoji: reaction.emoji,
-      }))
+      })),
     );
   }, [stats.categorizedReactions]);
 
   // Calculate total reactions count
   const totalReactions = useMemo(
     () => stats.categorizedReactions?.reduce((sum, reaction) => sum + reaction.count, 0) || 0,
-    [stats.categorizedReactions]
+    [stats.categorizedReactions],
   );
+
+  console.log(stats.categorizedReactions);
 
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -102,7 +104,7 @@ const ReactionTooltip: React.FC<{
                     </button>
                   </div>
 
-                  <div className='grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 my-4'>
+                  <div className='flex items-center flex-wrap gap-2 my-4'>
                     {(stats.categorizedReactions || [])?.map((reaction) => {
                       return (
                         <div
@@ -110,7 +112,7 @@ const ReactionTooltip: React.FC<{
                           title={`${reaction.count} ${
                             reaction.count === 1 ? 'person' : 'people'
                           } reacted with ${reaction.emoji}`}
-                          className='flex items-center justify-between mb-1 dark:bg-white/5 px-4 py-1 bg-gray-300/30 dark:border-white/10 dark:shadow-none shadow-sm border-[1.75px] rounded-full hover:dark:bg-white/10 cursor-pointer'>
+                          className='flex items-center gap-2 dark:bg-white/5 bg-gray-300/30 dark:border-white/10 dark:shadow-none shadow-sm border-[1.75px] rounded-full w-12 h-12 justify-center hover:dark:bg-white/10 cursor-pointer'>
                           <div className='flex items-center gap-2'>
                             <span className='text-lg'>{reaction.emoji}</span>
                           </div>
