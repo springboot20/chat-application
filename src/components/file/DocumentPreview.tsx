@@ -70,7 +70,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
             canvas.width = viewport.width;
             canvas.height = viewport.height;
 
-            await page.render({ canvasContext: context, viewport }).promise;
+            await page.render({ canvasContext: canvas, viewport } as any).promise;
             page.cleanup();
           } catch (error: any) {
             console.error(`Failed to render PDF ${attachment?.url}:`, error);
@@ -173,8 +173,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
           isModal
             ? 'w-full h-auto max-w-xl'
             : attachment?.url.split('.').includes('pdf')
-            ? 'h-24 w-24'
-            : 'cursor-pointer'
+              ? 'h-24 w-24'
+              : 'cursor-pointer',
         )}>
         {isModal && attachment?.url && (
           <button
@@ -222,5 +222,5 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
         {renderContent()}
       </div>
     );
-  }
+  },
 );
