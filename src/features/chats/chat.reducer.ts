@@ -91,38 +91,59 @@ const ChatSlice = createSlice({
       LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
     },
 
-    updateMessageReactions: (
-      state,
-      action: PayloadAction<{ messageId: string; reactions: any[]; chatId: string }>,
-    ) => {
-      const { messageId, reactions, chatId } = action.payload;
+  // features/chats/chat.reducer.ts
 
-      if (!state.chatMessages[chatId]) return;
+updateMessageReactions: (
+  state,
+  action: PayloadAction<{ messageId: string; reactions: any[]; chatId: string }>
+) => {
+  const { messageId, reactions, chatId } = action.payload;
 
-      // ✅ Update message in chatMessages
-      const messageIndex = state.chatMessages[chatId].findIndex((msg) => msg._id === messageId);
+  if (!state.chatMessages[chatId]) return;
 
-      if (messageIndex !== -1) {
-        // Direct assignment (Immer handles immutability)
-        state.chatMessages[chatId][messageIndex].reactions = reactions;
-      }
+  // ✅ Update message in chatMessages
+  const messageIndex = state.chatMessages[chatId].findIndex((msg) => msg._id === messageId);
+  
+  if (messageIndex !== -1) {
+    state.chatMessages[chatId][messageIndex] = {
+      ...state.chatMessages[chatId][messageIndex],
+      reactions: reactions,
+    };
+  }
 
-      // ✅ Update lastMessage in chats array
-      const chatIndex = state.chats.findIndex((chat) => chat.lastMessage?._id === messageId);
+  // ✅ Update lastMessage in chats array - Use current() to avoid proxy issues
+  const chatIndex = state.chats.findIndex((chat) => chat.lastMessage?._id === messageId);
+  
+  if (chatIndex !== -1) {
+    const currentChat = current(state.chats[chatIndex]); // ✅ Get plain copy
+    
+    if (currentChat.lastMessage) {
+      state.chats[chatIndex] = {
+        ...currentChat,
+        lastMessage: {
+          ...currentChat.lastMessage,
+          reactions: reactions,
+        },
+      };
+    }
+  }
 
-      if (chatIndex !== -1 && state.chats[chatIndex].lastMessage) {
-        // Direct assignment (Immer handles it)
-        state.chats[chatIndex].lastMessage!.reactions = reactions;
-      }
+  // ✅ Update current chat if needed - Use current() here too
+  if (state.currentChat?.lastMessage?._id === messageId) {
+    const currentChatCopy = current(state.currentChat); // ✅ Get plain copy
+    
+    state.currentChat = {
+      ...currentChatCopy,
+      lastMessage: {
+        ...currentChatCopy.lastMessage!,
+        reactions: reactions,
+      },
+    };
+  }
 
-      // ✅ Update current chat
-      if (state.currentChat?.lastMessage?._id === messageId) {
-        state.currentChat.lastMessage.reactions = reactions;
-        LocalStorage.set('current-chat', current(state.currentChat));
-      }
-
-      LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
+  LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
     },
+
     setCurrentChat: (state, action) => {
       state.currentChat = action.payload.chat;
       LocalStorage.set('current-chat', action.payload.chat);

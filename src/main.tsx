@@ -8,6 +8,9 @@ import { ThemeContextProvider } from "./context/ThemeContext.tsx";
 import { SocketContextProvider } from "./context/SocketContext.tsx";
 import { Provider } from "react-redux";
 import store from "./app/store.ts";
+import { checkAndClearStorage } from "./utils/versionCheck.ts";
+
+checkAndClearStorage();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
