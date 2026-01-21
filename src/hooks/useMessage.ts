@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useAppDispatch } from './../redux/redux.hooks';
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { JOIN_CHAT_EVENT } from '../enums/index.ts';
 import { RootState } from '../app/store.ts';
 import { useAppSelector } from '../redux/redux.hooks.ts';
@@ -29,6 +29,7 @@ import { ChatListItemInterface, ChatMessageInterface } from '../types/chat.ts';
 import { useNetwork } from './useNetwork.ts';
 import { messageQueue } from '../utils/messageQueue.ts';
 import { useTyping } from './useTyping.ts';
+import { getFuzzyMatches } from '../utils/fuzzySearch.ts';
 // import { toast } from "react-toastify";
 
 type FileType = {
@@ -71,6 +72,7 @@ export const useMessage = () => {
 
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
   const users = availableUsers?.data as User[];
 
   const { isOnline } = useNetwork();
@@ -115,26 +117,61 @@ export const useMessage = () => {
     }
   }, []);
 
-  const handleSelectUser = useCallback((user: User) => {
-    setMessage((prev) => {
-      return prev + user.username;
-    });
+  const handleSelectUser = useCallback(
+    (selectedUser: User) => {
+      const input = messageInputRef.current;
+      if (!input) return;
 
-    setSelectedUser(user);
-    setShowMentionUserMenu(false);
-  }, []);
+      const cursorPosition = input.selectionStart;
+      const textBeforeCursor = message.substring(0, cursorPosition);
+      const textAfterCursor = message.substring(cursorPosition);
+
+      // Find the last '@' before the cursor to replace the query string
+      const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+
+      if (lastAtIndex !== -1) {
+        const newTextBefore = textBeforeCursor.substring(0, lastAtIndex);
+        const completedMention = `@${selectedUser.username} `; // Added space for UX
+        const newMessage = newTextBefore + completedMention + textAfterCursor;
+
+        setMessage(newMessage);
+        setShowMentionUserMenu(false);
+        setSelectedUser(selectedUser);
+        setMentionQuery(''); // Reset query
+
+        // Senior Tip: Refocus and place cursor AFTER the new mention
+        setTimeout(() => {
+          const newPos = lastAtIndex + completedMention.length;
+          input.setSelectionRange(newPos, newPos);
+          input.focus();
+        }, 0);
+      }
+    },
+    [message],
+  );
 
   const handleShowMentionUserMenu = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     event.preventDefault();
-    const target = event.target;
+    const value = event.target.value;
+    const cursorPosition = event.target.selectionStart;
 
-    const regexPattern = /(^|\s)@$/;
+    // Look for the last '@' before the cursor
+    const lastAtIndex = value.lastIndexOf('@', cursorPosition - 1);
 
-    if (target.value.match(regexPattern)) {
-      setShowMentionUserMenu(true);
-    } else {
-      setShowMentionUserMenu(false);
+    if (lastAtIndex !== -1) {
+      // Extract the text between '@' and the cursor (e.g., "jhn")
+      const query = value.substring(lastAtIndex + 1, cursorPosition);
+
+      // Check if there's a space in the query (mentions usually stop at a space)
+      if (!query.includes(' ')) {
+        setMentionQuery(query);
+        setShowMentionUserMenu(true);
+        return;
+      }
     }
+
+    setShowMentionUserMenu(false);
+    setMentionQuery('');
   }, []);
 
   const checkScrollPosition = () => {
@@ -146,6 +183,10 @@ export const useMessage = () => {
       setShowScrollButton(!isNearBottom);
     }
   };
+
+  const filteredMentionUsers = useMemo(() => {
+    return getFuzzyMatches(mentionQuery, currentChat?.participants || []);
+  }, [mentionQuery, currentChat]);
 
   // Add scroll listener
   useEffect(() => {
@@ -313,38 +354,32 @@ export const useMessage = () => {
     [deleteChatMessage, currentChat?._id, dispatch, playMessageSound],
   );
 
-  const processMentionsContent = (message: string, users: User[]) => {
-    const mentionRegex = /@([@\w\s]+?)(?=\s|$)/g;
+  const processMentionsContent = (message: string, availableUsers: User[]) => {
+    const mentionRegex = /(?:^|\s)@([\w\d._]+)/g;
     const mentions: Array<{
-      [key: string]: any;
+      userId: string;
+      username: string;
+      position: number;
     }> = [];
+
     let match: any;
 
     while ((match = mentionRegex.exec(message)) !== null) {
-      const username = match[1] || match[2];
-      const mentionedUser = users.find(
+      const fullMatch = match[0]; // e.g., " @john"
+      const username = match[1]; // e.g., "john"
+
+      // Calculate the exact start position of the '@' character
+      const atIndex = match.index + (fullMatch.startsWith(' ') ? 1 : 0);
+
+      const mentionedUser = availableUsers.find(
         (user) => user.username.toLowerCase() === username.toLowerCase(),
       );
 
-      if (mentionedUser && !mentions.find((m) => m.userId === mentionedUser?._id)) {
+      if (mentionedUser) {
         mentions.push({
           userId: mentionedUser._id,
           username: mentionedUser.username,
-          position: match.index,
-          length: match[0].length,
-          originalMatch: match[0],
-          exists: true,
-        });
-      } else {
-        // Track non-existent mentions too
-        mentions.push({
-          id: null,
-          username: username,
-          displayName: username,
-          position: match.index,
-          length: match[0].length,
-          originalMatch: match[0],
-          exists: false,
+          position: atIndex,
         });
       }
     }
@@ -352,8 +387,6 @@ export const useMessage = () => {
     return {
       content: message,
       mentions: mentions,
-      validMentions: mentions.filter((m) => m.exists),
-      invalidMentions: mentions.filter((m) => !m.exists),
     };
   };
 
@@ -543,7 +576,6 @@ export const useMessage = () => {
     handleShowMentionUserMenu,
     showMentionUserMenu,
     handleSelectUser,
-    selectedUser,
     onReactionUpdate,
     onUpdateChatLastMessage,
 
@@ -557,7 +589,8 @@ export const useMessage = () => {
     messageToReply,
     showScrollButton,
     sendChatMessage,
-
+    filteredMentionUsers,
     queuedMessageIds,
+    selectedUser,
   };
 };

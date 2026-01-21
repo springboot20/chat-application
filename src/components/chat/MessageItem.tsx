@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { ChatMessageInterface } from '../../types/chat';
 import { classNames, formatMessageTime } from '../../utils';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DocumentPreview } from '../file/DocumentPreview';
 import EmojiPicker, { Theme, type EmojiClickData } from 'emoji-picker-react';
 import { MessageMenuSelection } from '../menu/MessageMenu';
@@ -22,6 +22,7 @@ import ReactionTooltip from '../modal/ReactionTooltip';
 import { updateMessageReactions } from '../../features/chats/chat.reducer';
 import { useNetwork } from '../../hooks/useNetwork';
 import { toast } from 'react-toastify';
+import { createPortal } from 'react-dom';
 
 type Status = 'queued' | 'sent' | 'delivered' | 'seen';
 
@@ -32,72 +33,48 @@ const MessageStatusTick = ({
   status: Status;
   isOwnedMessage: boolean;
 }) => {
-  const { isOnline: hasInternet } = useNetwork();
-
   if (!isOwnedMessage) return null;
 
-  // ✅ Fix: Add return statement here
-  if (!hasInternet && status === 'queued') {
-    return (
-      <span className='message-status'>
-        <ClockIcon className='w-4 h-4 text-orange-400 animate-pulse' title='Queued (offline)' />
-      </span>
-    );
-  }
+  const icons = {
+    queued: <ClockIcon className='w-3 h-3 text-orange-400 animate-pulse' />,
+    sent: <CheckIcon className='w-3 h-3 text-gray-400' />,
+    delivered: (
+      <svg
+        xmlns='http://www.w3.org/2000/svg'
+        width='24'
+        height='24'
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        className='h-4 w-4 text-gray-400'>
+        <path d='M18 6 7 17l-5-5' />
+        <path d='m22 10-7.5 7.5L13 16' />
+      </svg>
+    ),
+    seen: (
+      <svg
+        xmlns='http://www.w3.org/2000/svg'
+        width='24'
+        height='24'
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+        className='h-4 w-4 text-blue-500'>
+        <path d='M18 6 7 17l-5-5' />
+        <path d='m22 10-7.5 7.5L13 16' />
+      </svg>
+    ),
+  };
 
-  if (status === 'sent') {
-    return (
-      <span className='message-status'>
-        <CheckIcon className='w-4 h-4 text-gray-400' />
-      </span>
-    );
-  }
-
-  if (status === 'delivered') {
-    return (
-      <span className='message-status'>
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width='24'
-          height='24'
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className='h-4 w-4 text-gray-400'>
-          <path d='M18 6 7 17l-5-5' />
-          <path d='m22 10-7.5 7.5L13 16' />
-        </svg>
-      </span>
-    );
-  }
-
-  if (status === 'seen') {
-    return (
-      <span className='message-status'>
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width='24'
-          height='24'
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className='h-4 w-4 text-blue-500'>
-          {/* ✅ Changed to blue for seen */}
-          <path d='M18 6 7 17l-5-5' />
-          <path d='m22 10-7.5 7.5L13 16' />
-        </svg>
-      </span>
-    );
-  }
-
-  return null;
+  return <span className='ml-1 self-end'>{icons[status]}</span>;
 };
+
 interface MessageItemProps {
   isOwnedMessage?: boolean;
   isGroupChatMessage?: boolean;
@@ -144,7 +121,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   message,
   theme,
   handleDeleteChatMessage,
-  users,
   handleSetOpenReply,
   onSetHighlightedMessage,
   highlightedMessageId,
@@ -628,56 +604,50 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   }, [isOwnedMessage, message.sender?._id, setIsOwnedMessage, user?._id]);
 
   const renderMessageWithMention = () => {
-    const mentionRegex = /@([@\w\s]+?)(?=\s|$)/g;
+    const { content, mentions } = message;
+    if (!mentions || mentions.length === 0) return <span>{content}</span>;
+
+    // Sort mentions by position to process the string linearly
+    const sortedMentions = [...mentions].sort((a, b) => a.position - b.position);
+
     const parts = [];
     let lastIndex = 0;
-    let match;
 
-    while ((match = mentionRegex.exec(message.content)) !== null) {
-      const username = match[1];
-      const mentionedUser = (users || [])?.find(
-        (user) => user.username.toLowerCase() === username.toLowerCase(),
+    sortedMentions.forEach((mention, index) => {
+      // Add text before the mention
+      if (mention.position > lastIndex) {
+        parts.push(
+          <span key={`text-${index}`}>{content.substring(lastIndex, mention.position)}</span>,
+        );
+      }
+
+      // Add the styled mention
+      const mentionText = `@${mention.username}`;
+      parts.push(
+        <span
+          key={`mention-${mention.userId}-${index}`}
+          className={classNames(
+            'font-bold cursor-pointer hover:underline transition-colors',
+            isOwnedMessage ? 'text-indigo-200' : 'text-blue-600',
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            // Logic to open user profile
+            console.log('Navigating to profile:', mention.userId);
+          }}>
+          {mentionText}
+        </span>,
       );
 
-      if (match.index > lastIndex) {
-        parts.push(message.content.slice(lastIndex, match.index));
-      }
+      lastIndex = mention.position + mentionText.length;
+    });
 
-      if (mentionedUser) {
-        parts.push(
-          <span
-            key={`mention-${match.index}`}
-            onClick={() => console.log(mentionedUser.username)}
-            className={classNames(
-              isOwnedMessage ? 'text-gray-800' : 'text-indigo-500',
-              'hover:underline !font-bold font-nunito cursor-pointer',
-            )}>
-            @{mentionedUser.username}
-          </span>,
-        );
-      } else {
-        parts.push(
-          <span
-            key={`not-mention-${username}`}
-            className={classNames(
-              isOwnedMessage ? 'text-gray-800' : 'text-indigo-500',
-              'hover:underline !font-bold font-nunito',
-            )}>
-            @{username}
-          </span>,
-        );
-      }
-
-      lastIndex = match.index + match[0].length;
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push(<span key='text-end'>{content.substring(lastIndex)}</span>);
     }
 
-    if (lastIndex < message.content.length) {
-      parts.push(message.content.slice(lastIndex));
-    }
-
-    return parts.map((part, index) =>
-      typeof part === 'string' ? <span key={index}>{part}</span> : part,
-    );
+    return parts;
   };
 
   const getGlowClass = () => {
@@ -718,6 +688,46 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     return reaction?.userIds?.includes(currentUserId);
   };
 
+  const categorizedReactionMemoized = useMemo(
+    () => categorizeReactions(message.reactions || []),
+    [message.reactions],
+  );
+
+  const getReactionStats = useCallback((): ReactionStats => {
+    const totalReactions = categorizedReactionMemoized.reduce(
+      (sum: number, r: CategorizedReaction) => sum + r.count,
+      0,
+    );
+    const userHasReacted: boolean = categorizedReactionMemoized.some((r: CategorizedReaction) =>
+      hasUserReacted(r, user?._id || ''),
+    );
+
+    // Normalize reactions to ensure all required fields are present
+    const normalizedReactions = categorizedReactionMemoized.map((reaction) => ({
+      ...reaction,
+      users:
+        reaction.users?.map((u) => ({
+          _id: u._id,
+          username: u.username,
+          avatar: {
+            url: u.avatar?.url ?? '',
+            localPath: u.avatar?.localPath ?? '',
+            _id: u.avatar?._id ?? '',
+          },
+        })) || [],
+    }));
+
+    return {
+      totalReactions,
+      uniqueEmojis: normalizedReactions.length,
+      topReaction: normalizedReactions[0] || null,
+      userHasReacted,
+      categorizedReactions: normalizedReactions,
+    };
+  }, [categorizedReactionMemoized, user?._id]);
+
+  const stats = useMemo(() => getReactionStats(), [getReactionStats]);
+
   const renderReactionsWithDuplicate = () => {
     if (!message.reactions || message.reactions.length === 0) return null;
 
@@ -752,40 +762,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         <span className='text-xs font-medium ml-1'>{totalReactions}</span>
       </div>
     );
-  };
-
-  const getReactionStats = (): ReactionStats => {
-    const categorizedReactions = categorizeReactions(message.reactions || []);
-    const totalReactions = categorizedReactions.reduce(
-      (sum: number, r: CategorizedReaction) => sum + r.count,
-      0,
-    );
-    const userHasReacted: boolean = categorizedReactions.some((r: CategorizedReaction) =>
-      hasUserReacted(r, user?._id || ''),
-    );
-
-    // Normalize reactions to ensure all required fields are present
-    const normalizedReactions = categorizedReactions.map((reaction) => ({
-      ...reaction,
-      users:
-        reaction.users?.map((u) => ({
-          _id: u._id,
-          username: u.username,
-          avatar: {
-            url: u.avatar?.url ?? '',
-            localPath: u.avatar?.localPath ?? '',
-            _id: u.avatar?._id ?? '',
-          },
-        })) || [],
-    }));
-
-    return {
-      totalReactions,
-      uniqueEmojis: normalizedReactions.length,
-      topReaction: normalizedReactions[0] || null,
-      userHasReacted,
-      categorizedReactions: normalizedReactions,
-    };
   };
 
   const getAttachmentType = () => {
@@ -851,7 +827,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       <ReactionTooltip
         open={showReactionTooltip}
         onClose={() => setShowReactionTooltip(false)}
-        stats={getReactionStats()!}
+        stats={stats}
       />
 
       <div
@@ -877,30 +853,33 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           />
         )}
 
-        {!message.isDeleted && showReactionPicker && (
-          <div
-            ref={reactionRef}
-            className='absolute z-[100] animate-in fade-in-0 zoom-in-95 duration-200'
-            style={{
-              top: `${reactionLocation.top}px`,
-              left: `${reactionLocation.left}px`,
-            }}
-            onClick={(e) => e.stopPropagation()}>
-            <div className='relative shadow-2xl rounded-lg overflow-hidden'>
-              <EmojiPicker
-                onReactionClick={(emoji, event) =>
-                  handleSelectReactionEmoji(message._id, emoji, event)
-                }
-                reactionsDefaultOpen={true}
-                theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
-                searchDisabled={false}
-                width={window.innerWidth < 768 ? Math.min(350, window.innerWidth - 20) : 350}
-                height={window.innerWidth < 768 ? Math.min(400, window.innerHeight - 20) : 400}
-                lazyLoadEmojis
-              />
-            </div>
-          </div>
-        )}
+        {!message.isDeleted &&
+          showReactionPicker &&
+          createPortal(
+            <div
+              ref={reactionRef}
+              className='absolute z-[999] animate-in fade-in-0 zoom-in-95 duration-200'
+              style={{
+                top: `${reactionLocation.top}px`,
+                left: `${reactionLocation.left}px`,
+              }}
+              onClick={(e) => e.stopPropagation()}>
+              <div className='relative shadow-2xl rounded-lg overflow-hidden'>
+                <EmojiPicker
+                  onReactionClick={(emoji, event) =>
+                    handleSelectReactionEmoji(message._id, emoji, event)
+                  }
+                  reactionsDefaultOpen={true}
+                  theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                  searchDisabled={false}
+                  width={window.innerWidth < 768 ? Math.min(350, window.innerWidth - 20) : 350}
+                  height={window.innerWidth < 768 ? Math.min(400, window.innerHeight - 20) : 400}
+                  lazyLoadEmojis
+                />
+              </div>
+            </div>,
+            document.body,
+          )}
 
         {!message.isDeleted &&
           message.reactions &&
