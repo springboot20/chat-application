@@ -62,7 +62,7 @@ export const Chat = () => {
   } = useChat();
 
   const [activeTab, setActiveTab] = useState<'chat_messages' | 'status' | 'settings'>(
-    'chat_messages'
+    'chat_messages',
   );
 
   const { isOnline: hasInternet } = useNetwork();
@@ -115,6 +115,7 @@ export const Chat = () => {
     scrollToBottom,
     showScrollButton,
     sendChatMessage,
+    filteredMentionUsers,
     // unreadMessages,
   } = useMemo(() => messageHook, [messageHook]);
 
@@ -376,7 +377,7 @@ export const Chat = () => {
           <div
             className={classNames(
               'w-full flex items-stretch h-screen flex-shrink-0',
-              open ? 'lg:justify-between' : ''
+              open ? 'lg:justify-between' : '',
             )}>
             <div>
               <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -391,14 +392,14 @@ export const Chat = () => {
             <main
               className={classNames(
                 'w-full min-h-screen right-0 overflow-hidden transition-all z-10',
-                'lg:ml-[30rem] lg:w-[calc(100%-30rem)]'
+                'lg:ml-[30rem] lg:w-[calc(100%-30rem)]',
               )}>
               <div className='relative flex flex-col justify-between h-full'>
                 {currentChat && currentChat._id ? (
                   <>
                     <header
                       className={classNames(
-                        'fixed top-0 right-0 p-1.5 left-16 sm:left-20 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all lg:left-[30rem]'
+                        'fixed top-0 right-0 p-1.5 left-16 sm:left-20 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all lg:left-[30rem]',
                       )}>
                       <div className={classNames('flex justify-between items-center h-full ml-6')}>
                         <div className='flex items-center gap-8'>
@@ -434,12 +435,12 @@ export const Chat = () => {
                                       'h-3 w-3 rounded-full block',
                                       isOtherUserOnline
                                         ? 'bg-green-400 animate-pulse'
-                                        : 'bg-gray-400'
+                                        : 'bg-gray-400',
                                     )}></span>
                                   <span
                                     className={classNames(
                                       'text-sm font-semibold',
-                                      isOtherUserOnline ? 'text-green-600' : 'text-gray-500'
+                                      isOtherUserOnline ? 'text-green-600' : 'text-gray-500',
                                     )}>
                                     {isOtherUserOnline ? 'online' : 'offline'}
                                   </span>
@@ -484,7 +485,7 @@ export const Chat = () => {
                                           }}
                                           className={classNames(
                                             active ? 'bg-gray-100' : '',
-                                            'flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium'
+                                            'flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium',
                                           )}>
                                           <svg
                                             width='20'
@@ -526,7 +527,7 @@ export const Chat = () => {
                                           to='/settings'
                                           className={classNames(
                                             active ? 'bg-gray-100' : '',
-                                            'flex items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium w-full'
+                                            'flex items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium w-full',
                                           )}>
                                           <svg
                                             width='20'
@@ -629,7 +630,7 @@ export const Chat = () => {
                                         onSetHighlightedMessage={handleSetHighlightedMessage}
                                       />
                                     );
-                                  })
+                                  }),
                                 )
                               ) : (
                                 <div className='flex justify-center items-center h-full'>
@@ -645,7 +646,7 @@ export const Chat = () => {
                                   <div
                                     className={classNames(
                                       'p-3 rounded-3xl bg-secondary w-fit inline-flex gap-1.5',
-                                      'bg-black/60 dark:bg-white/5 border-[1.5px] dark:border-white/10 border-gray-300'
+                                      'bg-black/60 dark:bg-white/5 border-[1.5px] dark:border-white/10 border-gray-300',
                                     )}>
                                     <span className='animation1 mx-[0.5px] h-1 w-1 bg-zinc-300 dark:bg-zinc-400 rounded-full'></span>
                                     <span className='animation2 mx-[0.5px] h-1 w-1 bg-zinc-300 dark:bg-zinc-400 rounded-full'></span>
@@ -679,7 +680,6 @@ export const Chat = () => {
                         messageToReply={messageToReply}
                         reduxStateMessages={currentChatMessages}
                         isOwnedMessage={isOwnedMessage}
-                        users={users}
                         theme={theme}
                         textareaRef={messageInputRef}
                         handleSendMessage={handleSendMessage}
@@ -689,6 +689,7 @@ export const Chat = () => {
                         handleSetCloseReply={handleSetCloseReply}
                         openEmoji={openEmoji}
                         currentChat={currentChat}
+                        users={filteredMentionUsers}
                         user={user!}
                       />
                     </div>

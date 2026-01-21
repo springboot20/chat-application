@@ -1,3 +1,4 @@
+import { User } from './auth';
 import { UserType } from './user';
 
 export interface ChatMessageInterface {
@@ -42,7 +43,7 @@ export interface ChatListItemInterface {
   isGroupChat: boolean;
   lastMessage: ChatMessageInterface;
   name: string;
-  participants: UserType[];
+  participants: User[];
   updatedAt: string;
   _id: string;
 }
