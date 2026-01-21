@@ -9,6 +9,9 @@ import {
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import { classNames } from '../../utils';
+import { Attachment } from '../../types/chat';
+import { VoiceMessagePlayer } from '../voice/VoiceMessagePlayer';
+import { getAudioBlobDuration } from '../../utils/audio';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
@@ -18,37 +21,65 @@ interface DocumentPreviewProps {
   attachment?: Attachment;
   onClick?: () => void;
   isModal?: boolean;
+  isOwnedMessage?: boolean;
   file?: File;
 }
 
-interface Attachment {
-  _id: string;
-  url: string;
-  localPath?: string;
-  type?: string; // Optional: Add if you can include MIME type in ChatMessageInterface
-}
-
 export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
-  ({ attachment, onRemove, index, onClick, isModal = false, file }) => {
+  ({ attachment, onRemove, index, onClick, isModal = false, file, isOwnedMessage }) => {
     const [imageUrl, setImageUrl] = useState<string>('');
+    const [audioURL, setAudioURL] = useState<string>('');
     const [pdfError, setPdfError] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
+    const [audioDuration, setAudioDuration] = useState<number>(0);
 
-    const isImage = attachment?.url?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
-    const isImageFromFile = file?.type.startsWith('image/');
-    const isPdf = attachment?.url.match(/\.pdf$/i) || attachment?.type === 'application/pdf';
+    console.log(file?.type);
+    console.log(attachment);
+
+    const isImageFromAttachment =
+      attachment?.url?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i) || attachment?.fileType === 'image';
+    const isPdfFromAttachment = attachment?.url?.match(/\.pdf$/i);
+    const isAudioFromAttachment =
+      attachment?.fileType === 'voice' || attachment?.url?.match(/\.(webm)$/i);
+    const isDocFromAttachment =
+      attachment?.url?.match(/\.docx$/i) || attachment?.fileType === 'document';
+
+    const isImageFromFile = file?.type?.startsWith('image/');
+    const isAudioFromFile = file?.type?.startsWith('audio/');
+
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+    const isAudio = isAudioFromAttachment || isAudioFromFile;
+    const isDocument = isDocFromAttachment;
+    const showOverlay = !isModal && !isAudio && !isDocument;
+
     useEffect(() => {
-      if (file) {
+      if (file && isAudioFromFile) {
+        getAudioBlobDuration(file)
+          .then((duration) => {
+            setAudioDuration(duration);
+          })
+          .catch((err) => {
+            console.error('Failed to get audio duration', err);
+            setAudioDuration(0);
+          });
+      }
+    }, [file, isAudioFromFile]);
+
+    useEffect(() => {
+      if (file && isImageFromFile) {
         const url = URL.createObjectURL(file);
         setImageUrl(url);
         return () => URL.revokeObjectURL(url);
+      } else if (file && isAudioFromFile) {
+        const url = URL.createObjectURL(file);
+        setAudioURL(url);
+        return () => URL.revokeObjectURL(url);
       }
-    }, [file]);
+    }, [file, isAudioFromFile, isImageFromFile]);
 
     useEffect(() => {
-      if (isPdf && canvasRef.current && attachment?.url) {
+      if (isPdfFromAttachment && canvasRef.current && attachment?.url) {
         const renderPDF = async () => {
           setIsLoading(true);
           setPdfError('');
@@ -81,10 +112,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
         };
         renderPDF();
       }
-    }, [attachment?.url, isPdf, isModal]);
+    }, [attachment?.url, isPdfFromAttachment, isModal]);
 
-    const fileExtension = attachment?.url.split('.').pop()?.toUpperCase() || '';
-    const fileName = attachment?.url.split('/').pop() || file?.name || 'Unknown File';
+    const fileExtension = attachment?.url?.split('.').pop()?.toUpperCase() || '';
+    const fileName = attachment?.url?.split('/').pop() || file?.name || 'Unknown File';
 
     const handleDownload = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -97,7 +128,29 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
     };
 
     const renderContent = () => {
-      if (isImage && attachment?.url) {
+      if (isAudioFromAttachment && attachment?.url) {
+        return (
+          <VoiceMessagePlayer
+            audioUrl={attachment.url}
+            duration={attachment.duration || 0}
+            isOwnMessage={Boolean(isOwnedMessage)}
+          />
+        );
+      }
+
+      if (isAudioFromFile && audioURL && file) {
+        return (
+          audioDuration > 0 && (
+            <VoiceMessagePlayer
+              audioUrl={audioURL}
+              duration={audioDuration}
+              isOwnMessage={Boolean(isOwnedMessage)}
+            />
+          )
+        );
+      }
+
+      if (isImageFromAttachment && attachment?.url) {
         return (
           <img
             className={classNames('h-full w-full object-cover', isModal ? 'object-contain' : '')}
@@ -127,7 +180,19 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
         );
       }
 
-      if (isPdf) {
+      if (isDocument) {
+        return (
+          <div className='h-full w-full bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center p-3'>
+            <DocumentIcon className='h-10 w-10 text-blue-600 mb-2' />
+            <span className='text-xs font-medium text-gray-700 dark:text-gray-300 text-center truncate max-w-[90px]'>
+              {fileName}
+            </span>
+            <span className='text-[10px] text-gray-500 uppercase'>{fileExtension}</span>
+          </div>
+        );
+      }
+
+      if (isPdfFromAttachment) {
         if (isLoading) {
           return (
             <div className='h-full w-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center'>
@@ -169,12 +234,16 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
     return (
       <div
         className={classNames(
-          'relative aspect-square rounded-lg overflow-hidden group',
-          isModal
-            ? 'w-full h-auto max-w-xl'
-            : attachment?.url.split('.').includes('pdf')
-              ? 'h-24 w-24'
-              : 'cursor-pointer',
+          'relative rounded-lg overflow-hidden group',
+          isAudio
+            ? 'w-full'
+            : isDocument
+              ? 'w-24 h-24'
+              : isModal
+                ? 'w-full h-auto max-w-xl'
+                : attachment?.url?.split('.').includes('pdf')
+                  ? 'h-24 w-24'
+                  : 'aspect-square cursor-pointer',
         )}>
         {isModal && attachment?.url && (
           <button
@@ -186,7 +255,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
           </button>
         )}
 
-        {!isModal && (
+        {showOverlay && (
           <div className='absolute inset-0 z-20 flex justify-center items-center w-full gap-2 h-full bg-black/60 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150'>
             <button
               type='button'

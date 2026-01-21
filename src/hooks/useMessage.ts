@@ -178,7 +178,7 @@ export const useMessage = () => {
 
       target.value = '';
     },
-    []
+    [],
   );
 
   const [openEmoji, setOpenEmoji] = useState<boolean>(false);
@@ -208,7 +208,7 @@ export const useMessage = () => {
 
       setOpenEmoji(false);
     },
-    [message]
+    [message],
   );
 
   const handleEmojiSelect = useCallback(
@@ -219,7 +219,7 @@ export const useMessage = () => {
       insertEmoji(emojiData);
       setOpenEmoji(false);
     },
-    [insertEmoji]
+    [insertEmoji],
   );
 
   const handleEmojiSimpleSelect = useCallback((emojiData: EmojiClickData, event: MouseEvent) => {
@@ -260,7 +260,7 @@ export const useMessage = () => {
   const onUpdateChatLastMessage = (updatedChat: ChatListItemInterface) => {
     // Update the last message of the chat
     dispatch(
-      updateChatLastMessage({ chatToUpdateId: updatedChat._id, message: updatedChat.lastMessage })
+      updateChatLastMessage({ chatToUpdateId: updatedChat._id, message: updatedChat.lastMessage }),
     );
   };
 
@@ -302,7 +302,7 @@ export const useMessage = () => {
             updateChatLastMessage({
               chatToUpdateId: currentChat?._id as string,
               message: response.data,
-            })
+            }),
           );
           playMessageSound();
         })
@@ -310,7 +310,7 @@ export const useMessage = () => {
           console.error(error);
         });
     },
-    [deleteChatMessage, currentChat?._id, dispatch, playMessageSound]
+    [deleteChatMessage, currentChat?._id, dispatch, playMessageSound],
   );
 
   const processMentionsContent = (message: string, users: User[]) => {
@@ -323,7 +323,7 @@ export const useMessage = () => {
     while ((match = mentionRegex.exec(message)) !== null) {
       const username = match[1] || match[2];
       const mentionedUser = users.find(
-        (user) => user.username.toLowerCase() === username.toLowerCase()
+        (user) => user.username.toLowerCase() === username.toLowerCase(),
       );
 
       if (mentionedUser && !mentions.find((m) => m.userId === mentionedUser?._id)) {
@@ -416,7 +416,7 @@ export const useMessage = () => {
       // Update only the reactions for the specific message
       dispatch(updateMessageReactions(data));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleRemoveFile = (indexToRemove: number) => {
@@ -478,6 +478,7 @@ export const useMessage = () => {
         content: processedMessage.content,
         sender: currentUser!,
         chat: currentChat._id,
+        attachments: files,
         status: 'queued', // Custom status
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

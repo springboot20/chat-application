@@ -53,8 +53,6 @@ const ReactionTooltip: React.FC<{
     [stats.categorizedReactions],
   );
 
-  console.log(stats.categorizedReactions);
-
   return (
     <Transition.Root show={open} as={Fragment}>
       <Dialog as='div' className='relative z-50' onClose={onClose}>

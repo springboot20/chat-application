@@ -38,6 +38,8 @@ class MessageQueue {
   }
 
   add(message: Omit<QueuedMessage, 'id' | 'timestamp'>) {
+    console.log(message);
+
     const queuedMessage: QueuedMessage = {
       ...message,
       id: `queued_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

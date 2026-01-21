@@ -1,4 +1,12 @@
-import { CheckIcon, ClockIcon, NoSymbolIcon, PaperClipIcon } from '@heroicons/react/24/outline';
+import {
+  DocumentTextIcon,
+  PhotoIcon,
+  MusicalNoteIcon,
+  CheckIcon,
+  ClockIcon,
+  NoSymbolIcon,
+  PaperClipIcon,
+} from '@heroicons/react/24/outline';
 import { ChatMessageInterface } from '../../types/chat';
 import { classNames, formatMessageTime } from '../../utils';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -780,6 +788,49 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     };
   };
 
+  const getAttachmentType = () => {
+    if (!message.attachments || message.attachments.length === 0) return null;
+
+    const types = message.attachments.map((a) => {
+      if (a.fileType === 'voice') return 'audio';
+      if (a.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) return 'image';
+      if (a.url?.match(/\.pdf$/i)) return 'pdf';
+      if (a.url?.match(/\.(doc|docx|ppt|pptx|xls|xlsx)$/i)) return 'document';
+      return 'file';
+    });
+
+    // If multiple different types → mixed
+    return new Set(types).size > 1 ? 'mixed' : types[0];
+  };
+
+  const renderAttachmentIcon = () => {
+    const type = getAttachmentType();
+
+    if (!type || message.isDeleted) return null;
+
+    const baseClass = 'h-4 w-4 mr-2';
+
+    switch (type) {
+      case 'audio':
+        return <MusicalNoteIcon className={baseClass} title='Audio message' />;
+
+      case 'image':
+        return <PhotoIcon className={baseClass} title='Image attachment' />;
+
+      case 'pdf':
+        return <DocumentTextIcon className={baseClass} title='PDF document' />;
+
+      case 'document':
+        return <DocumentTextIcon className={baseClass} title='Document attachment' />;
+
+      case 'mixed':
+        return <PaperClipIcon className={baseClass} title='Multiple attachments' />;
+
+      default:
+        return <PaperClipIcon className={baseClass} />;
+    }
+  };
+
   return (
     <>
       <FilePreviewModal
@@ -954,15 +1005,18 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   message.attachments?.length >= 3 ? 'grid-cols-3' : '',
                   message.content ? 'mb-6' : '',
                 )}>
-                {message.attachments?.map((file, index) => (
-                  <DocumentPreview
-                    key={file._id}
-                    attachment={file}
-                    index={index}
-                    onClick={() => handleImageChange(index)}
-                    isModal={false}
-                  />
-                ))}
+                {message.attachments?.map((file, index) => {
+                  return (
+                    <DocumentPreview
+                      key={`${file._id}-${file.fileType}`}
+                      attachment={file}
+                      index={index}
+                      onClick={() => handleImageChange(index)}
+                      isModal={false}
+                      isOwnedMessage={Boolean(isOwnedMessage)}
+                    />
+                  );
+                })}
               </div>
             )}
 
@@ -988,9 +1042,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   'mt-1.5 self-end text-xs inline-flex items-center dark:text-white',
                   isOwnedMessage ? 'text-zinc-50' : 'text-gray-800',
                 )}>
-                {message.attachments?.length > 0 && !message.isDeleted && (
-                  <PaperClipIcon className='h-4 w-4 mr-2' />
-                )}
+                {message.attachments?.length > 0 && !message.isDeleted && renderAttachmentIcon()}
                 {formatMessageTime(message.updatedAt)}
               </p>
               {!message.isDeleted && (

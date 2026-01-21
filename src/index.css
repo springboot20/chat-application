@@ -52,6 +52,34 @@
 }
 
 @layer components {
+  /* Waveform animation */
+  @keyframes pulse-wave {
+    0%,
+    100% {
+      transform: scaleY(0.3);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  .animate-pulse-wave {
+    animation: pulse-wave 1s ease-in-out infinite;
+  }
+
+  /* Recording indicator pulse */
+  @keyframes recording-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.2);
+    }
+  }
+
   @keyframes slideLeft {
     0% {
       transform: translateX(-10rem) scale(0.85);

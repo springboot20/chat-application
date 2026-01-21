@@ -1,15 +1,21 @@
 import { UserType } from './user';
 
+export interface Attachment {
+  _id?: string;
+  url: string;
+  localPath?: string;
+  fileType?: 'image' | 'document' | 'video' | 'voice';
+  fileName?: string;
+  fileSize?: number;
+  duration?: number; // for voice messages
+  waveform?: number[]; // waveform data
+}
+
 export interface ChatMessageInterface {
   _id: string;
   sender: Pick<UserType, '_id' | 'username' | 'avatar' | 'email'>;
   content: string;
-  attachments: Array<{
-    url: string;
-    localPath: string;
-    _id: string;
-    type?: string;
-  }>;
+  attachments: Array<Attachment>;
   replyId?: string;
   mentions: Array<{
     userId: string;
