@@ -7,7 +7,7 @@ import {
   PaperAirplaneIcon,
 } from '@heroicons/react/24/solid';
 import { classNames } from '../../utils';
-import { LiveWaveform } from './LiveWaveForm';
+import { LiveWaveform } from './LiveWaveform';
 import { TrashIcon } from '@heroicons/react/24/outline';
 
 interface VoiceRecorderProps {
