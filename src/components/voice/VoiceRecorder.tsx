@@ -6,6 +6,7 @@ import {
   ChevronUpIcon,
   LockClosedIcon,
   LockOpenIcon,
+  StopIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +21,7 @@ interface VoiceRecorderProps {
   onResume: () => void;
   onCancel: () => void;
   onSend: () => void;
+  stopRecording: () => void;
   hasRecording: boolean;
   isRecordingCancelled: boolean;
   uiState: 'idle' | 'recording' | 'locked' | 'cancelled';
@@ -33,6 +35,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   isPaused,
   recordingTime,
   // audioLevel,
+  stopRecording,
   onPause,
   onResume,
   onCancel,
@@ -161,14 +164,26 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
               )}
             </button>
 
+            {isRecording && (
+              <button
+                type='button'
+                onClick={stopRecording}
+                className='p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors'
+                title='Stop recording'>
+                <StopIcon className='h-5 w-5' />
+              </button>
+            )}
+
             {/* Send Button */}
-            <button
-              type='button'
-              onClick={onSend}
-              title='send voice record'
-              className='p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 shadow-md transition-all active:scale-90'>
-              <PaperAirplaneIcon className='h-5 w-5' />
-            </button>
+            {(isPaused || !isRecording) && (
+              <button
+                type='button'
+                onClick={onSend}
+                title='send voice record'
+                className='p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 shadow-md transition-all active:scale-90'>
+                <PaperAirplaneIcon className='h-5 w-5' />
+              </button>
+            )}
           </div>
         </motion.div>
       )}

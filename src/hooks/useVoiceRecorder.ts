@@ -17,6 +17,7 @@ interface UseVoiceRecorderReturn {
   resumeRecording: () => void;
   cancelRecording: () => void;
   resetRecording: () => void;
+  stopRecording: () => void;
   setDrag: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
 }
 
@@ -90,6 +91,16 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
+      mediaRecorder.onpause = async () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
+
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+
+        const duration = await getAudioBlobDuration(blob);
+        setAudioDuration(duration);
+      };
+
       mediaRecorder.onstop = async () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
 
@@ -118,6 +129,25 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       toast.error('Failed to access microphone. Please check permissions.');
     }
   }, [analyzeAudio]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsPaused(false);
+      setRecordingTime(0);
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      console.log('⏹️ Recording stopped');
+    }
+  }, [isRecording]);
 
   const pauseRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording && !isPaused) {
@@ -231,5 +261,6 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
     resumeRecording,
     cancelRecording,
     resetRecording,
+    stopRecording,
   };
 };

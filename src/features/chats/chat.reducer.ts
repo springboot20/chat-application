@@ -90,9 +90,15 @@ const ChatSlice = createSlice({
 
       const currentMessages = current(state.chatMessages[chatId]);
 
-      // Check for exact ID match OR check if we have an optimistic version with same content/time
-      // (This helps if the server returns a message before the upload 'unwrap' triggers)
-      const existingIndex = currentMessages.findIndex((msg) => msg._id === message._id);
+      const existingIndex = currentMessages.findIndex((msg) => {
+        if (msg._id === message._id) return true;
+
+        const isTemp = msg._id.toString().startsWith('temp-') || msg.status === 'queued';
+        const sameContent = msg.content === message.content;
+        const sameSender = msg.sender._id === message.sender._id;
+
+        return isTemp && sameSender && sameContent;
+      });
 
       if (existingIndex !== -1) {
         state.chatMessages[chatId][existingIndex] = {

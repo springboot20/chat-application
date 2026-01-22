@@ -75,6 +75,7 @@ export const useMessage = () => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const users = availableUsers?.data as User[];
+  const isAtBottomRef = useRef(true);
 
   const { isOnline } = useNetwork();
 
@@ -172,15 +173,21 @@ export const useMessage = () => {
     setMentionQuery('');
   }, []);
 
-  const checkScrollPosition = () => {
+  const checkScrollPosition = useCallback(() => {
     if (bottomRef.current) {
-      const container = bottomRef.current;
-      const threshold = 100; // pixels from bottom
-      const isNearBottom =
-        container?.scrollHeight - container?.scrollTop - container?.clientHeight < threshold;
-      setShowScrollButton(!isNearBottom);
+      const { scrollTop, scrollHeight, clientHeight } = bottomRef.current;
+      const threshold = 100; // tolerance in pixels
+
+      const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+      const nearBottom = distanceToBottom < threshold;
+
+      // Update the ref for logic checks
+      isAtBottomRef.current = nearBottom;
+
+      // Update the state for the UI button
+      setShowScrollButton(!nearBottom);
     }
-  };
+  }, []);
 
   const filteredMentionUsers = useMemo(() => {
     return getFuzzyMatches(mentionQuery, currentChat?.participants || []);
@@ -193,7 +200,7 @@ export const useMessage = () => {
       container.addEventListener('scroll', checkScrollPosition);
       return () => container.removeEventListener('scroll', checkScrollPosition);
     }
-  }, []);
+  }, [checkScrollPosition]);
 
   const handleFileChange = useCallback(
     (fileType: 'document-file' | 'image-file', event: React.ChangeEvent<HTMLInputElement>) => {
@@ -303,23 +310,33 @@ export const useMessage = () => {
     );
   };
 
-  const onMessageReceive = (data: any) => {
-    // Always dispatch the received message to the Redux store
-    dispatch(onMessageReceived({ data }));
+  const scrollToBottom = useCallback(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollTo({
+        top: bottomRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+      isAtBottomRef.current = true;
+    }
+  }, []);
 
+  const onMessageReceive = (data: any) => {
+    dispatch(onMessageReceived({ data }));
     dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
 
-    // Determine when to play sound
     const isCurrentChat = data.chat === currentChat?._id;
     const isFromCurrentUser = data.sender._id === currentUser?._id;
 
-    scrollToBottom();
+    // ✅ SMART SCROLL:
+    // Only scroll to bottom if the user is already near the bottom
+    // OR if the user themselves sent the message.
+    if (isCurrentChat && (isAtBottomRef.current || isFromCurrentUser)) {
+      // Wrap in setTimeout to ensure the DOM has updated with the new message height
+      setTimeout(() => {
+        scrollToBottom();
+      }, 0);
+    }
 
-    // Play sound for messages from other users in the current chat
-    // Only play if:
-    // 1. Message is in the currently active chat
-    // 2. Message is NOT from the current user (don't play sound for your own messages)
-    // 3. Sender is a valid participant (optional security check)
     if (isCurrentChat && !isFromCurrentUser) {
       playMessageSound();
     }
@@ -431,14 +448,9 @@ export const useMessage = () => {
     messageToReply,
     attachmentFiles.files,
     replyToChatMessage,
+    scrollToBottom,
     playMessageSound,
   ]);
-
-  const scrollToBottom = () => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollTop = bottomRef.current.scrollHeight;
-    }
-  };
 
   const onReactionUpdate = useCallback(
     (data: any) => {
@@ -488,10 +500,6 @@ export const useMessage = () => {
     setMessage('');
     setAttachmentFiles({} as any);
 
-    toast.info('You are offline. Message will be sent when you reconnect.', {
-      autoClose: 3000,
-    });
-
     // Add optimistic UI update with "queued" status
     const tempMessage = {
       _id: tempId,
@@ -515,6 +523,9 @@ export const useMessage = () => {
           mentions: processedMessage.mentions,
         });
 
+        toast.info('You are offline. Message will be sent when you reconnect.', {
+          autoClose: 3000,
+        });
         return;
       }
 

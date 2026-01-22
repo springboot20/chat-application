@@ -100,6 +100,7 @@ const MessageInput = ({
     resetRecording,
     audioDuration,
     isRecordingCancelled,
+    stopRecording,
   } = useVoiceRecorder();
 
   const {
@@ -140,6 +141,8 @@ const MessageInput = ({
   const canSendMessage = hasTextContent || hasFiles;
 
   const handleSendVoiceMessage = async () => {
+    console.log(audioBlob);
+
     if (!audioBlob || !currentChat?._id) return;
 
     const tempId = `temp-${Date.now()}`;
@@ -169,8 +172,9 @@ const MessageInput = ({
       updatedAt: new Date().toISOString(),
     };
 
+    dispatch(onMessageReceived({ data: optimisticMessage as unknown as ChatMessageInterface }));
+
     try {
-      dispatch(onMessageReceived({ data: optimisticMessage as unknown as ChatMessageInterface }));
       resetRecording();
       resetLock();
 
@@ -426,6 +430,7 @@ const MessageInput = ({
               onSend={handleSendVoiceMessage}
               hasRecording={!!audioUrl && !isRecordingCancelled}
               isRecordingCancelled={isRecordingCancelled}
+              stopRecording={stopRecording}
               micRef={micRef}
               cancelRef={cancelRef}
               lockRef={lockRef}

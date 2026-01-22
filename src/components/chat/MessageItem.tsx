@@ -22,7 +22,6 @@ import ReactionTooltip from '../modal/ReactionTooltip';
 import { updateMessageReactions } from '../../features/chats/chat.reducer';
 import { useNetwork } from '../../hooks/useNetwork';
 import { toast } from 'react-toastify';
-import { createPortal } from 'react-dom';
 
 type Status = 'queued' | 'sent' | 'delivered' | 'seen';
 
@@ -853,33 +852,30 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           />
         )}
 
-        {!message.isDeleted &&
-          showReactionPicker &&
-          createPortal(
-            <div
-              ref={reactionRef}
-              className='absolute z-[999] animate-in fade-in-0 zoom-in-95 duration-200'
-              style={{
-                top: `${reactionLocation.top}px`,
-                left: `${reactionLocation.left}px`,
-              }}
-              onClick={(e) => e.stopPropagation()}>
-              <div className='relative shadow-2xl rounded-lg overflow-hidden'>
-                <EmojiPicker
-                  onReactionClick={(emoji, event) =>
-                    handleSelectReactionEmoji(message._id, emoji, event)
-                  }
-                  reactionsDefaultOpen={true}
-                  theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
-                  searchDisabled={false}
-                  width={window.innerWidth < 768 ? Math.min(350, window.innerWidth - 20) : 350}
-                  height={window.innerWidth < 768 ? Math.min(400, window.innerHeight - 20) : 400}
-                  lazyLoadEmojis
-                />
-              </div>
-            </div>,
-            document.body,
-          )}
+        {!message.isDeleted && showReactionPicker && (
+          <div
+            ref={reactionRef}
+            className='absolute z-[999] animate-in fade-in-0 zoom-in-95 duration-200'
+            style={{
+              top: `${reactionLocation.top}px`,
+              left: `${reactionLocation.left}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}>
+            <div className='relative shadow-2xl rounded-lg overflow-hidden'>
+              <EmojiPicker
+                onReactionClick={(emoji, event) =>
+                  handleSelectReactionEmoji(message._id, emoji, event)
+                }
+                reactionsDefaultOpen={true}
+                theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                searchDisabled={false}
+                width={window.innerWidth < 768 ? Math.min(350, window.innerWidth - 20) : 350}
+                height={window.innerWidth < 768 ? Math.min(400, window.innerHeight - 20) : 400}
+                lazyLoadEmojis
+              />
+            </div>
+          </div>
+        )}
 
         {!message.isDeleted &&
           message.reactions &&
