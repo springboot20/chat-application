@@ -125,7 +125,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
       // ✅ HOLDING/UNLOCKED STATE - Gesture-based UI
       <div className='flex items-center justify-between w-full bg-white dark:bg-black h-14 px-2 overflow-hidden relative'>
-        <div className='flex items-center gap-3'>
+        <div className='flex items-center gap-3 font-nunito'>
           {/* ✅ FIXED: Trash icon with progressive feedback */}
           <motion.div
             animate={
@@ -161,7 +161,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
               transition={{ repeat: Infinity, duration: 0.8 }}
               className='h-2.5 w-2.5 rounded-full bg-red-500'
             />
-            <span className='font-mono text-sm dark:text-white'>{formatTime(recordingTime)}</span>
+            <span className='font-nunito text-sm dark:text-white'>{formatTime(recordingTime)}</span>
           </div>
         </div>
 
@@ -181,8 +181,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                 scale: 0.8,
                 transition: { duration: 0.15 },
               }}
-              className='flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mr-10'>
-              <ChevronLeftIcon /> <span> Slide to cancel</span>
+              className='flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mr-10 font-nunito'>
+              <ChevronLeftIcon className="h-4 w-4" /> <span> Slide to cancel</span>
             </motion.div>
           )}
 
