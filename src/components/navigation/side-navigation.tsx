@@ -1,7 +1,6 @@
-import { ChevronRightIcon, CogIcon } from '@heroicons/react/24/outline';
+import {  CogIcon } from '@heroicons/react/24/outline';
 import { Settings } from '../../pages/settings/Settings';
 import { useState } from 'react';
-import { Disclosure } from '@headlessui/react';
 import { classNames } from '../../utils';
 
 const navLinks = [
@@ -16,7 +15,7 @@ const navLinks = [
           xmlns='http://www.w3.org/2000/svg'
           className={classNames(
             'h-5 fill-none transition cursor-pointer hover:stroke-[#615EF0] dark:hover:stroke-[#615EF0]',
-            classname
+            classname,
           )}>
           <path d='M17 2H7C4.24 2 2 4.23 2 6.98V13.96C2 16.71 4.24 18.94 7 18.94H8.5C8.77 18.94 9.13 19.12 9.3 19.34L10.8 21.33C11.46 22.21 12.54 22.21 13.2 21.33L14.7 19.34C14.89 19.09 15.19 18.94 15.5 18.94H17C19.76 18.94 22 16.71 22 13.96V6.98C22 4.23 19.76 2 17 2ZM8 12C7.44 12 7 11.55 7 11C7 10.45 7.45 10 8 10C8.55 10 9 10.45 9 11C9 11.55 8.56 12 8 12ZM12 12C11.44 12 11 11.55 11 11C11 10.45 11.45 10 12 10C12.55 10 13 10.45 13 11C13 11.55 12.56 12 12 12ZM16 12C15.44 12 15 11.55 15 11C15 10.45 15.45 10 16 10C16.55 10 17 10.45 17 11C17 11.55 16.56 12 16 12Z' />
         </svg>
@@ -34,7 +33,7 @@ const navLinks = [
           xmlns='http://www.w3.org/2000/svg'
           className={classNames(
             'h-5 fill-none transition cursor-pointer hover:stroke-[#615EF0] dark:hover:stroke-[#615EF0]',
-            classname
+            classname,
           )}>
           <path
             d='M7 10.74V13.94M12 9V15.68M17 10.74V13.94M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z'
@@ -60,14 +59,8 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab
 
   return (
     <nav
-      className={`fixed inset-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-black dark:border-r-white/15 w-16 sm:w-20 z-20`}>
+      className={`fixed inset-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-black dark:border-r-white/15 w-16 sm:w-20 z-20 hidden lg:block`}>
       <div className={`h-full flex justify-between p-5 flex-col items-center`}>
-        <Disclosure.Button
-          title='open mobile menu'
-          className='lg:hidden absolute -right-6 sm:-right-8 rounded-full flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 bg-[#615EF0] '>
-          <ChevronRightIcon className='h-5 w-5 text-white' strokeWidth={3} />
-        </Disclosure.Button>
-
         <div className='flex flex-col justify-between items-center'>
           <div className='flex flex-col items-center space-y-8'>
             <div className='flex items-center'>
@@ -100,7 +93,7 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab
                         'stroke-2',
                         activeTab === (tab as Tab)
                           ? 'stroke-[#615EF0]'
-                          : 'stroke-gray-500 dark:stroke-white'
+                          : 'stroke-gray-500 dark:stroke-white',
                       )}
                     />
                   </li>

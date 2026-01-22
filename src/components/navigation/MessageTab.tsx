@@ -2,7 +2,7 @@ import { Disclosure } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState, Fragment } from 'react';
-import { ChevronLeftIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { ChatModal } from '../modal/ChatModal.tsx';
 import { SearchInput } from '../panels/SearchInput.tsx';
 import { ChatItem } from '../chat/ChatItem.tsx';
@@ -21,7 +21,7 @@ type MessageTabComponentProps = {
   close: () => any;
 };
 
-export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ open, close }) => {
+export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ close }) => {
   const { user } = useAppSelector((state) => state.auth);
   const { setMessage, getAllMessages } = useMessage();
 
@@ -59,7 +59,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ open, 
 
       close();
     },
-    [close, currentChat, dispatch, setMessage, getAllMessages]
+    [close, currentChat, dispatch, setMessage, getAllMessages],
   );
 
   const handleChatDelete = useCallback(
@@ -67,7 +67,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ open, 
       setItemDeleted(true);
       dispatch(onChatDelete({ chatId }));
     },
-    [dispatch]
+    [dispatch],
   );
 
   // Consistent logic for calculating unread messages
@@ -75,7 +75,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ open, 
     (chatId: string) => {
       return unreadMessages?.filter((msg) => msg.chat === chatId).length || 0;
     },
-    [unreadMessages]
+    [unreadMessages],
   );
 
   const filteredChats = useMemo(() => {
@@ -116,32 +116,6 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ open, 
     setOpenChat(false);
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!open) return; // Only attach listener when panel is open
-
-      const target = event.target as HTMLElement;
-
-      if (target.closest('button[title="open mobile menu"]')) {
-        return;
-      }
-
-      if (!target.closest('.mobile-navigation') && !target.closest('.group-navigation')) {
-        close();
-      }
-    };
-
-    // Add a small delay to prevent immediate closing
-    const timeoutId = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
-    }, 100);
-
-    return () => {
-      clearTimeout(timeoutId);
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [open, close]);
-
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalSearchQuery(e.target.value);
   }, []);
@@ -163,7 +137,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ open, 
         'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
         filter === filterType
           ? 'bg-[#615EF0] text-white'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
       )}>
       {label} ( {count} )
     </button>
@@ -247,7 +221,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ open, 
                         unreadCount={getUnreadCount(chat._id)}
                         refetchChats={refetchChats}
                       />
-                    ))
+                    )),
                   )}
                 </div>
               </Fragment>
@@ -288,20 +262,13 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ open, 
       </div>
 
       <Disclosure.Panel
+        static
         className={classNames(
-          'fixed w-full sm:w-[25rem] bg-white dark:bg-black h-screen z-50 lg:hidden',
+          'fixed w-full bg-white dark:bg-black h-screen z-50 lg:hidden',
           'mobile-navigation border-r-[1.5px] border-r-gray-600/30',
-          open ? 'left-0 translate-x-0' : '-translate-x-full'
+          'left-0 translate-x-0',
         )}>
-        <Disclosure.Button
-          className={
-            'absolute right-7 flex items-center justify-center bottom-10 bg-[#615EF0] h-8 w-8 rounded-full lg:hidden'
-          }>
-          <span className='sr-only'>Close panel</span>
-          <ChevronLeftIcon className='h-5 w-5 text-white' aria-hidden={true} strokeWidth={3} />
-        </Disclosure.Button>
-
-        <div className='flex flex-col items-center gap-8 h-full'>
+        <div className='flex flex-col items-center gap-4 h-full'>
           <div className='flex justify-between items-center w-full p-2 border-b-[1.5px] border-b-gray-600/30'>
             <div className='flex items-center'>
               <span className='text-xl block text-gray-600 font-medium dark:text-white'>
@@ -371,7 +338,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ open, 
                       refetchChats={refetchChats}
                       close={close}
                     />
-                  ))
+                  )),
                 )}
               </div>
             ) : (

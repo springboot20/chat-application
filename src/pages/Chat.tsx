@@ -46,6 +46,7 @@ import MessageInput from '../components/inout/MessageInput.tsx';
 import { useSocketContext } from '../hooks/useSocket.ts';
 import { useOnlineUsers } from '../hooks/useOnlineUsers.ts';
 import { useMarkMessagesAsSeen } from '../hooks/useMarkMessagesAsSeen.ts';
+import { MobileBottomNav } from '../components/navigation/MobileNavigation.tsx';
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -374,12 +375,13 @@ export const Chat = () => {
     <Disclosure as={Fragment}>
       {({ open, close }) => (
         <React.Fragment>
-          <div
-            className={classNames(
-              'w-full flex items-stretch h-screen flex-shrink-0',
-              open ? 'lg:justify-between' : '',
-            )}>
-            <div>
+          <div className={classNames('w-full flex items-stretch h-screen flex-shrink-0')}>
+            <div
+              className={classNames(
+                'flex-shrink-0 border-r dark:border-white/10',
+                currentChat ? 'hidden lg:block' : 'w-full lg:w-[30rem]', // Hide list on mobile when chatting
+                'lg:block lg:w-[30rem]',
+              )}>
               <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
               <MessageNavigation
@@ -391,15 +393,17 @@ export const Chat = () => {
             </div>
             <main
               className={classNames(
-                'w-full min-h-screen right-0 overflow-hidden transition-all z-10',
-                'lg:ml-[30rem] lg:w-[calc(100%-30rem)]',
+                'flex-grow transition-all z-10',
+                !currentChat
+                  ? 'hidden lg:block'
+                  : 'fixed inset-0 bg-white dark:bg-black lg:relative',
               )}>
               <div className='relative flex flex-col justify-between h-full'>
                 {currentChat && currentChat._id ? (
                   <>
                     <header
                       className={classNames(
-                        'fixed top-0 right-0 p-1.5 left-16 sm:left-20 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all lg:left-[30rem]',
+                        'fixed top-0 right-0 p-1.5 left-0 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all lg:left-[30rem]',
                       )}>
                       <div className={classNames('flex justify-between items-center h-full ml-6')}>
                         <div className='flex items-center gap-8'>
@@ -577,13 +581,13 @@ export const Chat = () => {
                       </div>
                     </header>
 
-                    <div className='relative left-16 w-[calc(100%-4rem)] sm:left-20 sm:w-[calc(100%-5rem)] lg:left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto overflow-x-hidden mt-20 pb-20 transition-all duration-200'>
+                    <div className='relative left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto overflow-x-hidden mt-16 transition-all duration-200'>
                       <div
                         ref={(e) => {
                           bottomRef.current = e;
                           containerRef.current = e;
                         }}
-                        className='flex flex-col flex-grow px-5 overflow-y-auto gap-10 relative'>
+                        className='flex flex-col flex-grow px-5 overflow-y-auto gap-10 relative mb-28'>
                         {showScrollButton && (
                           <button
                             onClick={scrollToBottom}
@@ -701,6 +705,9 @@ export const Chat = () => {
                 )}
               </div>
             </main>
+
+            {/* MOBILE NAV: Only visible on small screens when NO chat is open */}
+            {!currentChat && <MobileBottomNav activeTab={activeTab} setActiveTab={setActiveTab} />}
           </div>
         </React.Fragment>
       )}

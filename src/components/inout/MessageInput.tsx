@@ -102,7 +102,8 @@ const MessageInput = ({
     isRecordingCancelled,
   } = useVoiceRecorder();
 
-  const { isLocked, onStart, onMove, onEnd } = useRecordingLock();
+  const { isLocked, onStart, onMove, onEnd, isCancelled, reset, slideProgress } =
+    useRecordingLock();
 
   const { isOnline } = useNetwork();
   const dispatch = useAppDispatch();
@@ -110,6 +111,14 @@ const MessageInput = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setQueuedMessageIds] = useState<string[]>([]);
   const [sendMessage] = useSendMessageMutation();
+
+  const triggerHaptic = (type: 'light' | 'success' | 'warning') => {
+    if (!('vibrate' in navigator)) return;
+
+    if (type === 'light') navigator.vibrate(10);
+    if (type === 'success') navigator.vibrate([10, 30, 10]);
+    if (type === 'warning') navigator.vibrate([50, 100, 50]);
+  };
 
   // ✅ Optimized visibility logic
   const visibility = () => {
@@ -221,6 +230,20 @@ const MessageInput = ({
   }, [textareaRef]);
 
   useEffect(() => {
+    if (isLocked) {
+      triggerHaptic('success');
+    }
+  }, [isLocked]);
+
+  useEffect(() => {
+    if (isCancelled && isRecording) {
+      cancelRecording(); // This stops the audio stream and resets state
+      onEnd(); // Resets the lock hook coordinates
+      triggerHaptic('warning');
+    }
+  }, [isCancelled, isRecording, cancelRecording, onEnd]);
+
+  useEffect(() => {
     adjustTextareaHeight();
   }, [message, adjustTextareaHeight]);
 
@@ -258,21 +281,33 @@ const MessageInput = ({
   );
 
   const handleMicPress = useCallback(
-    (clientY: number) => {
+    (clientX: number, clientY: number) => {
+      reset(); // Clear previous recording states
+      onStart(clientX, clientY);
       startRecording();
-      onStart(clientY);
+      triggerHaptic('light');
     },
-    [startRecording, onStart],
+    [reset, onStart, startRecording],
   );
 
   const handleMicRelease = useCallback(() => {
     onEnd();
-  }, [onEnd]);
+
+    // Now check if cancelled AFTER gesture completes
+    if (isCancelled) {
+      cancelRecording();
+      return;
+    }
+
+    if (!isLocked && isRecording) {
+      stopRecording();
+    }
+  }, [isCancelled, isLocked, isRecording, onEnd, cancelRecording, stopRecording]);
 
   return (
     <div
       className={classNames(
-        'fixed bottom-0 gap-2 left-16 sm:left-20 lg:left-[30rem] right-0 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30 transition-all duration-200',
+        'fixed bottom-0 gap-2 left-0 lg:left-[30rem] right-0 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30 transition-all duration-200',
         (attachmentFiles.files && attachmentFiles?.files?.length) || showReply
           ? 'h-auto'
           : 'min-h-16',
@@ -354,7 +389,7 @@ const MessageInput = ({
             {/* Emoji Button */}
             <button
               onClick={handleOpenAndCloseEmoji}
-              className='cursor-pointer h-12 w-12 shrink-0 mb-1'
+              className='cursor-pointer h-8 w-8 lg:h-12 lg:w-12 shrink-0 mb-1'
               type='button'
               title='Add emoji'>
               <span className='flex items-center justify-center h-full w-full dark:bg-transparent bg-gray-50 dark:hover:bg-white/10 hover:bg-gray-100 rounded-lg transition-colors'>
@@ -366,7 +401,7 @@ const MessageInput = ({
             <Disclosure>
               {({ close, open }) => (
                 <>
-                  <Disclosure.Button className='cursor-pointer h-12 w-12 shrink-0 mb-1'>
+                  <Disclosure.Button className='cursor-pointer h-8 w-8 lg:h-12 lg:w-12 shrink-0 mb-1'>
                     <span className='sr-only'>Open file menu</span>
                     <span className='flex items-center justify-center h-full w-full dark:bg-transparent bg-gray-50 dark:hover:bg-white/10 hover:bg-gray-100 rounded-lg transition-colors'>
                       <PaperClipIcon className='cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 dark:hover:stroke-gray-300 transition-colors' />
@@ -387,7 +422,7 @@ const MessageInput = ({
 
         {/* ✅ Voice Recorder - Shown when recording or has recorded audio */}
         {showVoiceRecorder && (
-          <div className='flex-1 animate-in fade-in slide-in-from-bottom-4 duration-300'>
+          <div className='flex-1 animate-in fade-in slide-in-from-bottom-4 duration-300 shrink-0'>
             <VoiceRecorder
               audioLevel={1}
               isRecording={isRecording}
@@ -400,6 +435,9 @@ const MessageInput = ({
               onSend={handleSendVoiceMessage}
               hasRecording={!!audioUrl}
               isRecordingCancelled={isRecordingCancelled}
+              isLocked={isLocked}
+              slideProgress={slideProgress}
+              isCancelled={isCancelled}
             />
           </div>
         )}
@@ -419,7 +457,7 @@ const MessageInput = ({
               'dark:text-white text-gray-900',
               'placeholder-gray-400 dark:placeholder-gray-500',
               'overflow-y-auto transition-all',
-              'text-sm leading-relaxed min-h-[48px] max-h-[200px]',
+              'text-sm leading-relaxed lg:min-h-[48px] lg:max-h-[200px]',
             )}
             rows={1}
           />
@@ -430,11 +468,11 @@ const MessageInput = ({
           {showMicButton ? (
             <button
               type='button'
-              onMouseDown={(e) => handleMicPress(e.clientY)}
-              onMouseMove={(e) => onMove(e.clientY)}
+              onMouseDown={(e) => handleMicPress(e.clientX, e.clientY)}
+              onMouseMove={(e) => onMove(e.clientX, e.clientY)}
               onMouseUp={handleMicRelease}
-              onTouchStart={(e) => handleMicPress(e.touches[0].clientY)}
-              onTouchMove={(e) => onMove(e.touches[0].clientY)}
+              onTouchStart={(e) => handleMicPress(e.touches[0].clientX, e.touches[0].clientY)}
+              onTouchMove={(e) => onMove(e.touches[0].clientX, e.touches[0].clientY)}
               onTouchEnd={handleMicRelease}
               className={classNames(
                 'p-3 rounded-full transition-all duration-200 hover:scale-110 active:scale-95',

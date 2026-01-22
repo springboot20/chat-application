@@ -8,7 +8,8 @@ import {
 } from '@heroicons/react/24/solid';
 import { classNames } from '../../utils';
 import { LiveWaveform } from './LiveWaveform';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronUpIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface VoiceRecorderProps {
   isRecording: boolean;
@@ -22,6 +23,10 @@ interface VoiceRecorderProps {
   onCancel: () => void;
   onSend: () => void;
   hasRecording: boolean;
+  isLocked: boolean;
+  isCancelled: boolean;
+
+  slideProgress?: { x: number; y: number };
 }
 
 export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
@@ -36,6 +41,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   onSend,
   hasRecording,
   isRecordingCancelled,
+  isLocked = false,
+  isCancelled,
+  slideProgress,
 }) => {
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -43,8 +51,19 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // ✅ Calculate visual feedback intensity based on slide distance
+  const getCancelIntensity = () => {
+    if (!slideProgress) return 0;
+    return Math.min(Math.abs(slideProgress.x) / 100, 1); // 0 to 1
+  };
+
+  const getLockProgress = () => {
+    if (!slideProgress) return 0;
+    return Math.min(Math.abs(slideProgress.y) / 80, 1); // 0 to 1
+  };
+
   if (isRecording) {
-    return (
+    return isLocked ? (
       <div className='flex flex-col gap-2 bg-gray-100 dark:bg-white/5 rounded-2xl px-4 py-3 animate-in fade-in w-full'>
         {/* ✅ Live Waveform Visualizer */}
         <div className='w-full h-[70px] bg-gray-200 dark:bg-white/10 rounded-lg overflow-hidden'>
@@ -100,6 +119,116 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             </button>
           </div>
         </div>
+      </div>
+    ) : (
+      /* Inside the Holding View (isRecording && !isLocked) block */
+
+      // ✅ HOLDING/UNLOCKED STATE - Gesture-based UI
+      <div className='flex items-center justify-between w-full bg-white dark:bg-black h-14 px-2 overflow-hidden relative'>
+        <div className='flex items-center gap-3'>
+          {/* ✅ FIXED: Trash icon with progressive feedback */}
+          <motion.div
+            animate={
+              isCancelled
+                ? {
+                    scale: 1.3,
+                    rotate: [0, -15, 15, -15, 0],
+                    color: '#ef4444',
+                  }
+                : {
+                    scale: 1 + getCancelIntensity() * 0.2, // Grows as user slides
+                    rotate: [-5, 5, -5],
+                  }
+            }
+            transition={
+              isCancelled ? { duration: 0.4 } : { rotate: { repeat: Infinity, duration: 0.5 } }
+            }
+            style={{
+              color: isCancelled ? '#ef4444' : `rgb(156, 163, 175)`, // gray-400
+            }}>
+            <TrashIcon
+              className='h-6 w-6'
+              style={{
+                opacity: 0.5 + getCancelIntensity() * 0.5, // Fades in as user slides
+              }}
+            />
+          </motion.div>
+
+          {/* Recording timer */}
+          <div className='flex items-center gap-2'>
+            <motion.span
+              animate={{ opacity: [1, 0, 1] }}
+              transition={{ repeat: Infinity, duration: 0.8 }}
+              className='h-2.5 w-2.5 rounded-full bg-red-500'
+            />
+            <span className='font-mono text-sm dark:text-white'>{formatTime(recordingTime)}</span>
+          </div>
+        </div>
+
+        {/* ✅ FIXED: Slide to cancel text with better exit animation */}
+        <AnimatePresence mode='wait'>
+          {!isCancelled && (
+            <motion.div
+              key='slide-text'
+              initial={{ opacity: 0, x: 20 }}
+              animate={{
+                opacity: 1 - getCancelIntensity() * 0.5, // Fade as user slides
+                x: 0,
+              }}
+              exit={{
+                x: -100,
+                opacity: 0,
+                scale: 0.8,
+                transition: { duration: 0.15 },
+              }}
+              className='flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mr-10'>
+              <ChevronLeftIcon /> <span> Slide to cancel</span>
+            </motion.div>
+          )}
+
+          {/* ✅ NEW: "Release to cancel" message when threshold reached */}
+          {isCancelled && (
+            <motion.div
+              key='cancel-text'
+              initial={{ opacity: 0, scale: 0.8, x: 20 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              className='flex items-center gap-2 text-red-500 text-sm font-semibold mr-10'>
+              <TrashIcon className='h-4 w-4' />
+              <span>Release to cancel</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ✅ FIXED: Lock indicator with progress feedback */}
+        <AnimatePresence>
+          {!isLocked && (
+            <motion.div
+              exit={{ opacity: 0, y: -20, transition: { duration: 0.2 } }}
+              animate={{
+                y: [0, -8, 0],
+                opacity: 0.6 + getLockProgress() * 0.4, // Becomes more visible
+                scale: 1 + getLockProgress() * 0.1, // Slightly grows
+              }}
+              transition={{
+                y: { repeat: Infinity, duration: 1.5 },
+                opacity: { duration: 0.1 },
+                scale: { duration: 0.1 },
+              }}
+              className='absolute -top-12 right-4 flex flex-col items-center text-gray-400 dark:text-gray-500'>
+              <ChevronUpIcon
+                className='h-5 w-5'
+                style={{
+                  color: getLockProgress() > 0.7 ? '#22c55e' : undefined, // Green when close
+                }}
+              />
+              <span className='text-[10px] font-bold uppercase'>
+                {getLockProgress() > 0.7 ? 'Release!' : 'Lock'}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
