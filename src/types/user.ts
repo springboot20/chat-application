@@ -1,8 +1,8 @@
 export type UserType = {
   _id: string;
   avatar: {
-    url: string;
-    localPath: string;
+    url?: string;
+    localPath?: string;
     _id: string;
   };
   username: string;

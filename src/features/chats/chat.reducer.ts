@@ -50,6 +50,36 @@ const ChatSlice = createSlice({
       LocalStorage.set('chats', removeCircularReferences(current(state.chats)));
     },
 
+    // ✅ NEW: Specifically for replacing Temp IDs with Server IDs after upload
+    replaceOptimisticMessage: (
+      state,
+      action: PayloadAction<{ chatId: string; tempId: string; realMessage: ChatMessageInterface }>,
+    ) => {
+      const { chatId, tempId, realMessage } = action.payload;
+
+      if (!state.chatMessages[chatId]) return;
+
+      const messageIndex = state.chatMessages[chatId].findIndex((msg) => msg._id === tempId);
+
+      if (messageIndex !== -1) {
+        // Replace the whole object to ensure 'status' and 'attachments' update
+        state.chatMessages[chatId][messageIndex] = {
+          ...realMessage,
+          status: 'sent' as const, // Force status update
+        };
+      }
+
+      // Also update the lastMessage in the sidebar if it matches the tempId
+      const chatIndex = state.chats.findIndex((chat) => chat._id === chatId);
+      if (chatIndex !== -1 && state.chats[chatIndex].lastMessage?._id === tempId) {
+        state.chats[chatIndex].lastMessage = realMessage;
+      }
+
+      LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
+      LocalStorage.set('chats', removeCircularReferences(current(state.chats)));
+    },
+
+    // ✅ ENHANCED: onMessageReceived to handle Status Updates and Merging
     onMessageReceived: (state, action: PayloadAction<{ data: ChatMessageInterface }>) => {
       const message = action.payload.data;
       const chatId = message.chat;
@@ -58,32 +88,24 @@ const ChatSlice = createSlice({
         state.chatMessages[chatId] = [];
       }
 
-      // ✅ Use current() to get a plain copy
       const currentMessages = current(state.chatMessages[chatId]);
+
+      // Check for exact ID match OR check if we have an optimistic version with same content/time
+      // (This helps if the server returns a message before the upload 'unwrap' triggers)
       const existingIndex = currentMessages.findIndex((msg) => msg._id === message._id);
 
       if (existingIndex !== -1) {
-        // ✅ Update existing message
         state.chatMessages[chatId][existingIndex] = {
           ...currentMessages[existingIndex],
           ...message,
+          // Ensure we don't accidentally revert 'sent' to 'sending'
+          status: message.status || 'sent',
         };
       } else {
-        // ✅ Add new message
         state.chatMessages[chatId].push(message);
       }
 
-      // ✅ Remove duplicates safely
-      const uniqueMessages = current(state.chatMessages[chatId]).reduce((acc, current) => {
-        if (!acc.some((msg) => msg._id === current._id)) {
-          acc.push(current);
-        }
-        return acc;
-      }, [] as ChatMessageInterface[]);
-
-      state.chatMessages[chatId] = uniqueMessages;
-
-      // ✅ Sort messages
+      // Sort messages by creation time
       state.chatMessages[chatId].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
@@ -91,57 +113,55 @@ const ChatSlice = createSlice({
       LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
     },
 
-  // features/chats/chat.reducer.ts
+    updateMessageReactions: (
+      state,
+      action: PayloadAction<{ messageId: string; reactions: any[]; chatId: string }>,
+    ) => {
+      const { messageId, reactions, chatId } = action.payload;
 
-updateMessageReactions: (
-  state,
-  action: PayloadAction<{ messageId: string; reactions: any[]; chatId: string }>
-) => {
-  const { messageId, reactions, chatId } = action.payload;
+      if (!state.chatMessages[chatId]) return;
 
-  if (!state.chatMessages[chatId]) return;
+      // ✅ Update message in chatMessages
+      const messageIndex = state.chatMessages[chatId].findIndex((msg) => msg._id === messageId);
 
-  // ✅ Update message in chatMessages
-  const messageIndex = state.chatMessages[chatId].findIndex((msg) => msg._id === messageId);
-  
-  if (messageIndex !== -1) {
-    state.chatMessages[chatId][messageIndex] = {
-      ...state.chatMessages[chatId][messageIndex],
-      reactions: reactions,
-    };
-  }
-
-  // ✅ Update lastMessage in chats array - Use current() to avoid proxy issues
-  const chatIndex = state.chats.findIndex((chat) => chat.lastMessage?._id === messageId);
-  
-  if (chatIndex !== -1) {
-    const currentChat = current(state.chats[chatIndex]); // ✅ Get plain copy
-    
-    if (currentChat.lastMessage) {
-      state.chats[chatIndex] = {
-        ...currentChat,
-        lastMessage: {
-          ...currentChat.lastMessage,
+      if (messageIndex !== -1) {
+        state.chatMessages[chatId][messageIndex] = {
+          ...state.chatMessages[chatId][messageIndex],
           reactions: reactions,
-        },
-      };
-    }
-  }
+        };
+      }
 
-  // ✅ Update current chat if needed - Use current() here too
-  if (state.currentChat?.lastMessage?._id === messageId) {
-    const currentChatCopy = current(state.currentChat); // ✅ Get plain copy
-    
-    state.currentChat = {
-      ...currentChatCopy,
-      lastMessage: {
-        ...currentChatCopy.lastMessage!,
-        reactions: reactions,
-      },
-    };
-  }
+      // ✅ Update lastMessage in chats array - Use current() to avoid proxy issues
+      const chatIndex = state.chats.findIndex((chat) => chat.lastMessage?._id === messageId);
 
-  LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
+      if (chatIndex !== -1) {
+        const currentChat = current(state.chats[chatIndex]); // ✅ Get plain copy
+
+        if (currentChat.lastMessage) {
+          state.chats[chatIndex] = {
+            ...currentChat,
+            lastMessage: {
+              ...currentChat.lastMessage,
+              reactions: reactions,
+            },
+          };
+        }
+      }
+
+      // ✅ Update current chat if needed - Use current() here too
+      if (state.currentChat?.lastMessage?._id === messageId) {
+        const currentChatCopy = current(state.currentChat); // ✅ Get plain copy
+
+        state.currentChat = {
+          ...currentChatCopy,
+          lastMessage: {
+            ...currentChatCopy.lastMessage!,
+            reactions: reactions,
+          },
+        };
+      }
+
+      LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
     },
 
     setCurrentChat: (state, action) => {
@@ -402,4 +422,5 @@ export const {
   updateMessageReactions,
   markMessagesAsSeen,
   updateMessageDelivery,
+  replaceOptimisticMessage,
 } = ChatSlice.actions;

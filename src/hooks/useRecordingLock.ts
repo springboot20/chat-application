@@ -1,69 +1,84 @@
 import { useRef, useState, useCallback } from 'react';
 
-export const useRecordingLock = () => {
-  const startY = useRef<number | null>(null);
-  const startX = useRef<number | null>(null);
-  const [isLocked, setIsLocked] = useState(false);
-  const [isCancelled, setIsCancelled] = useState(false);
-  const [slideProgress, setSlideProgress] = useState({ x: 0, y: 0 });
+export type RecorderUIState = 'idle' | 'recording' | 'locked' | 'cancelled';
 
-  const LOCK_THRESHOLD = 80;
-  const CANCEL_THRESHOLD = 100;
+export const useRecordingLock = (LOCK_THRESHOLD = 60, CANCEL_THRESHOLD = 100) => {
+  const [uiState, setUIState] = useState<RecorderUIState>('idle');
+  const startPos = useRef({ x: 0, y: 0 });
+
+  // Refs to manipulate DOM directly for 60fps performance
+  const micRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLDivElement>(null);
+  const lockRef = useRef<HTMLDivElement>(null);
+
+  // ✅ NEW: Track whether user is currently dragging
+  const isDragging = useRef(false);
 
   const onStart = useCallback((x: number, y: number) => {
-    startX.current = x;
-    startY.current = y;
-    setIsLocked(false);
-    setIsCancelled(false);
-    setSlideProgress({ x: 0, y: 0 });
+    startPos.current = { x, y };
+    isDragging.current = true;
+    setUIState('recording');
+    if (navigator.vibrate) navigator.vibrate(10);
   }, []);
 
   const onMove = useCallback(
     (x: number, y: number) => {
-      if (startY.current === null || startX.current === null) return;
+      if (!isDragging.current) return;
+      if (uiState === 'locked' || uiState === 'idle') return;
 
-      const deltaY = startY.current - y; // Positive = UP
-      const deltaX = startX.current - x; // Positive = LEFT
+      const dx = x - startPos.current.x;
+      const dy = y - startPos.current.y;
 
-      // ✅ Update progress for visual feedback
-      setSlideProgress({ x: deltaX, y: deltaY });
-
-      // Check for lock
-      if (deltaY > LOCK_THRESHOLD && !isLocked) {
-        setIsLocked(true);
+      // Direct DOM manipulation (No React State updates here!)
+      if (micRef.current) {
+        const translateX = Math.min(0, dx); // Only allow left swipe
+        const translateY = Math.min(0, dy); // Only allow up swipe
+        micRef.current.style.transform = `translate(${translateX}px, ${translateY}px) scale(1.1)`;
       }
 
-      // Check for cancel
-      if (deltaX > CANCEL_THRESHOLD && !isCancelled) {
-        setIsCancelled(true);
+      // Visual feedback for Cancel/Lock (Opacity & Intensity)
+      if (cancelRef.current) {
+        const opacity = Math.max(0, 1 - Math.abs(dx) / CANCEL_THRESHOLD);
+        cancelRef.current.style.opacity = opacity.toString();
+      }
+
+      // Logic Thresholds
+      if (dx < -CANCEL_THRESHOLD) {
+        setUIState('cancelled');
+      } else if (dy < -LOCK_THRESHOLD) {
+        setUIState('locked');
+        if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
       }
     },
-    [isLocked, isCancelled],
+    [uiState, CANCEL_THRESHOLD, LOCK_THRESHOLD],
   );
 
+  // ✅ NEW: Called when pointer is released
   const onEnd = useCallback(() => {
-    startY.current = null;
-    startX.current = null;
-    setSlideProgress({ x: 0, y: 0 });
+    isDragging.current = false;
+
+    // Reset visual transforms
+    if (micRef.current) {
+      micRef.current.style.transform = '';
+    }
+    if (cancelRef.current) {
+      cancelRef.current.style.opacity = '1';
+    }
+    if (lockRef.current) {
+      lockRef.current.style.opacity = '1';
+    }
   }, []);
 
   const reset = useCallback(() => {
-    setIsLocked(false);
-    setIsCancelled(false);
-    setSlideProgress({ x: 0, y: 0 });
-    startY.current = null;
-    startX.current = null;
+    setUIState('idle');
+    isDragging.current = false;
+    startPos.current = { x: 0, y: 0 };
+
+    // Clean up any lingering transforms
+    if (micRef.current) micRef.current.style.transform = '';
+    if (cancelRef.current) cancelRef.current.style.opacity = '1';
+    if (lockRef.current) lockRef.current.style.opacity = '1';
   }, []);
 
-  return {
-    isLocked,
-    isCancelled,
-    slideProgress, // ✅ Export for UI feedback
-    onStart,
-    onMove,
-    onEnd,
-    reset,
-    LOCK_THRESHOLD,
-    CANCEL_THRESHOLD,
-  };
+  return { uiState, onStart, onMove, reset, micRef, cancelRef, lockRef,onEnd };
 };

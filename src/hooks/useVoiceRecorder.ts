@@ -10,24 +10,28 @@ interface UseVoiceRecorderReturn {
   audioDuration: number;
   audioBlob: Blob | null;
   audioUrl: string | null;
-  audioLevel: number; // ✅ For live waveform
+  audioLevel: number; // For live waveform
+  drag: { x: number; y: number }; // ✅ Drag progress for mic UI
   startRecording: () => Promise<void>;
-  stopRecording: () => void;
   pauseRecording: () => void;
   resumeRecording: () => void;
   cancelRecording: () => void;
   resetRecording: () => void;
+  setDrag: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
 }
 
 export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
   const [isRecordingCancelled, setIsRecordingCancelled] = useState(false);
-  const [isRecording, setIsRecording] = useState(false); // track audio/voice recording state
-  const [isPaused, setIsPaused] = useState(false); // track audio/voice pausing state
-  const [recordingTime, setRecordingTime] = useState(0); // track audio/voice recording time
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [audioLevel, setAudioLevel] = useState(0); // ✅ Current audio level
+  const [audioLevel, setAudioLevel] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+
+  // ✅ For drag-following mic
+  const [drag, setDrag] = useState({ x: 0, y: 0 });
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -39,20 +43,17 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
 
   // ✅ Analyze audio level for live waveform
   const analyzeAudio = useCallback(() => {
-    if (!analyserRef.current || (isPaused && isRecordingCancelled)) return;
+    if (!analyserRef.current || isPaused) return;
 
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
     analyserRef.current.getByteFrequencyData(dataArray);
 
-    // Calculate average audio level
-    const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
-    const normalizedLevel = Math.min(average / 128, 1); // Normalize to 0-1
-
+    const average = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
+    const normalizedLevel = Math.min(average / 128, 1);
     setAudioLevel(normalizedLevel);
 
-    // Continue animation
     animationFrameRef.current = requestAnimationFrame(analyzeAudio);
-  }, [isPaused, isRecordingCancelled]);
+  }, [isPaused]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -61,18 +62,13 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       setAudioBlob(null);
       setRecordingTime(0);
 
-      // Request microphone permission
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
 
       streamRef.current = stream;
 
-      // ✅ Create audio context for visualization
+      // Setup AudioContext for visualization
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
@@ -83,79 +79,51 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
 
-      // Start analyzing audio
       analyzeAudio();
 
-      // Create MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus',
-      });
+      // MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
-      // Handle data available
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      // Handle recording stop
       mediaRecorder.onstop = async () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
 
-        // FIX: Don't set these to null here! We need them for the preview state.
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
 
         const duration = await getAudioBlobDuration(blob);
         setAudioDuration(duration);
 
-        // Cleanup hardware/streams
-        streamRef.current?.getTracks().forEach((track) => track.stop());
+        // Cleanup
+        streamRef.current?.getTracks().forEach((t) => t.stop());
         audioContextRef.current?.close();
       };
 
-      // Start recording
       mediaRecorder.start(100);
       setIsRecording(true);
       setRecordingTime(0);
 
-      // Start timer
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
 
       console.log('🎙️ Recording started');
-    } catch (error) {
-      console.error('Failed to start recording:', error);
+    } catch (err) {
+      console.error(err);
       toast.error('Failed to access microphone. Please check permissions.');
     }
   }, [analyzeAudio]);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setIsPaused(false);
-      setRecordingTime(0);
-
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-
-      console.log('⏹️ Recording stopped');
-    }
-  }, [isRecording]);
 
   const pauseRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording && !isPaused) {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
+      setIsRecording(false);
 
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -172,9 +140,10 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
   }, [isRecording, isPaused]);
 
   const resumeRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording && isPaused) {
+    if (mediaRecorderRef.current && !isRecording && isPaused) {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
+      setIsRecording(true);
 
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
@@ -188,19 +157,18 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
   }, [isRecording, isPaused, analyzeAudio]);
 
   const resetRecording = useCallback(() => {
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
-    }
+    if (audioUrl) URL.revokeObjectURL(audioUrl);
 
     setAudioBlob(null);
     setAudioUrl(null);
     setRecordingTime(0);
     setAudioLevel(0);
+
     chunksRef.current = [];
+    setDrag({ x: 0, y: 0 });
   }, [audioUrl]);
 
   const cancelRecording = useCallback(() => {
-    // 1. Stop the physical recorder first
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
@@ -210,19 +178,19 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
 
-    // 3. Clear all intervals and animation frames
     if (timerRef.current) clearInterval(timerRef.current);
     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
 
-    // 4. RESET ALL STATES TO INITIAL
     setIsRecording(false);
-    setIsRecordingCancelled(true); // This tells the UI to hide
+    setIsRecordingCancelled(true);
     setIsPaused(false);
     setRecordingTime(0);
     setAudioBlob(null);
-    setAudioUrl(null); // This is the most important line to restore the text input
+    setAudioUrl(null);
     setAudioLevel(0);
     chunksRef.current = [];
+    setDrag({ x: 0, y: 0 });
+    console.log('❌ Recording cancelled');
   }, []);
 
   // Cleanup on unmount
@@ -254,13 +222,14 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
     recordingTime,
     audioBlob,
     audioUrl,
-    audioLevel, // ✅ Export audio level
+    audioLevel,
+    audioDuration,
+    drag,
+    setDrag, // ✅ Expose drag state for UI
     startRecording,
-    stopRecording,
     pauseRecording,
     resumeRecording,
     cancelRecording,
     resetRecording,
-    audioDuration,
   };
 };

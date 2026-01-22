@@ -21,8 +21,9 @@ import { useSendMessageMutation } from '../../features/chats/chat.slice';
 import { useNetwork } from '../../hooks/useNetwork';
 import { messageQueue } from '../../utils/messageQueue';
 import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks';
-import { onMessageReceived } from '../../features/chats/chat.reducer';
+import { onMessageReceived, replaceOptimisticMessage } from '../../features/chats/chat.reducer';
 import { useRecordingLock } from '../../hooks/useRecordingLock';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type FileType = {
   files: File[] | null;
@@ -93,7 +94,6 @@ const MessageInput = ({
     audioBlob,
     audioUrl,
     startRecording,
-    stopRecording,
     pauseRecording,
     resumeRecording,
     cancelRecording,
@@ -102,106 +102,90 @@ const MessageInput = ({
     isRecordingCancelled,
   } = useVoiceRecorder();
 
-  const { isLocked, onStart, onMove, onEnd, isCancelled, reset, slideProgress } =
-    useRecordingLock();
+  const {
+    uiState,
+    onStart,
+    onMove,
+    onEnd,
+    reset: resetLock,
+    micRef,
+    cancelRef,
+    lockRef,
+  } = useRecordingLock();
 
   const { isOnline } = useNetwork();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_, setQueuedMessageIds] = useState<string[]>([]);
   const [sendMessage] = useSendMessageMutation();
 
-  const triggerHaptic = (type: 'light' | 'success' | 'warning') => {
-    if (!('vibrate' in navigator)) return;
+  // ✅ CRITICAL FIX: Track if we're in a drag gesture to prevent premature UI hiding
+  const [isDraggingMic, setIsDraggingMic] = useState(false);
 
-    if (type === 'light') navigator.vibrate(10);
-    if (type === 'success') navigator.vibrate([10, 30, 10]);
-    if (type === 'warning') navigator.vibrate([50, 100, 50]);
-  };
+  // Compute UI visibility states
+  const isActivelyRecording = uiState === 'recording' || uiState === 'locked';
+  const hasReviewableAudio = !!audioUrl && !isRecordingCancelled;
 
-  // ✅ Optimized visibility logic
-  const visibility = () => {
-    const hasText = message.trim().length > 0;
-    const hasFiles = !!attachmentFiles.files?.length;
-    const hasRecording = !!audioUrl && !isRecordingCancelled; // Use audioUrl to detect "Review" mode
-    const isActivelyRecording = isRecording && !isRecordingCancelled;
+  const showVoiceRecorder = isActivelyRecording || hasReviewableAudio;
+  const showTextInput = !isActivelyRecording && !hasReviewableAudio && !isDraggingMic;
 
-    return {
-      // Show voice UI during recording OR while reviewing the clip
-      showVoiceRecorder: isActivelyRecording || hasRecording,
+  const hasTextContent = message.trim().length > 0;
+  const hasFiles = attachmentFiles.files && attachmentFiles.files.length > 0;
 
-      // Hide input if the user is busy with a voice message
-      showTextInput: !isActivelyRecording && !hasRecording,
+  // ✅ FIXED: Keep mic button visible during drag gesture
+  const shouldShowMicButton =
+    !hasTextContent && !hasFiles && !hasReviewableAudio && (!isActivelyRecording || isDraggingMic); // Keep visible while dragging
 
-      // Mic button only if there is absolutely no other content
-      showMicButton: !hasText && !hasFiles && !isActivelyRecording && !hasRecording,
-
-      // Send button for text/files only
-      showSendButton: (hasText || hasFiles) && !isActivelyRecording,
-
-      showUtilityButtons: !isActivelyRecording && !hasRecording,
-      canSend: hasText || hasFiles,
-    };
-  };
-
-  const {
-    showVoiceRecorder,
-    showTextInput,
-    showMicButton,
-    showSendButton,
-    showUtilityButtons,
-    canSend,
-  } = visibility();
+  const shouldShowSendButton =
+    (hasTextContent || hasFiles) && !isActivelyRecording && !isDraggingMic;
+  const canSendMessage = hasTextContent || hasFiles;
 
   const handleSendVoiceMessage = async () => {
     if (!audioBlob || !currentChat?._id) return;
 
+    const tempId = `temp-${Date.now()}`;
+    const localAudioUrl = URL.createObjectURL(audioBlob);
+
+    const voiceFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
+      type: 'audio/webm;codecs=opus',
+    });
+
+    const optimisticMessage = {
+      _id: tempId,
+      content: '',
+      sender: user!,
+      chat: currentChat._id,
+      attachments: [
+        {
+          url: localAudioUrl,
+          localPath: localAudioUrl,
+          fileType: 'voice',
+          fileName: voiceFile.name,
+          fileSize: voiceFile.size,
+          duration: audioDuration,
+        },
+      ],
+      status: 'queued',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
     try {
-      const voiceFile = new File([audioBlob], `voice-${Date.now()}.webm`, {
-        type: 'audio/webm;codecs=opus',
-      });
+      dispatch(onMessageReceived({ data: optimisticMessage as unknown as ChatMessageInterface }));
+      resetRecording();
+      resetLock();
 
       if (!isOnline) {
-        const queuedId = messageQueue.add({
+        messageQueue.add({
           chatId: currentChat._id,
           content: '',
           attachments: [voiceFile],
           mentions: [],
         });
-
-        setQueuedMessageIds((prev) => [...prev, queuedId]);
-
-        toast.info('You are offline. Message will be sent when you reconnect.', {
-          autoClose: 3000,
-        });
-
-        const tempMessage = {
-          _id: queuedId,
-          content: '',
-          sender: user!,
-          chat: currentChat._id,
-          attachments: [
-            {
-              url: URL.createObjectURL(voiceFile),
-              localPath: '',
-              fileType: 'voice',
-              fileName: voiceFile.name,
-              fileSize: voiceFile.size,
-              duration: audioDuration,
-            },
-          ],
-          status: 'queued',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        dispatch(onMessageReceived({ data: tempMessage as unknown as ChatMessageInterface }));
-        resetRecording();
+        toast.info('Offline. Message queued.');
         return;
       }
 
-      await sendMessage({
+      const response = await sendMessage({
         chatId: currentChat._id,
         data: {
           content: '',
@@ -211,15 +195,19 @@ const MessageInput = ({
         },
       }).unwrap();
 
-      resetRecording();
-      toast.success('Voice message sent!');
+      dispatch(
+        replaceOptimisticMessage({
+          chatId: currentChat._id,
+          tempId: tempId,
+          realMessage: response.data,
+        }),
+      );
     } catch (error) {
-      console.error('Failed to send voice message:', error);
+      console.error('Failed to send:', error);
       toast.error('Failed to send voice message');
     }
   };
 
-  // Auto-resize textarea based on content
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -228,20 +216,6 @@ const MessageInput = ({
       textarea.style.height = `${newHeight}px`;
     }
   }, [textareaRef]);
-
-  useEffect(() => {
-    if (isLocked) {
-      triggerHaptic('success');
-    }
-  }, [isLocked]);
-
-  useEffect(() => {
-    if (isCancelled && isRecording) {
-      cancelRecording(); // This stops the audio stream and resets state
-      onEnd(); // Resets the lock hook coordinates
-      triggerHaptic('warning');
-    }
-  }, [isCancelled, isRecording, cancelRecording, onEnd]);
 
   useEffect(() => {
     adjustTextareaHeight();
@@ -254,7 +228,7 @@ const MessageInput = ({
   }, [isRecording, textareaRef]);
 
   const handleSendMessageLocal = useCallback(() => {
-    if (canSend) {
+    if (canSendMessage) {
       handleSendMessage();
 
       setTimeout(() => {
@@ -263,7 +237,7 @@ const MessageInput = ({
         }
       }, 0);
     }
-  }, [canSend, handleSendMessage, textareaRef]);
+  }, [canSendMessage, handleSendMessage, textareaRef]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     handleOnMessageChange(event);
@@ -280,29 +254,44 @@ const MessageInput = ({
     [handleSendMessageLocal],
   );
 
-  const handleMicPress = useCallback(
-    (clientX: number, clientY: number) => {
-      reset(); // Clear previous recording states
-      onStart(clientX, clientY);
-      startRecording();
-      triggerHaptic('light');
-    },
-    [reset, onStart, startRecording],
-  );
+  // ✅ FIXED: Proper drag gesture lifecycle management
+  const handleMicPointerDown = (e: React.PointerEvent) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
 
-  const handleMicRelease = useCallback(() => {
-    onEnd();
+    setIsDraggingMic(true); // Mark as dragging
+    resetLock();
+    onStart(e.clientX, e.clientY);
+    startRecording();
+  };
 
-    // Now check if cancelled AFTER gesture completes
-    if (isCancelled) {
+  const handleMicPointerMove = (e: React.PointerEvent) => {
+    if (uiState === 'recording' || isDraggingMic) {
+      onMove(e.clientX, e.clientY);
+    }
+  };
+
+  const handleMicPointerUp = () => {
+    setIsDraggingMic(false); // Drag gesture complete
+    onEnd(); // Reset transforms
+
+    // Handle state transitions AFTER drag completes
+    if (uiState === 'cancelled') {
       cancelRecording();
-      return;
+      resetLock();
+    } else if (uiState === 'recording') {
+      // If released without locking, stop recording
+      // (You might want different behavior here)
     }
+    // If locked, do nothing - let user use the controls
+  };
 
-    if (!isLocked && isRecording) {
-      stopRecording();
+  // ✅ Auto-reset on cancel
+  useEffect(() => {
+    if (isRecordingCancelled) {
+      resetLock();
+      setIsDraggingMic(false);
     }
-  }, [isCancelled, isLocked, isRecording, onEnd, cancelRecording, stopRecording]);
+  }, [isRecordingCancelled, resetLock]);
 
   return (
     <div
@@ -347,6 +336,7 @@ const MessageInput = ({
               className='rounded-full h-6 w-6 dark:bg-white/10 right-2 absolute top-2 flex items-center justify-center ring-1 dark:ring-black/10 hover:bg-gray-100 dark:hover:bg-white/20 transition-colors'>
               <XMarkIcon className='dark:text-white h-4' strokeWidth={2} />
             </button>
+
             {(() => {
               const replyMessage = reduxStateMessages.find(
                 (msg) => msg._id.toString() === messageToReply.toString(),
@@ -383,8 +373,8 @@ const MessageInput = ({
 
       {/* Input Section */}
       <div className='flex items-end justify-between mx-auto max-w-8xl relative z-20 px-2 py-2 gap-2'>
-        {/* ✅ Utility Buttons (Emoji & Attachment) - Hidden when recording */}
-        {showUtilityButtons && (
+        {/* Utility Buttons (Emoji & Attachment) */}
+        {!isActivelyRecording && !hasReviewableAudio && !isDraggingMic && (
           <div className='flex items-center gap-4 animate-in fade-in duration-200'>
             {/* Emoji Button */}
             <button
@@ -407,6 +397,7 @@ const MessageInput = ({
                       <PaperClipIcon className='cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 dark:hover:stroke-gray-300 transition-colors' />
                     </span>
                   </Disclosure.Button>
+
                   <FileSelection
                     imageInputRef={imageInputRef}
                     documentInputRef={documentInputRef}
@@ -420,29 +411,29 @@ const MessageInput = ({
           </div>
         )}
 
-        {/* ✅ Voice Recorder - Shown when recording or has recorded audio */}
+        {/* Voice Recorder */}
         {showVoiceRecorder && (
-          <div className='flex-1 animate-in fade-in slide-in-from-bottom-4 duration-300 shrink-0'>
+          <div className='flex-1 animate-in fade-in slide-in-from-bottom-4 duration-300'>
             <VoiceRecorder
-              audioLevel={1}
+              uiState={uiState}
               isRecording={isRecording}
               isPaused={isPaused}
               recordingTime={recordingTime}
-              onStop={stopRecording}
+              audioLevel={1}
               onPause={pauseRecording}
               onResume={resumeRecording}
               onCancel={cancelRecording}
               onSend={handleSendVoiceMessage}
-              hasRecording={!!audioUrl}
+              hasRecording={!!audioUrl && !isRecordingCancelled}
               isRecordingCancelled={isRecordingCancelled}
-              isLocked={isLocked}
-              slideProgress={slideProgress}
-              isCancelled={isCancelled}
+              micRef={micRef}
+              cancelRef={cancelRef}
+              lockRef={lockRef}
             />
           </div>
         )}
 
-        {/* ✅ Text Input - Shown when not recording */}
+        {/* Text Input */}
         {showTextInput && (
           <textarea
             title='message input'
@@ -463,45 +454,67 @@ const MessageInput = ({
           />
         )}
 
-        {/* ✅ Action Button - Either Mic or Send */}
-        <div className='animate-in fade-in zoom-in-95 duration-200'>
-          {showMicButton ? (
-            <button
-              type='button'
-              onMouseDown={(e) => handleMicPress(e.clientX, e.clientY)}
-              onMouseMove={(e) => onMove(e.clientX, e.clientY)}
-              onMouseUp={handleMicRelease}
-              onTouchStart={(e) => handleMicPress(e.touches[0].clientX, e.touches[0].clientY)}
-              onTouchMove={(e) => onMove(e.touches[0].clientX, e.touches[0].clientY)}
-              onTouchEnd={handleMicRelease}
-              className={classNames(
-                'p-3 rounded-full transition-all duration-200 hover:scale-110 active:scale-95',
-                isLocked
-                  ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700'
-                  : 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700',
-                'text-white shadow-lg',
-              )}
-              title='Hold to record voice message'>
-              <MicrophoneIcon className='h-6 w-6' />
-            </button>
-          ) : (
-            showSendButton && (
-              <button
+        {/* Action Buttons with Smooth Transitions */}
+        <AnimatePresence mode='wait' initial={false}>
+          {shouldShowMicButton && (
+            <div className='relative w-12 h-12 shrink-0'>
+              <motion.button
+                key='mic-button'
+                type='button'
+                onPointerDown={handleMicPointerDown}
+                onPointerMove={handleMicPointerMove}
+                onPointerUp={handleMicPointerUp}
+                onPointerCancel={handleMicPointerUp}
+                initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                exit={{ scale: 0.8, opacity: 0, rotate: 90 }}
+                transition={{
+                  duration: 0.2,
+                  ease: [0.4, 0, 0.2, 1],
+                }}
+                className={classNames(
+                  'absolute inset-0 p-3 rounded-full transition-colors duration-200',
+                  uiState === 'locked'
+                    ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700'
+                    : 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700',
+                  'text-white shadow-lg touch-none',
+                )}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title='Hold to record voice message'>
+                <MicrophoneIcon className='h-6 w-6' />
+              </motion.button>
+            </div>
+          )}
+
+          {shouldShowSendButton && (
+            <div className='relative w-12 h-12 shrink-0'>
+              <motion.button
+                key='send-button'
                 title='Send message'
                 type='button'
-                disabled={!canSend}
+                disabled={!canSendMessage}
                 onClick={handleSendMessageLocal}
+                initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                exit={{ scale: 0.8, opacity: 0, rotate: 90 }}
+                transition={{
+                  duration: 0.2,
+                  ease: [0.4, 0, 0.2, 1],
+                }}
                 className={classNames(
-                  'p-3 rounded-full shrink-0 flex items-center justify-center transition-all duration-200 shadow-lg',
-                  canSend
-                    ? 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white hover:scale-110 active:scale-95'
+                  'absolute inset-0 p-3 rounded-full transition-colors duration-200 shadow-lg flex items-center justify-center',
+                  canSendMessage
+                    ? 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed',
-                )}>
+                )}
+                whileHover={canSendMessage ? { scale: 1.1 } : {}}
+                whileTap={canSendMessage ? { scale: 0.95 } : {}}>
                 <PaperAirplaneIcon className='h-5 w-5' />
-              </button>
-            )
+              </motion.button>
+            </div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
     </div>
   );

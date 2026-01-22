@@ -14,6 +14,7 @@ import {
   setUnreadMessages,
   onChatMessageDelete,
   updateMessageReactions,
+  replaceOptimisticMessage,
 } from '../features/chats/chat.reducer.ts';
 import {
   useDeleteChatMessageMutation,
@@ -76,9 +77,6 @@ export const useMessage = () => {
   const users = availableUsers?.data as User[];
 
   const { isOnline } = useNetwork();
-
-  // Add visual indicator for queued messages
-  const [queuedMessageIds, setQueuedMessageIds] = useState<string[]>([]);
 
   // Initialize audio manager
   useEffect(() => {
@@ -485,69 +483,64 @@ export const useMessage = () => {
 
     // Clear input fields immediately for better UX
     const files = attachmentFiles.files;
+    const tempId = `temp-${Date.now()}`;
 
     setMessage('');
     setAttachmentFiles({} as any);
 
-    // ✅ Check if user is offline
-    if (!isOnline) {
-      // Queue the message
-      const queuedId = messageQueue.add({
-        chatId: currentChat._id,
-        content: processedMessage.content,
-        attachments: files || undefined,
-        mentions: processedMessage.mentions,
-      });
+    toast.info('You are offline. Message will be sent when you reconnect.', {
+      autoClose: 3000,
+    });
 
-      setQueuedMessageIds((prev) => [...prev, queuedId]);
+    // Add optimistic UI update with "queued" status
+    const tempMessage = {
+      _id: tempId,
+      content: processedMessage.content,
+      sender: currentUser!,
+      chat: currentChat._id,
+      attachments: files,
+      status: 'queued', // Custom status
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
-      toast.info('You are offline. Message will be sent when you reconnect.', {
-        autoClose: 3000,
-      });
-
-      // Add optimistic UI update with "queued" status
-      const tempMessage = {
-        _id: queuedId,
-        content: processedMessage.content,
-        sender: currentUser!,
-        chat: currentChat._id,
-        attachments: files,
-        status: 'queued', // Custom status
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
+    try {
       dispatch(onMessageReceived({ data: tempMessage as unknown as ChatMessageInterface }));
 
-      return;
-    }
-
-    // ✅ User is online - send normally
-    await sendMessage({
-      chatId: currentChat._id,
-      data: {
-        content: processedMessage.content,
-        attachments: files,
-        mentions: processedMessage.mentions,
-      },
-    })
-      .unwrap()
-      .then(() => {
-        playMessageSound();
-        scrollToBottom();
-      })
-      .catch((error: any) => {
-        console.error(error);
-        toast.error('Failed to send message');
-
-        // Re-queue on failure
+      if (!isOnline) {
         messageQueue.add({
           chatId: currentChat._id,
           content: processedMessage.content,
           attachments: files || undefined,
           mentions: processedMessage.mentions,
         });
-      });
+
+        return;
+      }
+
+      const response = await sendMessage({
+        chatId: currentChat._id,
+        data: {
+          content: processedMessage.content,
+          attachments: files,
+          mentions: processedMessage.mentions,
+        },
+      }).unwrap();
+
+      playMessageSound();
+      scrollToBottom();
+
+      dispatch(
+        replaceOptimisticMessage({
+          chatId: currentChat._id,
+          tempId: tempId, // The 'temp-xxx' ID you created
+          realMessage: response.data, // The actual message from server
+        }),
+      );
+    } catch (error) {
+      console.error('Failed to send:', error);
+      toast.error('Failed to send message');
+    }
   };
 
   return {
@@ -590,7 +583,6 @@ export const useMessage = () => {
     showScrollButton,
     sendChatMessage,
     filteredMentionUsers,
-    queuedMessageIds,
     selectedUser,
   };
 };

@@ -67,6 +67,30 @@
     animation: pulse-wave 1s ease-in-out infinite;
   }
 
+  @keyframes shimmer-x {
+    0%,
+    100% {
+      transform: translateX(0);
+      opacity: 0.4;
+    }
+    50% {
+      transform: translateX(-4px);
+      opacity: 1;
+    }
+  }
+
+  .animate-shimmer-x {
+    animation: shimmer-x 1.5s infinite ease-in-out;
+  }
+
+  /* Senior Tip: Ensure the draggable mic icon has this */
+  .mic-draggable {
+    will-change: transform;
+    touch-action: none; /* Prevents browser pull-to-refresh during recording */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   /* Recording indicator pulse */
   @keyframes recording-pulse {
     0%,
