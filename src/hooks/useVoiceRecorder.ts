@@ -112,7 +112,14 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
 
         // Cleanup
         streamRef.current?.getTracks().forEach((t) => t.stop());
-        audioContextRef.current?.close();
+
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          try {
+            await audioContextRef.current.close();
+          } catch (e) {
+            console.warn('AudioContext already closed or closing', e);
+          }
+        }
       };
 
       mediaRecorder.start(100);
@@ -203,9 +210,12 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       mediaRecorderRef.current.stop();
     }
 
-    // 2. Stop all mic tracks immediately
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch(() => {});
     }
 
     if (timerRef.current) clearInterval(timerRef.current);
@@ -236,8 +246,11 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
         }
-        if (audioContextRef.current) {
-          audioContextRef.current.close();
+
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close().catch((err) => {
+            console.warn('Error closing AudioContext on unmount:', err);
+          });
         }
       } catch (error) {
         console.log(error);
