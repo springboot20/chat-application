@@ -53,14 +53,14 @@ export const useChat = () => {
     (chatToUpdateId: string, message: ChatMessageInterface) => {
       dispatch(updateChatLastMessage({ chatToUpdateId, message }));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const onNewChat = useCallback(
     (chat: ChatListItemInterface) => {
       dispatch(newChat({ chat }));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const onGroupChatRename = useCallback(
@@ -68,18 +68,17 @@ export const useChat = () => {
       dispatch(updateGroupName({ chat: data }));
       refetchChats();
     },
-    [dispatch, refetchChats]
+    [dispatch, refetchChats],
   );
 
   const _onChatLeave = useCallback(
     (chat: ChatListItemInterface) => {
       dispatch(onChatLeave({ chat }));
-
       toast('A chat you were participating in has been deleted', {
         type: 'info',
       });
     },
-    [dispatch]
+    [dispatch],
   );
 
   return {

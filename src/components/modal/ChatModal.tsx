@@ -48,8 +48,9 @@ export const ChatModal: React.FC<{
       onSuccess();
       handleClose();
     } catch (error: any) {
-      const { message } = error.data;
-      toast(message, { type: 'error' });
+      console.log();
+      // const { message } = error.data;
+      // toast(message, { type: 'error' });
       handleClose();
     } finally {
       setCreatingChat(false);

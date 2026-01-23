@@ -35,7 +35,7 @@ const ChatSlice = createSlice({
     newChat: (state, action: PayloadAction<{ chat: ChatListItemInterface }>) => {
       const { chat } = action.payload;
       state.chats = [chat, ...state.chats];
-      LocalStorage.set('chats', removeCircularReferences(current(state.chats)));
+      LocalStorage.set('chats', removeCircularReferences(state.chats));
     },
 
     onChatLeave: (state, action: PayloadAction<{ chat: ChatListItemInterface }>) => {
@@ -47,7 +47,7 @@ const ChatSlice = createSlice({
       }
 
       state.chats = state.chats?.filter((ch) => ch?._id !== chat?._id);
-      LocalStorage.set('chats', removeCircularReferences(current(state.chats)));
+      LocalStorage.set('chats', removeCircularReferences(state.chats));
     },
 
     // ✅ NEW: Specifically for replacing Temp IDs with Server IDs after upload
@@ -75,8 +75,8 @@ const ChatSlice = createSlice({
         state.chats[chatIndex].lastMessage = realMessage;
       }
 
-      LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
-      LocalStorage.set('chats', removeCircularReferences(current(state.chats)));
+      LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
+      LocalStorage.set('chats', removeCircularReferences(state.chats));
     },
 
     // ✅ ENHANCED: onMessageReceived to handle Status Updates and Merging
@@ -88,7 +88,7 @@ const ChatSlice = createSlice({
         state.chatMessages[chatId] = [];
       }
 
-      const currentMessages = current(state.chatMessages[chatId]);
+      const currentMessages = state.chatMessages[chatId];
 
       const existingIndex = currentMessages.findIndex((msg) => {
         if (msg._id === message._id) return true;
@@ -116,7 +116,7 @@ const ChatSlice = createSlice({
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
 
-      LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
+      LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
     },
 
     updateMessageReactions: (
@@ -167,7 +167,7 @@ const ChatSlice = createSlice({
         };
       }
 
-      LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
+      LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
     },
 
     setCurrentChat: (state, action) => {
@@ -198,7 +198,7 @@ const ChatSlice = createSlice({
           LocalStorage.set('current-chat', updatedChat);
         }
 
-        LocalStorage.set('chats', removeCircularReferences(current(state.chats)));
+        LocalStorage.set('chats', removeCircularReferences(state.chats));
       }
     },
 
@@ -221,7 +221,7 @@ const ChatSlice = createSlice({
         }
       }
 
-      LocalStorage.set('chats', removeCircularReferences(current(state.chats)));
+      LocalStorage.set('chats', removeCircularReferences(state.chats));
     },
 
     onChatDelete: (state, action: PayloadAction<{ chatId: string }>) => {
@@ -234,9 +234,9 @@ const ChatSlice = createSlice({
         LocalStorage.remove('current-chat');
       }
 
-      LocalStorage.set('chats', removeCircularReferences(current(state.chats)));
-      LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
-      LocalStorage.set('unreadMessages', removeCircularReferences(current(state.unreadMessages)));
+      LocalStorage.set('chats', removeCircularReferences(state.chats));
+      LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
+      LocalStorage.set('unreadMessages', removeCircularReferences(state.unreadMessages));
     },
 
     onChatMessageDelete: (
@@ -273,7 +273,7 @@ const ChatSlice = createSlice({
         };
       }
 
-      LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
+      LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
     },
 
     // ✅ FIXED: updateMessageDelivery
@@ -360,7 +360,7 @@ const ChatSlice = createSlice({
         }
       }
 
-      LocalStorage.set('chatmessages', removeCircularReferences(current(state.chatMessages)));
+      LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
     },
   },
 
@@ -375,7 +375,8 @@ const ChatSlice = createSlice({
       const { data } = action.payload;
       const { chatId, messages } = data;
       state.chatMessages[chatId] = messages;
-      LocalStorage.set('chatmessages', current(state.chatMessages));
+
+      LocalStorage.set('chatmessages', state.chatMessages);
     });
 
     builder.addMatcher(ChatApiSlice.endpoints.getAvailableUsers.matchFulfilled, (state, action) => {
@@ -395,7 +396,7 @@ const ChatSlice = createSlice({
         state.chats = [data, ...state.chats];
       }
 
-      LocalStorage.set('chats', current(state.chats));
+      LocalStorage.set('chats', state.chats);
     });
 
     builder.addMatcher(ChatApiSlice.endpoints.createGroupChat.matchFulfilled, (state, action) => {
@@ -409,7 +410,7 @@ const ChatSlice = createSlice({
         state.chats = [data, ...state.chats];
       }
 
-      LocalStorage.set('chats', current(state.chats));
+      LocalStorage.set('chats', state.chats);
     });
   },
 });
