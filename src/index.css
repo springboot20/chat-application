@@ -218,4 +218,15 @@
     animation: bounce 0.4s ease-in-out infinite alternate;
     animation-delay: 0s;
   }
+
+  [contenteditable]:empty:before {
+    content: attr(placeholder);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: text;
+  }
+
+  [contenteditable] {
+    caret-color: #25d366; /* WhatsApp Green caret */
+    outline: none;
+  }
 }
