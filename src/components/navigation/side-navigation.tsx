@@ -1,4 +1,4 @@
-import {  CogIcon } from '@heroicons/react/24/outline';
+import { CogIcon } from '@heroicons/react/24/outline';
 import { Settings } from '../../pages/settings/Settings';
 import { useState } from 'react';
 import { classNames } from '../../utils';
@@ -102,7 +102,7 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab
             </ul>
           </div>
         </div>
-        <div className=''>
+        <div className='hidden lg:block'>
           <div className='flex items-center'>
             {/* Mobile menu button*/}
             <button
@@ -123,4 +123,4 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab
   );
 };
 
-export default SideNavigation;
+export { SideNavigation };

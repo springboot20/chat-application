@@ -1,11 +1,11 @@
-import { ApiRequestHandlerProps } from "../types/api";
-import { toast } from "react-toastify";
-import { ChatListItemInterface } from "../types/chat";
-import { User } from "../types/auth";
-import moment from "moment";
+import { ApiRequestHandlerProps } from '../types/api';
+import { toast } from 'react-toastify';
+import { ChatListItemInterface } from '../types/chat';
+import { User } from '../types/auth';
+import moment from 'moment';
 
 export const classNames = (...className: (string | boolean | undefined)[]) => {
-  return className.filter(Boolean).join(" ");
+  return className.filter(Boolean).join(' ');
 };
 
 export const formatMessageTime = (timestamp: string | Date): string => {
@@ -49,21 +49,21 @@ export const requestHandler = async ({
     const response = await api();
     const { data } = response;
 
-    if (data?.success && response.status.toString().startsWith("2")) {
+    if (data?.success && response.status.toString().startsWith('2')) {
       onSuccess(data, data.message, toast.success);
     }
   } catch (error: any) {
     if ([401, 403].includes(error?.response?.data.statusCode)) {
       LocalStorage.clear();
-      if (isBrowser) window.location.href = "./";
+      if (isBrowser) window.location.href = './';
     }
-    onError(error?.response?.data?.message ?? "something went wrong", toast.error);
+    onError(error?.response?.data?.message ?? 'something went wrong', toast.error);
   } finally {
     setLoading && setLoading(false);
   }
 };
 
-export const isBrowser = typeof window !== "undefined";
+export const isBrowser = typeof window !== 'undefined';
 
 export class AudioManager {
   private audio: HTMLAudioElement;
@@ -71,18 +71,18 @@ export class AudioManager {
 
   constructor(audioSrc: string) {
     this.audio = new Audio(audioSrc);
-    this.audio.preload = "auto";
+    this.audio.preload = 'auto';
     this.setupAudio();
   }
 
   private setupAudio() {
     this.audio.volume = 0.5;
-    this.audio.addEventListener("canplaythrough", () => {
+    this.audio.addEventListener('canplaythrough', () => {
       this.isReady = true;
     });
 
-    this.audio.addEventListener("error", (e) => {
-      console.error("Audio loading error: ", e);
+    this.audio.addEventListener('error', (e) => {
+      console.error('Audio loading error: ', e);
     });
   }
 
@@ -97,13 +97,13 @@ export class AudioManager {
       this.audio.volume = 0.5;
       this.isReady = Boolean(1);
     } catch (error: any) {
-      console.warn("Audio initialization failed:", error);
+      console.warn('Audio initialization failed:', error);
     }
   }
 
   async playSound(): Promise<void> {
     if (!this.isReady) {
-      console.warn("Audio not ready. User interaction required first.");
+      console.warn('Audio not ready. User interaction required first.');
       return;
     }
 
@@ -112,7 +112,7 @@ export class AudioManager {
       this.audio.currentTime = 0;
       await this.audio.play();
     } catch (error) {
-      console.error("Failed to play audio:", error);
+      console.error('Failed to play audio:', error);
     }
   }
 
@@ -156,26 +156,26 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
 
     return {
       title: chat?.name,
-      lastMessage: "No message yet",
+      lastMessage: 'No message yet',
       description: chat?.isGroupChat
         ? `${chat?.participants?.length || 0} members in the group`
         : participant?.email,
-    }; 
+    };
   }
 
-  const lastMessage = chat.lastMessage.content || "";
+  const lastMessage = chat.lastMessage.content || '';
   // const replyLastMessage = chat.lastMessage.content || "";
 
   const attachmentText =
     chat.lastMessage.attachments &&
     chat.lastMessage.attachments.length > 0 &&
-    `${chat.lastMessage.attachments.length} ${chat.lastMessage.attachments.length > 1 ? "s" : ""}`;
+    `${chat.lastMessage.attachments.length} ${chat.lastMessage.attachments.length > 1 ? 's' : ''}`;
   if (chat.isGroupChat) {
     return {
       title: chat.name,
       lastMessage: chat.lastMessage.sender?.username
         ? `${chat.lastMessage?.sender?.username}: ${truncate(lastMessage, 20)}${
-            attachmentText ? attachmentText : ""
+            attachmentText ? attachmentText : ''
           }`
         : lastMessage,
       description: `${chat.participants?.length} members in the group`,
@@ -185,7 +185,7 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
 
     return {
       title: participant?.username,
-      lastMessage: lastMessage || "No message yet",
+      lastMessage: lastMessage || 'No message yet',
       description: participant?.email,
     };
   }
@@ -203,13 +203,13 @@ export function removeCircularReferences(obj: any) {
   const seen = new WeakSet();
   return JSON.parse(
     JSON.stringify(obj, (_, value) => {
-      if (typeof value === "object" && value !== null) {
+      if (typeof value === 'object' && value !== null) {
         if (seen.has(value)) {
           return;
         }
         seen.add(value);
       }
       return value;
-    })
+    }),
   );
 }
