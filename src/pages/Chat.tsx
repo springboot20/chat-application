@@ -412,7 +412,7 @@ export const Chat = () => {
                             <button
                               type='button'
                               title='close chat'
-                              className='flex items-center justify-center lg:hidden'
+                              className='flex items-center justify-center'
                               onClick={(event) => {
                                 event.stopPropagation();
                                 if (socket) {

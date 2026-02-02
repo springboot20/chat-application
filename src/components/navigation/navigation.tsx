@@ -29,7 +29,8 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div
           className={classNames(
             'flex-shrink-0 border-r dark:border-white/10 lg:w-[30rem]',
-            currentChat ? 'hidden' : 'block',
+            currentChat ? 'hidden lg:block' : 'w-full lg:w-[30rem]', // Hide list on mobile when chatting
+            'lg:block lg:w-[30rem]',
           )}>
           <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
 

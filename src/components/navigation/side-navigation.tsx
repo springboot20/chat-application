@@ -59,7 +59,7 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab
 
   return (
     <nav
-      className={`fixed inset-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-black dark:border-r-white/15 w-16 sm:w-20 z-20 hidden lg:block`}>
+      className={`fixed inset-0 min-h-screen shadow-sm border-r-[1.5px] border-r-gray-600/30 bottom-0 bg-white dark:bg-black dark:border-r-white/15 w-16 sm:w-20 z-20`}>
       <div className={`h-full flex justify-between p-5 flex-col items-center`}>
         <div className='flex flex-col justify-between items-center'>
           <div className='flex flex-col items-center space-y-8'>
