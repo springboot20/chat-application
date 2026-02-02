@@ -3,7 +3,6 @@ import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { UserIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { classNames } from '../utils/index.ts';
 import { Navigation } from '../components/navigation/navigation.tsx';
-import { SideNavigation } from '../components/navigation/side-navigation.tsx';
 import { Link } from 'react-router-dom';
 import {
   JOIN_CHAT_EVENT,
@@ -381,16 +380,13 @@ export const Chat = () => {
         <React.Fragment>
           <div className={classNames('w-full flex items-stretch h-screen flex-shrink-0')}>
             {/* LEFT SIDEBAR - Chat list / Status list / Settings */}
-            <div className={classNames('flex-shrink-0 border-r dark:border-white/10 lg:w-[30rem]')}>
-              <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-
-              <Navigation
-                open={open}
-                close={close}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-              />
-            </div>
+            <Navigation
+              open={open}
+              close={close}
+              activeTab={activeTab}
+              currentChat={currentChat!}
+              setActiveTab={setActiveTab}
+            />
 
             {/* MAIN CONTENT AREA */}
             <main className={classNames('flex-grow transition-all z-10')}>

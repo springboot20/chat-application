@@ -1,25 +1,42 @@
 import React, { Fragment } from 'react';
 import { MessageTabComponent } from './MessageTab';
 import { StatusTabComponent } from './StatusTab';
+import { classNames } from '../../utils';
+import { SideNavigation } from './side-navigation';
+import { ChatListItemInterface } from '../../types/chat';
 
 type Tab = 'status' | 'chat_messages' | 'settings';
 
 type NavigationProps = {
-  setActiveTab?: React.Dispatch<React.SetStateAction<Tab>>;
+  setActiveTab: React.Dispatch<React.SetStateAction<Tab>>;
   activeTab: Tab;
   open: boolean;
   close: () => any;
+  currentChat: ChatListItemInterface;
 };
 
-export const Navigation: React.FC<NavigationProps> = ({ open, close, activeTab }) => {
+export const Navigation: React.FC<NavigationProps> = ({
+  open,
+  close,
+  activeTab,
+  setActiveTab,
+  currentChat,
+}) => {
   console.log(open);
   return (
     <Fragment>
       {activeTab === 'chat_messages' && (
-        <Fragment>
+        <div
+          className={classNames(
+            'flex-shrink-0 border-r dark:border-white/10 lg:w-[30rem]',
+            currentChat ? 'hidden' : 'block',
+          )}>
+          <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+
           <MessageTabComponent open={open} close={close} />
-        </Fragment>
+        </div>
       )}
+
       {activeTab === 'status' && (
         <Fragment>
           <StatusTabComponent />
