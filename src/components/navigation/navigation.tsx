@@ -25,18 +25,19 @@ export const Navigation: React.FC<NavigationProps> = ({
   console.log(open);
   return (
     <Fragment>
-      {activeTab === 'chat_messages' && (
-        <div
-          className={classNames(
-            'flex-shrink-0 border-r dark:border-white/10 lg:w-[30rem]',
-            currentChat ? 'hidden lg:block' : 'w-full lg:w-[30rem]', // Hide list on mobile when chatting
-            'lg:block lg:w-[30rem]',
-          )}>
-          <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-
-          <MessageTabComponent open={open} close={close} />
-        </div>
-      )}
+      <Fragment>
+        <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        {activeTab === 'chat_messages' && (
+          <div
+            className={classNames(
+              'flex-shrink-0 border-r dark:border-white/10 lg:w-[30rem]',
+              currentChat ? 'hidden lg:block' : 'w-full lg:w-[30rem]', // Hide list on mobile when chatting
+              'lg:block lg:w-[30rem]',
+            )}>
+            <MessageTabComponent open={open} close={close} />
+          </div>
+        )}
+      </Fragment>
 
       {activeTab === 'status' && (
         <Fragment>
