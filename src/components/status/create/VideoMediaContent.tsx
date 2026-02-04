@@ -88,7 +88,7 @@ export default function VideoMediaContent() {
       initial={{ scale: 0.85, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.85, opacity: 0 }}
-      className='mt-16 bg-gray-600/30 h-screen flex flex-col'>
+      className='flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16'>
       <header className='h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 shrink-0'>
         <button
           type='button'
@@ -100,7 +100,7 @@ export default function VideoMediaContent() {
         <div className='w-10' />
       </header>
 
-      <div className='p-4 space-y-4 flex-1 flex flex-col h-full'>
+      <div className='flex-1 overflow-y-auto p-4 space-y-4 mb-20 lg:mb-0'>
         {/* Source Switcher */}
         <div className='flex justify-center shrink-0'>
           <div className='flex bg-black/20 p-1 rounded-full'>
@@ -125,7 +125,7 @@ export default function VideoMediaContent() {
           </div>
         </div>
 
-        <div className='relative aspect-[9/16] w-full max-h-[480px] mx-auto bg-black rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10'>
+        <div className='relative aspect-[9/16] max-h-[520px] w-full mx-auto bg-black rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 shrink-0'>
           <AnimatePresence mode='wait'>
             {viewMode === 'camera' ? (
               <motion.div
@@ -170,7 +170,7 @@ export default function VideoMediaContent() {
         {/* Caption Field - Only show if a video is selected and in gallery mode */}
         {videoUrl && <CaptionInputComponent file={selectedVideo as File} type='video' />}
 
-        <div className='flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide'>
+        <div className='flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide shrink-0'>
           {/* Add More Button */}
           {selectedVideoFiles.length < 6 && (
             <label className='flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group'>

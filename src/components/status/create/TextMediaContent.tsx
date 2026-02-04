@@ -25,9 +25,10 @@ export default function TextMediaContent() {
         scale: 0.85,
         opacity: 0,
       }}
-      className='mt-16 bg-gray-600/30 h-full'>
-      <div className='w-full h-full space-y-5'>
-        <TextStatusTab />
+      className='flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16'>
+      <TextStatusTab />
+
+      <div className='flex-1 overflow-y-auto p-4 relative mb-20 lg:mb-0'>
         <TextEditorContent />
       </div>
     </motion.div>
@@ -210,7 +211,7 @@ const TextEditorContent = () => {
   return (
     <Fragment>
       {openEmoji && (
-        <div className='bottom-24 absolute left-6 z-50'>
+        <div className='absolute bottom-20 left-4 z-50'>
           <EmojiPicker
             className='absolute min-w-[300px] sm:min-w-[500px]'
             searchPlaceHolder='search for emoji'
@@ -223,7 +224,7 @@ const TextEditorContent = () => {
         </div>
       )}
 
-      <div className='w-full max-w-2xl mx-auto'>
+      <div className='w-full max-w-2xl mx-auto relative'>
         <fieldset
           className='w-full h-[50vh] rounded-2xl flex items-center p-8 mb-4 relative overflow-hidden transition-all duration-500 shadow-xl border-4 border-white/5'
           style={{ backgroundColor: selectedTextBackground }}>
@@ -338,7 +339,7 @@ const TextStatusTab = () => {
     <Fragment>
       <ColorModal open={openColorPicker} close={handleCloseColorPicker} />
 
-      <header className='h-14 border-b border-gray-100 dark:border-white/5'>
+      <header className='h-14 border-b border-gray-100 dark:border-white/5 shrink-0'>
         <div className='h-full w-full px-4 flex items-center justify-between'>
           <button
             type='button'
@@ -386,10 +387,7 @@ const ColorModal = ({ open, close }: { open: boolean; close: () => void }) => {
 
   return (
     <Transition.Root show={open} as={Fragment}>
-      <Dialog
-        as='div'
-        onClose={close}
-        className='fixed z-[999] inset-0 overflow-y-auto left-[35rem]'>
+      <Dialog as='div' onClose={close} className='fixed inset-0 z-[999]'>
         {/* Overlay */}
         <Transition.Child
           as={Fragment}
@@ -399,7 +397,7 @@ const ColorModal = ({ open, close }: { open: boolean; close: () => void }) => {
           leave='ease-in duration-200'
           leaveFrom='opacity-100'
           leaveTo='opacity-0'>
-          <Dialog.Overlay className='backdrop-blur-sm fixed left-0 lg:left-[30rem] right-0 inset-y-0 bg-gray-600/40' />
+          <Dialog.Overlay className='fixed inset-0 bg-black/40 backdrop-blur-sm' />
         </Transition.Child>
 
         <div className='fixed left-0 lg:left-[30rem] right-0 overflow-hidden'>

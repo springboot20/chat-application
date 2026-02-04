@@ -11,8 +11,8 @@ export const Settings: React.FC<{ open: boolean; onClose: () => void }> = ({ ope
   return (
     <>
       <Transition appear show={open} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={handleClose}>
-          <div className="fixed inset-0 z-10">
+        <Dialog as="div" className="relative z-50" onClose={handleClose}>
+          <div className="fixed inset-0 z-50">
             <div className="flex min-h-full items-end justify-center p-3 text-center sm:items-center sm:p-0">
               <Transition.Child
                 as={Fragment}
@@ -24,7 +24,7 @@ export const Settings: React.FC<{ open: boolean; onClose: () => void }> = ({ ope
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
                 <Dialog.Panel
-                  className="transition-all transform rounded-lg h-1/2 p-4 fixed bottom-12 left-32 max-w-xl lg:max-w-3xl w-full z-20 bg-gray-200 dark:bg-gray-600 shadow-lg"
+                  className="transition-all transform rounded-lg h-1/2 p-4 fixed bottom-12 left-32 max-w-xl lg:max-w-3xl w-full bg-gray-200 dark:bg-gray-600 shadow-lg"
                   style={{
                     overflow: "inherit",
                   }}

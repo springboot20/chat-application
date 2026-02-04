@@ -3,7 +3,6 @@ import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { UserIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { classNames } from '../utils/index.ts';
 import { Navigation } from '../components/navigation/navigation.tsx';
-import { SideNavigation } from '../components/navigation/side-navigation.tsx';
 import { Link } from 'react-router-dom';
 import {
   JOIN_CHAT_EVENT,
@@ -381,26 +380,23 @@ export const Chat = () => {
         <React.Fragment>
           <div className={classNames('w-full flex items-stretch h-screen flex-shrink-0')}>
             {/* LEFT SIDEBAR - Chat list / Status list / Settings */}
-            <div className={classNames('flex-shrink-0 border-r dark:border-white/10 lg:w-[30rem]')}>
-              <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-
-              <Navigation
-                open={open}
-                close={close}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-              />
-            </div>
+            <Navigation
+              open={open}
+              close={close}
+              activeTab={activeTab}
+              currentChat={currentChat!}
+              setActiveTab={setActiveTab}
+            />
 
             {/* MAIN CONTENT AREA */}
-            <main className={classNames('flex-grow transition-all z-10')}>
+            <main className={classNames('flex-grow transition-all')}>
               <div
                 className={classNames(
                   'relative flex flex-col justify-between h-full',
                   // Hide main area on mobile when no chat is selected and on chat_messages tab
                   !currentChat && activeTab === 'chat_messages'
                     ? 'hidden lg:block'
-                    : 'bg-white dark:bg-black lg:relative',
+                    : 'bg-white dark:bg-black',
                 )}>
                 {/* CHAT MESSAGES TAB */}
                 {activeTab === 'chat_messages' &&
@@ -416,7 +412,7 @@ export const Chat = () => {
                             <button
                               type='button'
                               title='close chat'
-                              className='flex items-center justify-center lg:hidden'
+                              className='flex items-center justify-center'
                               onClick={(event) => {
                                 event.stopPropagation();
                                 if (socket) {
@@ -712,9 +708,12 @@ export const Chat = () => {
                       No chat selected
                     </div>
                   ))}
-
                 {/* STATUS TAB */}
-                {activeTab === 'status' && <CreateOrViewStatusWindowPanel />}
+                {activeTab === 'status' && (
+                  <div className='h-full overflow-hidden'>
+                    <CreateOrViewStatusWindowPanel />
+                  </div>
+                )}
               </div>
             </main>
 
