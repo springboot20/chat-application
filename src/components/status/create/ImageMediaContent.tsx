@@ -111,8 +111,8 @@ export default function ImageMediaContent() {
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.9, opacity: 0 }}
-      className='mt-16 bg-gray-600/30 h-full overflow-x-hidden overflow-auto pb-20 shadow-2xl'>
-      <header className='h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 font-nunito'>
+      className='flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16'>
+      <header className='h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 font-nunito shrink-0'>
         <button
           type='button'
           onClick={closeMediaContent}
@@ -123,7 +123,7 @@ export default function ImageMediaContent() {
         <div className='w-10' /> {/* Spacer for balance */}
       </header>
 
-      <div className='p-4 space-y-4 min-h-0'>
+      <div className='p-4 space-y-4 flex-1 overflow-y-auto mb-20 lg:mb-0'>
         {/* SUB-SWITCHER: Gallery vs Camera */}
         <div className='flex justify-center'>
           <div className='flex bg-black/20 p-1 rounded-full'>

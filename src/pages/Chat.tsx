@@ -389,14 +389,14 @@ export const Chat = () => {
             />
 
             {/* MAIN CONTENT AREA */}
-            <main className={classNames('flex-grow transition-all z-10')}>
+            <main className={classNames('flex-grow transition-all')}>
               <div
                 className={classNames(
                   'relative flex flex-col justify-between h-full',
                   // Hide main area on mobile when no chat is selected and on chat_messages tab
                   !currentChat && activeTab === 'chat_messages'
                     ? 'hidden lg:block'
-                    : 'bg-white dark:bg-black lg:relative',
+                    : 'bg-white dark:bg-black',
                 )}>
                 {/* CHAT MESSAGES TAB */}
                 {activeTab === 'chat_messages' &&
@@ -708,9 +708,12 @@ export const Chat = () => {
                       No chat selected
                     </div>
                   ))}
-
                 {/* STATUS TAB */}
-                {activeTab === 'status' && <CreateOrViewStatusWindowPanel />}
+                {activeTab === 'status' && (
+                  <div className='h-full overflow-hidden'>
+                    <CreateOrViewStatusWindowPanel />
+                  </div>
+                )}
               </div>
             </main>
 

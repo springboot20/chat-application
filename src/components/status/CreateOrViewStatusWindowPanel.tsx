@@ -11,12 +11,13 @@ import ImageMediaContent from './create/ImageMediaContent';
 import VideoMediaContent from './create/VideoMediaContent';
 import TextMediaContent from './create/TextMediaContent';
 import { MediaContentType } from '../../context/StatusContext';
+import { Fragment } from 'react';
 
 export const CreateOrViewStatusWindowPanel = () => {
   const { statusWindow } = useStatusStories();
 
   return (
-    <div className='shrink-0 h-full w-full'>
+    <div className='h-screen w-full overflow-hidden lg:pl-[30rem]'>
       {statusWindow === 'view-status' && statusWindow !== null && <ViewStatusWindowPanelSlot />}
       {statusWindow === 'create-status' && statusWindow !== null && <CreateStatusWindowPanelSlot />}
     </div>
@@ -28,10 +29,10 @@ export const CreateStatusWindowPanelSlot = () => {
     useStatusStories();
 
   return (
-    <div className='h-full'>
+    <div className='h-full flex flex-col'>
       <header
         className={classNames(
-          'fixed h-16 top-0 right-0 p-1.5 left-0 bg-white dark:bg-black border-b-[1.5px] border-b-gray-600/30 z-20 transition-all',
+          'fixed h-16 top-0 right-0 p-1.5 left-0 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all',
           'lg:left-[30rem]',
         )}>
         <div className='h-full w-full flex items-center px-2'>
@@ -50,9 +51,9 @@ export const CreateStatusWindowPanelSlot = () => {
         </div>
       </header>
 
-      <div className='h-full w-full'>
+      <Fragment>
         {mediaContentType === null && (
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4 place-content-center place-items-center max-w-xl mx-auto h-full mt-20 pb-24 md:pb-0 md:mt-0 p-4 lg:p-0'>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4 place-content-center place-items-center h-full pb-24 md:pb-0 p-4 lg:p-0'>
             {MEDIA_TYPES.map((type) => (
               <MediaTypeButtonComponent
                 key={type}
@@ -67,7 +68,7 @@ export const CreateStatusWindowPanelSlot = () => {
         {mediaContentType === 'text' && <TextMediaContent />}
         {mediaContentType === 'image' && <ImageMediaContent />}
         {mediaContentType === 'video' && <VideoMediaContent />}
-      </div>
+      </Fragment>
     </div>
   );
 };
@@ -76,10 +77,10 @@ export const ViewStatusWindowPanelSlot = () => {
   const { handleStatusWindowChange } = useStatusStories();
 
   return (
-    <div className='h-full w-full'>
+    <div className='h-full flex flex-col'>
       <header
         className={classNames(
-          'fixed h-16 top-0 right-0 p-1.5 left-0 bg-white dark:bg-black border-b-[1.5px] border-b-gray-600/30 z-20 transition-all',
+          'fixed h-16 top-0 right-0 p-1.5 left-0 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all',
           'lg:left-[30rem]',
         )}>
         <div className='h-full w-full flex items-center px-2'>
