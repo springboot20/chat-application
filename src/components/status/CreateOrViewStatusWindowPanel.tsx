@@ -295,11 +295,13 @@ export const ViewStatusWindowPanelSlot = () => {
 
   const [_, setElapsedTime] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isLongPress, setIsLongPress] = useState(false);
   const [videoDuration, setVideoDuration] = useState(5000);
   const [isMuted, setIsMuted] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
 
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const viewerRef = useRef<HTMLDivElement | null>(null);
 
@@ -425,11 +427,11 @@ export const ViewStatusWindowPanelSlot = () => {
   };
 
   const handleTap = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+    (clientX: number) => {
       const rect = viewerRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      const x = e.clientX - rect.left;
+      const x = clientX - rect.left;
       const tapZoneWidth = rect.width / 3;
 
       if (x < tapZoneWidth) {
@@ -449,6 +451,36 @@ export const ViewStatusWindowPanelSlot = () => {
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  const handleMouseDown = () => setIsPaused(true);
+  const handleMouseUp = () => setIsPaused(false);
+  const handleMouseLeave = () => setIsPaused(false);
+
+  const handleTouchStart = () => {
+    // Start a timer to detect if this is a "Long Press"
+    longPressTimeoutRef.current = setTimeout(() => {
+      setIsLongPress(true);
+      setIsPaused(true); // Pause the progress and video
+    }, 200); // 200ms threshold for long press
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    // Clear the timer
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+
+    if (isLongPress) {
+      // If it was a long press, just resume
+      setIsLongPress(false);
+      setIsPaused(false);
+    } else {
+      // If it was just a quick tap, handle navigation
+      // We pass the touch coordinates to our existing handleTap logic
+      const touch = e.changedTouches[0];
+      handleTap(touch.clientX);
+    }
+  };
 
   return (
     <div className='fixed inset-0 bg-black z-50 lg:left-[30rem]'>
@@ -518,7 +550,13 @@ export const ViewStatusWindowPanelSlot = () => {
             <div
               ref={viewerRef}
               className='relative z-10 w-full h-full flex items-center justify-center cursor-pointer'
-              onClick={handleTap}>
+              // Desktop Mouse Events
+              onMouseDown={handleMouseDown}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+              // Mobile Touch Events
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}>
               {/* Text Status */}
               {currentStatus.type === 'text' && currentStatus.textContent && (
                 <div
