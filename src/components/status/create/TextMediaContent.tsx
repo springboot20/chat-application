@@ -49,6 +49,7 @@ const TextEditorContent = () => {
     MAX_CHARS,
     mediaContentType,
     handlePostStatus,
+    isAddingNewTextStatus,
   } = useStatusStories();
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
   const { theme } = useTheme();
@@ -319,7 +320,7 @@ const TextEditorContent = () => {
               key='send-button'
               title='Send message'
               type='button'
-              disabled={!canPostTextStatus}
+              disabled={!canPostTextStatus || isAddingNewTextStatus}
               onClick={handlePostStatus}
               initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -336,7 +337,11 @@ const TextEditorContent = () => {
               )}
               whileHover={canPostTextStatus ? { scale: 1.1 } : {}}
               whileTap={canPostTextStatus ? { scale: 0.95 } : {}}>
-              <PaperAirplaneIcon className='h-5 w-5' />
+              {isAddingNewTextStatus ? (
+                <span className='size-4 rounded-full animate-spin' />
+              ) : (
+                <PaperAirplaneIcon className='h-5 w-5' />
+              )}
             </motion.button>
           </div>
         </div>

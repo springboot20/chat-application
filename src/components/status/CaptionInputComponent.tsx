@@ -13,7 +13,8 @@ export default function CaptionInputComponent({
   file: File;
   type: 'image' | 'video';
 }) {
-  const { setCaptions, captions, mediaContentType, handlePostStatus } = useStatusStories();
+  const { setCaptions, captions, mediaContentType, handlePostStatus, isAddingNewMediaStatus } =
+    useStatusStories();
   const captionRef = useRef<HTMLInputElement>(null);
   const { theme } = useTheme();
 
@@ -135,7 +136,7 @@ export default function CaptionInputComponent({
             key='send-button'
             title='Send message'
             type='button'
-            disabled={!canPostMediaStatus}
+            disabled={!canPostMediaStatus || isAddingNewMediaStatus}
             onClick={handlePostStatus}
             initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -152,7 +153,11 @@ export default function CaptionInputComponent({
             )}
             whileHover={canPostMediaStatus ? { scale: 1.1 } : {}}
             whileTap={canPostMediaStatus ? { scale: 0.95 } : {}}>
-            <PaperAirplaneIcon className='h-5 w-5' />
+            {isAddingNewMediaStatus ? (
+              <span className='size-4 rounded-full animate-spin' />
+            ) : (
+              <PaperAirplaneIcon className='h-5 w-5' />
+            )}
           </motion.button>
         </Fragment>
       </div>

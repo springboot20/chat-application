@@ -47,6 +47,8 @@ type StatusContextValue = {
   activeFileIndex: number;
   activeStatusIndex: number;
   progress: number;
+  isAddingNewMediaStatus: boolean;
+  isAddingNewTextStatus: boolean;
 
   setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>;
   setSelectedVideoFiles: React.Dispatch<React.SetStateAction<File[]>>;
@@ -92,8 +94,8 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedVideoFiles, setSelectedVideoFiles] = useState<File[]>([]);
 
-  const [addNewMediaStatus] = useAddNewMediaStatusMutation();
-  const [addNewTextStatus] = useAddNewTextStatusMutation();
+  const [addNewMediaStatus, { isLoading: isAddingNewMediaStatus }] = useAddNewMediaStatusMutation();
+  const [addNewTextStatus, { isLoading: isAddingNewTextStatus }] = useAddNewTextStatusMutation();
 
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [activeVideoFileIndex, setActiveVideoFileIndex] = useState(0);
@@ -221,10 +223,12 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     formData.append('metadata', JSON.stringify(metadata));
 
     try {
-      const response = await addNewMediaStatus(formData).unwrap();
+      await addNewMediaStatus(formData).unwrap();
 
-      console.log(response);
-      handleStatusWindowChange(null);
+      await Promise.all([
+        Promise.resolve(setTimeout(() => resetCreationState(), 2500)),
+        Promise.resolve(setTimeout(() => handleStatusWindowChange(null), 5000)),
+      ]);
     } catch (error) {
       console.error('Upload failed', error);
     }
@@ -276,6 +280,8 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
       setActiveStatusIndex,
       progress,
       setProgress,
+      isAddingNewMediaStatus,
+      isAddingNewTextStatus,
     }),
     [
       statusWindow,
@@ -301,6 +307,8 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
       setActiveStatusIndex,
       progress,
       setProgress,
+      isAddingNewMediaStatus,
+      isAddingNewTextStatus,
     ],
   );
 
