@@ -35,7 +35,7 @@ const MessageStatusTick = ({
   if (!isOwnedMessage) return null;
 
   const icons = {
-    queued: <ClockIcon className='w-3 h-3 text-orange-400 animate-pulse' />,
+    queued: <ClockIcon className='w-3 h-3 text-gray-400' />,
     sent: <CheckIcon className='w-3 h-3 text-gray-400' />,
     delivered: (
       <svg
@@ -835,7 +835,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           isOwnedMessage ? 'justify-end' : 'justify-start',
           getGlowClass(),
           isAnimating && (isOwnedMessage ? 'slide-right' : 'slide-left'),
-          !hasInternet && 'opacity-70 cursor-not-allowed',
         )}
         ref={containerRef}
         onDoubleClick={handleReactionPicker}

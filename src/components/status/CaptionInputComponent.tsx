@@ -1,8 +1,10 @@
-import { FaceSmileIcon } from '@heroicons/react/24/outline';
+import { FaceSmileIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { useStatusStories } from '../../hooks/useStatusStories';
 import { Fragment, useCallback, useRef, useState } from 'react';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { useTheme } from '../../context/ThemeContext';
+import { motion } from 'framer-motion';
+import { classNames } from '../../utils';
 
 export default function CaptionInputComponent({
   file,
@@ -11,7 +13,7 @@ export default function CaptionInputComponent({
   file: File;
   type: 'image' | 'video';
 }) {
-  const { setCaptions, captions } = useStatusStories();
+  const { setCaptions, captions, mediaContentType, handlePostStatus } = useStatusStories();
   const captionRef = useRef<HTMLInputElement>(null);
   const { theme } = useTheme();
 
@@ -84,7 +86,13 @@ export default function CaptionInputComponent({
 
       return { ...prev, [type]: newList };
     });
-  };  
+  };
+
+  const captionValue = captions[type]?.find((c: any) => c.id === String(file?.name))?.text;
+
+  const canPostMediaStatus =
+    mediaContentType === 'video' ||
+    (mediaContentType === 'image' && String(captionValue).length > 0);
 
   return (
     <Fragment>
@@ -106,7 +114,7 @@ export default function CaptionInputComponent({
         <Fragment>
           <button
             onClick={toggleEmojiPicker}
-            className='cursor-pointer h-8 w-8 lg:h-12 lg:w-12 shrink-0 mb-1'
+            className='cursor-pointer h-8 w-8 lg:h-12 lg:w-12 shrink-0 ml-2'
             type='button'
             title='Add emoji'>
             <span className='flex items-center justify-center h-full w-full dark:bg-transparent bg-gray-50 dark:hover:bg-white/10 hover:bg-gray-100 rounded-lg transition-colors'>
@@ -117,11 +125,35 @@ export default function CaptionInputComponent({
           <input
             type='text'
             ref={captionRef}
-            value={captions[type]?.find((c: any) => c.id === String(file?.name))?.text || ''}
+            value={captionValue || ''}
             onChange={handleTextChange}
             placeholder='Add a caption...'
             className='flex-1 h-full bg-transparent outline-none border-none text-white focus:ring-0 px-2 py-1'
           />
+
+          <motion.button
+            key='send-button'
+            title='Send message'
+            type='button'
+            disabled={!canPostMediaStatus}
+            onClick={handlePostStatus}
+            initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            exit={{ scale: 0.8, opacity: 0, rotate: 90 }}
+            transition={{
+              duration: 0.2,
+              ease: [0.4, 0, 0.2, 1],
+            }}
+            className={classNames(
+              'p-3 rounded-full transition-colors duration-200 shadow-lg flex items-center justify-center mr-2',
+              canPostMediaStatus
+                ? 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed',
+            )}
+            whileHover={canPostMediaStatus ? { scale: 1.1 } : {}}
+            whileTap={canPostMediaStatus ? { scale: 0.95 } : {}}>
+            <PaperAirplaneIcon className='h-5 w-5' />
+          </motion.button>
         </Fragment>
       </div>
     </Fragment>
