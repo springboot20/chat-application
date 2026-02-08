@@ -5,7 +5,7 @@ import { UserAvatar } from './StatusAvatar';
 import { useAppSelector } from '../../redux/redux.hooks';
 
 export const CreateStatusButton = () => {
-  const { handleStatusWindowChange, statusWindow } = useStatusStories();
+  const { handleStatusWindowChange } = useStatusStories();
   const { user } = useAppSelector((state) => state.auth);
 
   return (
