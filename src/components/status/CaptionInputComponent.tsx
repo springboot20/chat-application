@@ -154,7 +154,7 @@ export default function CaptionInputComponent({
             whileHover={canPostMediaStatus ? { scale: 1.1 } : {}}
             whileTap={canPostMediaStatus ? { scale: 0.95 } : {}}>
             {isAddingNewMediaStatus ? (
-              <span className='size-4 rounded-full animate-spin' />
+              <span className='size-4 rounded-full animate-spin border-t border-white' />
             ) : (
               <PaperAirplaneIcon className='h-5 w-5' />
             )}

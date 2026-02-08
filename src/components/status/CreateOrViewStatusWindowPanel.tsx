@@ -26,7 +26,6 @@ import {
   useDeleteStatusMutation,
   useMarkStatusAsViewedMutation,
 } from '../../features/status/status.api.slice';
-import { useAuth } from '../../context/AuthContext';
 
 export const CreateOrViewStatusWindowPanel = () => {
   const { statusWindow, handleStatusWindowChange } = useStatusStories();
@@ -282,7 +281,7 @@ const StatusViewerHeader: React.FC<{
 };
 
 export const ViewStatusWindowPanelSlot = () => {
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const { selectedStatusToView } = useAppSelector((state) => state.statusStories);
   const {
     handleStatusWindowChange,
@@ -310,11 +309,21 @@ export const ViewStatusWindowPanelSlot = () => {
 
   const statuses = selectedStatusToView?.items || [];
   const currentStatus = statuses[activeStatusIndex];
-  const isOwnStatus = selectedStatusToView?._id === user?._id;
+  const isOwnStatus = selectedStatusToView?.user?._id === user?._id;
+
+  // Log this to verify
+  console.log('Owner ID:', selectedStatusToView?.user?._id);
+  console.log('Logged in User ID:', user?._id);
+  console.log('Logged in User ID:', user);
 
   const onVideoLoad = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     setVideoDuration(e.currentTarget.duration * 1000); // Convert to ms
   };
+
+  useEffect(() => {
+    setProgress(0);
+    setElapsedTime(0);
+  }, [activeStatusIndex, setProgress]);
 
   useEffect(() => {
     if (currentStatus && !isOwnStatus) {
@@ -324,10 +333,6 @@ export const ViewStatusWindowPanelSlot = () => {
   }, [currentStatus?._id, isOwnStatus, markAsViewed]);
 
   useEffect(() => {
-    if (progress === 0) {
-      setElapsedTime(0);
-    }
-
     if (currentStatus && !isPaused) {
       const INTERVAL = 50;
       const DURATION = currentStatus.type === 'video' ? videoDuration : 5000;
@@ -360,8 +365,6 @@ export const ViewStatusWindowPanelSlot = () => {
   const handleNext = useCallback(() => {
     if (activeStatusIndex < statuses.length - 1) {
       setActiveStatusIndex((prev) => prev + 1);
-      setProgress(0);
-      setElapsedTime(0);
     } else {
       // Close viewer when reaching the end
       handleSelectedStatusToView(null);
@@ -371,8 +374,6 @@ export const ViewStatusWindowPanelSlot = () => {
   const handlePrevious = useCallback(() => {
     if (activeStatusIndex > 0) {
       setActiveStatusIndex((prev) => prev - 1);
-      setProgress(0);
-      setElapsedTime(0);
     }
   }, [activeStatusIndex, setActiveStatusIndex]);
 

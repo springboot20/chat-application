@@ -227,7 +227,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
 
       await Promise.all([
         Promise.resolve(setTimeout(() => resetCreationState(), 2500)),
-        Promise.resolve(setTimeout(() => handleStatusWindowChange(null), 5000)),
+        Promise.resolve(setTimeout(() => handleStatusWindowChange(null), 3000)),
       ]);
     } catch (error) {
       console.error('Upload failed', error);

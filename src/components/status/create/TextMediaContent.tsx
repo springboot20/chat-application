@@ -338,7 +338,7 @@ const TextEditorContent = () => {
               whileHover={canPostTextStatus ? { scale: 1.1 } : {}}
               whileTap={canPostTextStatus ? { scale: 0.95 } : {}}>
               {isAddingNewTextStatus ? (
-                <span className='size-4 rounded-full animate-spin' />
+                <span className='size-4 rounded-full animate-spin border-t border-white' />
               ) : (
                 <PaperAirplaneIcon className='h-5 w-5' />
               )}
