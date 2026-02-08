@@ -1,7 +1,12 @@
 import { createContext, useState, useCallback, useMemo, ReactNode, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../redux/redux.hooks';
-import { setStatusWindow } from '../features/status/status.slice';
+import { setSelectedStatusToView, setStatusWindow } from '../features/status/status.slice';
 import sanitizeHtml from 'sanitize-html';
+import {
+  StatusGroup,
+  useAddNewMediaStatusMutation,
+  useAddNewTextStatusMutation,
+} from '../features/status/status.api.slice';
 
 type StatusWindow = 'create-status' | 'view-status' | null;
 
@@ -30,28 +35,39 @@ type StatusContextValue = {
   statusWindow: StatusWindow;
   mediaContentType: MediaContentType | null;
   selectedTextBackground: string;
+  MEDIA_TYPES: readonly MediaContentType[];
+  MAX_CHARS: number;
+  selectedStatusToView: StatusGroup | null;
+  colors: typeof BACKGROUND_COLORS;
+  textContent: string;
+  captions: CaptionsType;
+  activeVideoFileIndex: number;
+  selectedVideoFiles: File[];
+  selectedFiles: File[];
+  activeFileIndex: number;
+  activeStatusIndex: number;
+  progress: number;
+
+  setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  setSelectedVideoFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  editorRef: React.RefObject<HTMLDivElement>;
+  setTextContent: React.Dispatch<React.SetStateAction<string>>;
+  setActiveFileIndex: React.Dispatch<React.SetStateAction<number>>;
+  setActiveVideoFileIndex: React.Dispatch<React.SetStateAction<number>>;
+  setActiveStatusIndex: React.Dispatch<React.SetStateAction<number>>;
+  setCaptions: React.Dispatch<React.SetStateAction<CaptionsType>>;
+  setProgress: React.Dispatch<React.SetStateAction<number>>;
+
+  onContentChange: (event: React.FormEvent<HTMLDivElement> | string) => void;
   setMediaContentType: (type: MediaContentType | null) => void;
   handleStatusWindowChange: (status: StatusWindow) => void;
   handleSelectedTextBackground: (background: string) => void;
   closeMediaContent: () => void;
-  MEDIA_TYPES: readonly MediaContentType[];
-  MAX_CHARS: number;
-  colors: typeof BACKGROUND_COLORS;
-  setTextContent: React.Dispatch<React.SetStateAction<string>>;
-  textContent: string;
-  editorRef: React.RefObject<HTMLDivElement>;
-  onContentChange: (event: React.FormEvent<HTMLDivElement> | string) => void;
-
-  selectedFiles: File[];
-  setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>;
-  selectedVideoFiles: File[];
-  setSelectedVideoFiles: React.Dispatch<React.SetStateAction<File[]>>;
-  activeFileIndex: number;
-  activeVideoFileIndex: number;
-  setActiveFileIndex: React.Dispatch<React.SetStateAction<number>>;
-  setActiveVideoFileIndex: React.Dispatch<React.SetStateAction<number>>;
-  captions: CaptionsType;
-  setCaptions: React.Dispatch<React.SetStateAction<CaptionsType>>;
+  handlePostStatus: () => Promise<void>;
+  handleSelectedStatusToView: (
+    selectedStatusToView: StatusGroup | null,
+    startIndex?: number,
+  ) => void;
 };
 
 type CaptionEntry = {
@@ -76,8 +92,15 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedVideoFiles, setSelectedVideoFiles] = useState<File[]>([]);
 
+  const [addNewMediaStatus] = useAddNewMediaStatusMutation();
+  const [addNewTextStatus] = useAddNewTextStatusMutation();
+
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [activeVideoFileIndex, setActiveVideoFileIndex] = useState(0);
+
+  const { selectedStatusToView } = useAppSelector((state) => state.statusStories);
+  const [activeStatusIndex, setActiveStatusIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   const [captions, setCaptions] = useState<CaptionsType>({
     image: [],
@@ -122,10 +145,34 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
+  const resetCreationState = useCallback(() => {
+    setTextContent('');
+    setMediaContentType(null);
+    setSelectedFiles([]);
+    setActiveFileIndex(0);
+    setCaptions({ image: [], video: [] });
+    setSelectedTextBackground(randomlySelectColor());
+  }, []);
+
   const handleStatusWindowChange = useCallback(
     (status: StatusWindow) => {
+      // If closing, clean up everything
+      if (status === null) {
+        resetCreationState();
+        dispatch(setSelectedStatusToView({ selectedStatusToView: null }));
+      }
       dispatch(setStatusWindow({ statusWindow: status }));
-      setMediaContentType(null); // reset when switching window
+    },
+    [dispatch, resetCreationState],
+  );
+
+  const handleSelectedStatusToView = useCallback(
+    (statusGroup: StatusGroup | null, startIndex: number = 0) => {
+      dispatch(setSelectedStatusToView({ selectedStatusToView: statusGroup }));
+      setProgress(0);
+      // Use the provided startIndex instead of always resetting to 0
+      setActiveStatusIndex(startIndex);
+      dispatch(setStatusWindow({ statusWindow: statusGroup ? 'view-status' : null }));
     },
     [dispatch],
   );
@@ -135,6 +182,63 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     setSelectedFiles([]); // Reset files on close
     setActiveFileIndex(0);
   }, []);
+
+  const handlePostStatus = useCallback(async () => {
+    if (mediaContentType === 'text') {
+      const payload = {
+        type: mediaContentType,
+        text: textContent,
+        backgroundColor: selectedTextBackground,
+      };
+
+      await addNewTextStatus(payload).unwrap();
+      return;
+    }
+    const formData = new FormData();
+
+    const overallFiles = [...selectedFiles, ...selectedVideoFiles];
+
+    // 1. Prepare Metadata based on your Mongoose Schema structure
+    const metadata = overallFiles.map((file) => {
+      const type = file.type.startsWith('video/') ? 'video' : 'image';
+
+      // Find the caption for this specific file in your state
+      const fileCaption = captions[type]?.find((c: any) => c.id === file.name)?.text || '';
+
+      return {
+        type: file.type.startsWith('video/') ? 'video' : 'image',
+        caption: fileCaption,
+        fileName: file.name, // Used by the backend to link the file to this object
+      };
+    });
+
+    // 2. Append files to FormData
+    overallFiles.forEach((file) => {
+      formData.append('statusMedias', file);
+    });
+
+    // 3. Append the metadata as a string
+    formData.append('metadata', JSON.stringify(metadata));
+
+    try {
+      const response = await addNewMediaStatus(formData).unwrap();
+
+      console.log(response);
+      handleStatusWindowChange(null);
+    } catch (error) {
+      console.error('Upload failed', error);
+    }
+  }, [
+    addNewMediaStatus,
+    addNewTextStatus,
+    captions,
+    mediaContentType,
+    selectedFiles,
+    selectedTextBackground,
+    selectedVideoFiles,
+    textContent,
+    handleStatusWindowChange,
+  ]);
 
   const value = useMemo<StatusContextValue>(
     () => ({
@@ -165,6 +269,13 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
       setActiveVideoFileIndex,
 
       MAX_CHARS,
+      handlePostStatus,
+      handleSelectedStatusToView,
+      selectedStatusToView,
+      activeStatusIndex,
+      setActiveStatusIndex,
+      progress,
+      setProgress,
     }),
     [
       statusWindow,
@@ -183,6 +294,13 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
 
       activeVideoFileIndex,
       setActiveVideoFileIndex,
+      handlePostStatus,
+      handleSelectedStatusToView,
+      selectedStatusToView,
+      activeStatusIndex,
+      setActiveStatusIndex,
+      progress,
+      setProgress,
     ],
   );
 

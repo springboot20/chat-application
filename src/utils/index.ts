@@ -4,8 +4,25 @@ import { ChatListItemInterface } from '../types/chat';
 import { User } from '../types/auth';
 import moment from 'moment';
 
+export function getInitials({ username }: { username?: string }) {
+  console.log(username)
+  const parts = username?.split(/[^A-Za-z0-9]+/).filter(Boolean);
+
+
+  console.log(parts)
+  return parts ? (parts[0]?.[0] || '') + (parts[1]?.[0] || '') : 'UN';
+}
+
 export const classNames = (...className: (string | boolean | undefined)[]) => {
   return className.filter(Boolean).join(' ');
+};
+
+export const timeAgo = (timestamp: string | Date) => {
+  const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
 };
 
 export const formatMessageTime = (timestamp: string | Date): string => {

@@ -22,7 +22,6 @@ export const Navigation: React.FC<NavigationProps> = ({
   setActiveTab,
   currentChat,
 }) => {
-  console.log(open);
   return (
     <Fragment>
       <Fragment>

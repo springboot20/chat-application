@@ -1,4 +1,9 @@
-import { CheckIcon, FaceSmileIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  CheckIcon,
+  FaceSmileIcon,
+  PaperAirplaneIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
 import { useStatusStories } from '../../../hooks/useStatusStories';
 import { Dialog, Transition } from '@headlessui/react';
@@ -36,13 +41,22 @@ export default function TextMediaContent() {
 }
 
 const TextEditorContent = () => {
-  const { textContent, onContentChange, selectedTextBackground, editorRef, MAX_CHARS } =
-    useStatusStories();
+  const {
+    textContent,
+    onContentChange,
+    selectedTextBackground,
+    editorRef,
+    MAX_CHARS,
+    mediaContentType,
+    handlePostStatus,
+  } = useStatusStories();
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
   const { theme } = useTheme();
 
   const [openEmoji, setOpenEmoji] = useState(false);
   const savedRange = useRef<Range | null>(null);
+
+  const canPostTextStatus = mediaContentType === 'text' && textContent.length > 0;
 
   // 1. Capture the range whenever the user stops interacting with the editor
   const handleBlur = useCallback(() => {
@@ -236,6 +250,16 @@ const TextEditorContent = () => {
             </div>
           )}
 
+          <span
+            className={classNames(
+              'text-xs px-3 py-1 rounded-full border transition-all duration-300 font-nunito absolute right-4 bottom-4',
+              charCount > MAX_CHARS * 0.9
+                ? 'bg-red-500 border-red-500 text-white'
+                : 'bg-white border-white/10 text-gray-400',
+            )}>
+            {charCount} / {MAX_CHARS}
+          </span>
+
           <div
             className={classNames('w-full h-full flex flex-col justify-center', textAlignClasses)}>
             <ContentEditable
@@ -290,16 +314,30 @@ const TextEditorContent = () => {
             ))}
           </div>
 
-          <div className='flex items-center'>
-            <span
+          <div className='flex items-center shrink-0 gap-x-3'>
+            <motion.button
+              key='send-button'
+              title='Send message'
+              type='button'
+              disabled={!canPostTextStatus}
+              onClick={handlePostStatus}
+              initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              exit={{ scale: 0.8, opacity: 0, rotate: 90 }}
+              transition={{
+                duration: 0.2,
+                ease: [0.4, 0, 0.2, 1],
+              }}
               className={classNames(
-                'text-xs px-3 py-1 rounded-full border transition-all duration-300 font-nunito',
-                charCount > MAX_CHARS * 0.9
-                  ? 'bg-red-500/20 border-red-500 text-red-400'
-                  : 'bg-white/5 border-white/10 text-gray-400',
-              )}>
-              {charCount} / {MAX_CHARS}
-            </span>
+                'p-3 rounded-full transition-colors duration-200 shadow-lg flex items-center justify-center mr-2',
+                canPostTextStatus
+                  ? 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed',
+              )}
+              whileHover={canPostTextStatus ? { scale: 1.1 } : {}}
+              whileTap={canPostTextStatus ? { scale: 0.95 } : {}}>
+              <PaperAirplaneIcon className='h-5 w-5' />
+            </motion.button>
           </div>
         </div>
       </div>
