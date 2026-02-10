@@ -170,9 +170,9 @@ export const MyStatusRow = ({ myStatus, onViewStatus }: MyStatusRowProps) => {
               </p>
               <div className='flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500'>
                 <EyeIcon height={14} width={14} />
-                {/* <span>
+                <span>
                   {myStatus.items.reduce((acc, item) => acc + (item.viewCount || 0), 0)} views
-                </span> */}
+                </span>
               </div>
             </div>
           ) : (
@@ -273,7 +273,7 @@ export const MyStatusListModal: React.FC<MyStatusListModalProps> = ({ myStatus, 
                   </p>
                   <div className='flex items-center gap-1 text-xs text-gray-500'>
                     <EyeIcon className='w-3 h-3' />
-                    {/* <span>{status.viewCount || 0}</span> */}
+                    <span>{status.viewCount || 0}</span>
                   </div>
                   {status.expiresAt && (
                     <div className='flex items-center gap-1 text-xs text-gray-400'>

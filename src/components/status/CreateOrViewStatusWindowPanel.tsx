@@ -501,7 +501,7 @@ export const ViewStatusWindowPanelSlot = () => {
               user={selectedStatusToView.user}
               timestamp={timestamp}
               isOwnStatus={isOwnStatus}
-              viewCount={0}
+              viewCount={selectedStatusToView?.items?.[activeStatusIndex]?.viewCount || 0}
               onClose={() => {
                 setActiveStatusIndex(0);
                 handleSelectedStatusToView(null);

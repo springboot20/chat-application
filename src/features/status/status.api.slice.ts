@@ -23,6 +23,7 @@ interface Status {
   textContent?: TextContent;
   viewedBy: Pick<User, '_id' | 'username' | 'avatar' | 'email'>[] | string[];
   visibleTo: string[];
+  viewCount: number;
   expiresAt: string;
   createdAt: string;
   updatedAt: string;
