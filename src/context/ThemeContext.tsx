@@ -1,15 +1,15 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { ThemeContextInterface } from "../types/theme";
-import { LocalStorage } from "../utils";
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { ThemeContextInterface } from '../types/theme';
+import { LocalStorage } from '../utils';
 
 const ThemeContext = createContext<ThemeContextInterface>({} as ThemeContextInterface);
 
 export const useTheme = () => useContext(ThemeContext);
 
-export const ThemeContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<string | null>(LocalStorage.get("theme"));
-  const dark = "dark";
-  const light = "light";
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setTheme] = useState<string | null>(LocalStorage.get('theme'));
+  const dark = 'dark';
+  const light = 'light';
 
   const defaultTheme = light;
   const [activeMode, setActiveMode] = useState(defaultTheme === theme);
@@ -21,9 +21,9 @@ export const ThemeContextProvider: React.FC<{ children: React.ReactNode }> = ({ 
       documentEle.classList.add(theme);
 
       setActiveMode(theme === dark);
-      LocalStorage.set("theme", theme);
+      LocalStorage.set('theme', theme);
     },
-    [dark, documentEle.classList, light]
+    [dark, documentEle.classList, light],
   );
 
   useEffect(() => {
@@ -37,17 +37,17 @@ export const ThemeContextProvider: React.FC<{ children: React.ReactNode }> = ({ 
       else if (window.matchMedia(preferTheme(light)).matches) activateTheme(light);
       else activateTheme(defaultTheme);
 
-      window.matchMedia(preferTheme(dark)).addEventListener("change", (event) => {
+      window.matchMedia(preferTheme(dark)).addEventListener('change', (event) => {
         if (event.matches) activateTheme(dark);
       });
-      window.matchMedia(preferTheme(light)).addEventListener("change", (event) => {
+      window.matchMedia(preferTheme(light)).addEventListener('change', (event) => {
         if (event.matches) activateTheme(light);
       });
     }
   }, [activateTheme, light, defaultTheme, dark, theme]);
 
   return (
-    <ThemeContext.Provider value={{ setTheme, theme: theme || "dark", activateTheme, activeMode }}>
+    <ThemeContext.Provider value={{ setTheme, theme: theme || 'dark', activateTheme, activeMode }}>
       {children}
     </ThemeContext.Provider>
   );

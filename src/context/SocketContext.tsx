@@ -24,7 +24,7 @@ const createSocket = (accessToken: string) => {
   });
 };
 
-export const SocketContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
 

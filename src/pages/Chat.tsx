@@ -85,38 +85,20 @@ export const Chat = () => {
 
   const {
     message,
-    openEmoji,
     setOpenEmoji,
-    handleOpenAndCloseEmoji,
     onReactionUpdate,
     onUpdateChatLastMessage,
-    selectedUser,
-    handleSelectUser,
     onChatMessageDeleted,
     getAllMessages,
-    handleOnMessageChange,
-    handleEmojiSelect,
-    attachmentFiles,
     onMessageReceive,
     bottomRef,
     messageInputRef,
-    handleRemoveFile,
-    imageInputRef,
-    documentInputRef,
-    handleFileChange,
-    messageItemRef,
-    handleDeleteChatMessage,
-    handleShowMentionUserMenu,
-    showMentionUserMenu,
     handleSetCloseReply,
-    handleSetOpenReply,
     showReply,
-    messageToReply,
     handleReplyToChatMessage,
     scrollToBottom,
     showScrollButton,
     sendChatMessage,
-    filteredMentionUsers,
     // unreadMessages,
   } = useMemo(() => messageHook, [messageHook]);
 
@@ -626,16 +608,12 @@ export const Chat = () => {
                                         <MessageItem
                                           message={msg}
                                           theme={theme}
-                                          messageToReply={messageToReply}
                                           users={users}
-                                          messageItemRef={messageItemRef}
                                           containerRef={containerRef}
-                                          handleSetOpenReply={handleSetOpenReply}
                                           highlightedMessageId={highlightedMessageId}
                                           isGroupChatMessage={currentChat?.isGroupChat}
                                           isOwnedMessage={msg.sender?._id === user?._id}
                                           setIsOwnedMessage={setIsOwnedMessage}
-                                          handleDeleteChatMessage={handleDeleteChatMessage}
                                           onSetHighlightedMessage={handleSetHighlightedMessage}
                                         />
                                       );
@@ -675,31 +653,12 @@ export const Chat = () => {
                         </div>
 
                         <MessageInput
-                          message={message}
-                          handleOnMessageChange={handleOnMessageChange}
-                          handleShowMentionUserMenu={handleShowMentionUserMenu}
-                          handleEmojiSelect={handleEmojiSelect}
-                          handleFileChange={handleFileChange}
-                          handleOpenAndCloseEmoji={handleOpenAndCloseEmoji}
-                          handleRemoveFile={handleRemoveFile}
-                          handleSelectUser={handleSelectUser}
-                          selectedUser={selectedUser}
-                          attachmentFiles={attachmentFiles}
-                          showReply={showReply}
-                          messageToReply={messageToReply}
                           reduxStateMessages={currentChatMessages}
                           isOwnedMessage={isOwnedMessage}
                           theme={theme}
                           textareaRef={messageInputRef}
                           handleSendMessage={handleSendMessage}
-                          imageInputRef={imageInputRef}
-                          documentInputRef={documentInputRef}
-                          showMentionUserMenu={showMentionUserMenu}
-                          handleSetCloseReply={handleSetCloseReply}
-                          openEmoji={openEmoji}
                           currentChat={currentChat}
-                          users={filteredMentionUsers}
-                          user={user!}
                         />
                       </div>
                     </>

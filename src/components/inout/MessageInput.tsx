@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState } from 'react';
 import { classNames } from '../../utils';
-import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 import { MentionUserMenuComponent } from '../menu/MentionUserMenu';
 import {
   FaceSmileIcon,
@@ -12,7 +12,6 @@ import {
 import { DocumentPreview } from '../file/DocumentPreview';
 import { Disclosure } from '@headlessui/react';
 import { ChatListItemInterface, ChatMessageInterface } from '../../types/chat';
-import { User } from '../../types/auth';
 import { FileSelection } from '../file/FileSelection';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
 import { toast } from 'react-toastify';
@@ -24,68 +23,24 @@ import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks';
 import { onMessageReceived, replaceOptimisticMessage } from '../../features/chats/chat.reducer';
 import { useRecordingLock } from '../../hooks/useRecordingLock';
 import { motion, AnimatePresence } from 'framer-motion';
-
-type FileType = {
-  files: File[] | null;
-  type: 'document-file' | 'image-file';
-};
+import { useMessage } from '../../hooks/useMessage';
 
 interface MessageInputProps {
   reduxStateMessages: ChatMessageInterface[];
   isOwnedMessage: boolean;
-  attachmentFiles: FileType;
-  showReply: boolean;
-  message: string;
   textareaRef: React.MutableRefObject<HTMLTextAreaElement | null>;
-  imageInputRef: React.MutableRefObject<HTMLInputElement | null>;
-  documentInputRef: React.MutableRefObject<HTMLInputElement | null>;
-  openEmoji: boolean;
-  handleEmojiSelect: (emojiData: EmojiClickData, event: MouseEvent) => void;
   theme: string;
-  showMentionUserMenu: boolean;
-  handleSelectUser: (user: User) => void;
-  users: User[];
-  selectedUser: User;
-  handleRemoveFile: (indexToRemove: number) => void;
-  messageToReply: string;
-  handleOpenAndCloseEmoji: () => void;
-  handleSendMessage: () => void;
-  handleShowMentionUserMenu: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  handleOnMessageChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  handleFileChange: (
-    fileType: 'document-file' | 'image-file',
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => void;
-  handleSetCloseReply: () => void;
   currentChat: ChatListItemInterface;
-  user: User;
+  handleSendMessage: () => void;
 }
 
 const MessageInput = ({
-  message,
-  handleOnMessageChange,
-  handleShowMentionUserMenu,
-  handleEmojiSelect,
-  handleFileChange,
-  handleOpenAndCloseEmoji,
-  handleRemoveFile,
-  handleSelectUser,
-  selectedUser,
-  attachmentFiles,
-  showReply,
-  messageToReply,
   reduxStateMessages,
   isOwnedMessage,
-  users,
   theme,
+  currentChat,
   textareaRef,
   handleSendMessage,
-  imageInputRef,
-  documentInputRef,
-  showMentionUserMenu,
-  handleSetCloseReply,
-  openEmoji,
-  currentChat,
 }: MessageInputProps) => {
   const {
     isRecording,
@@ -102,6 +57,27 @@ const MessageInput = ({
     isRecordingCancelled,
     stopRecording,
   } = useVoiceRecorder();
+
+  const {
+    message,
+    handleOnMessageChange,
+    handleShowMentionUserMenu,
+    handleEmojiSelect,
+    handleFileChange,
+    handleOpenAndCloseEmoji,
+    handleRemoveFile,
+    handleSelectUser,
+    selectedUser,
+    attachmentFiles,
+    showReply,
+    messageToReply,
+    imageInputRef,
+    documentInputRef,
+    showMentionUserMenu,
+    handleSetCloseReply,
+    openEmoji,
+    filteredMentionUsers,
+  } = useMessage();
 
   const {
     uiState,
@@ -322,7 +298,7 @@ const MessageInput = ({
         show={showMentionUserMenu}
         handleSelectUser={handleSelectUser}
         selectedUser={selectedUser}
-        users={users}
+        users={filteredMentionUsers}
       />
 
       {/* Reply Section */}

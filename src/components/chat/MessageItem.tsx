@@ -22,6 +22,7 @@ import ReactionTooltip from '../modal/ReactionTooltip';
 import { updateMessageReactions } from '../../features/chats/chat.reducer';
 import { useNetwork } from '../../hooks/useNetwork';
 import { toast } from 'react-toastify';
+import { useMessage } from '../../hooks/useMessage';
 
 type Status = 'queued' | 'sent' | 'delivered' | 'seen';
 
@@ -77,18 +78,13 @@ const MessageStatusTick = ({
 interface MessageItemProps {
   isOwnedMessage?: boolean;
   isGroupChatMessage?: boolean;
-  message: ChatMessageInterface;
-  messageItemRef: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   containerRef: React.MutableRefObject<HTMLDivElement | null>;
-  handleDeleteChatMessage: (key: string) => void;
   theme: string;
-  messageToReply: string;
   users: User[];
-  handleSetOpenReply: (messageId: string) => void;
   highlightedMessageId?: string;
   onSetHighlightedMessage?: (messageId: string | undefined) => void;
   setIsOwnedMessage: (value: React.SetStateAction<boolean>) => void;
-
+  message: ChatMessageInterface;
   otherParticipantId?: string;
 }
 
@@ -115,17 +111,12 @@ type CategorizedReaction = EmojiType & { count: number };
 
 export const MessageItem: React.FC<MessageItemProps> = ({
   isOwnedMessage,
-  messageItemRef,
   isGroupChatMessage,
-  message,
   theme,
-  handleDeleteChatMessage,
-  handleSetOpenReply,
   onSetHighlightedMessage,
   highlightedMessageId,
-  messageToReply,
   setIsOwnedMessage,
-
+  message,
   containerRef: messagesContainerRef,
 }) => {
   const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
@@ -133,6 +124,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
   const [reactToMessage] = useReactToChatMessageMutation();
   const dispatch = useAppDispatch();
+
+  const { handleDeleteChatMessage, handleSetOpenReply, messageToReply, messageItemRef } =
+    useMessage();
 
   const messageFiles = message.attachments || [];
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
