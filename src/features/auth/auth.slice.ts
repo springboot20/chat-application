@@ -20,7 +20,7 @@ export const AuthApiSlice = ApiService.injectEndpoints({
   endpoints: (builder) => ({
     register: builder.mutation<Response, RegisterRequest>({
       query: (data) => ({
-        url: '/auth/users/register',
+        url: '/chat-app/auth/users/register',
         body: data,
         method: 'POST',
       }),
@@ -28,7 +28,7 @@ export const AuthApiSlice = ApiService.injectEndpoints({
 
     login: builder.mutation<Response, LoginRequest>({
       query: (data) => ({
-        url: '/auth/users/login',
+        url: '/chat-app/auth/users/login',
         body: data,
         method: 'POST',
       }),
@@ -36,7 +36,7 @@ export const AuthApiSlice = ApiService.injectEndpoints({
 
     logout: builder.mutation<Response, void>({
       query: (data) => ({
-        url: '/auth/users/logout',
+        url: '/chat-app/auth/users/logout',
         body: data,
         method: 'POST',
       }),
