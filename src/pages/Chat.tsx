@@ -3,7 +3,7 @@ import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { UserIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { classNames } from '../utils/index.ts';
 import { Navigation } from '../components/navigation/navigation.tsx';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   JOIN_CHAT_EVENT,
   MESSAGE_RECEIVED_EVENT,
@@ -47,10 +47,12 @@ import { useOnlineUsers } from '../hooks/useOnlineUsers.ts';
 import { useMarkMessagesAsSeen } from '../hooks/useMarkMessagesAsSeen.ts';
 import { MobileBottomNav } from '../components/navigation/MobileNavigation.tsx';
 import { CreateOrViewStatusWindowPanel } from '../components/status/CreateOrViewStatusWindowPanel.tsx';
+import { ApiService } from '../app/services/api.service.ts';
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [logout] = useLogoutMutation();
   const { theme } = useTheme();
   const { socket } = useSocketContext();
@@ -69,7 +71,9 @@ export const Chat = () => {
   const { isOnline: hasInternet } = useNetwork();
   const { isUserOnline, handleUserOnline, handleUserOffline, checkUsersOnlineStatus } =
     useOnlineUsers();
-  const { data: availableUsers } = useGetAvailableUsersQuery();
+  const { data: availableUsers } = useGetAvailableUsersQuery(undefined, {
+    skip: !isAuthenticated,
+  });
   const users = availableUsers?.data as User[];
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -327,7 +331,7 @@ export const Chat = () => {
     const isGroupChat = currentChat?.isGroupChat;
     const chatName = isGroupChat
       ? currentChat.name
-      : participants?.filter((p) => p._id !== user._id)[0]?.username;
+      : participants?.filter((p) => p._id !== user?._id)[0]?.username;
 
     // const avatarUrl = isGroupChat
     //   ? participants?.slice(0, 3)
@@ -355,6 +359,24 @@ export const Chat = () => {
 
   // Determine if we should show mobile bottom nav
   const showMobileBottomNav = !currentChat;
+
+  const handleLogout = async () => {
+    try {
+      // 1. Stop all outgoing API calls immediately
+      dispatch(ApiService.util.resetApiState());
+      
+      // We call the API, but we don't wait for success to clear local UI
+      // The Redux Slice extraReducers will handle the state wipe
+      await logout().unwrap();
+      toast.success('Logged out successfully');
+    } catch (error) {
+      // Even if the API fails, the user wants out.
+      // You could force a page reload here to clear memory: window.location.href = '/login';
+      toast.error('Server logout failed, but local session cleared.');
+    } finally {
+      navigate('/login');
+    }
+  };
 
   return (
     <Disclosure as={Fragment}>
@@ -461,18 +483,8 @@ export const Chat = () => {
                                       <Menu.Item>
                                         {({ active }) => (
                                           <button
-                                            onClick={async () => {
-                                              await logout()
-                                                .unwrap()
-                                                .then((response) => {
-                                                  toast(response?.data?.message, {
-                                                    type: 'success',
-                                                  });
-                                                })
-                                                .catch((error: any) => {
-                                                  toast(error?.data?.message, { type: 'error' });
-                                                });
-                                            }}
+                                            type='button'
+                                            onClick={handleLogout}
                                             className={classNames(
                                               active ? 'bg-gray-100' : '',
                                               'flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium',

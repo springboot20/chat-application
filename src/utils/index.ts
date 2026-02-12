@@ -169,7 +169,7 @@ export class LocalStorage {
 
 export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User) => {
   if (!chat || !chat.lastMessage) {
-    const participant = chat.participants?.find((p) => p?._id !== user._id);
+    const participant = chat.participants?.find((p) => p?._id !== user?._id);
 
     return {
       title: chat?.name,
@@ -198,7 +198,7 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
       description: `${chat.participants?.length} members in the group`,
     };
   } else {
-    const participant = chat.participants?.find((p) => p?._id !== user._id);
+    const participant = chat.participants?.find((p) => p?._id !== user?._id);
 
     return {
       title: participant?.username,

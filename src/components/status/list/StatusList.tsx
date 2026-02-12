@@ -6,10 +6,10 @@ import {
 import { List, type RowComponentProps } from 'react-window';
 import { motion } from 'framer-motion';
 import { UserAvatar } from '../StatusAvatar';
-import { useAuth } from '../../../context/AuthContext';
 import { useMemo } from 'react';
 import { ClockIcon } from '@heroicons/react/24/solid';
 import { timeAgo } from '../../../utils';
+import { useAppSelector } from '../../../redux/redux.hooks';
 
 const hasUnviewedStatus = (statusGroup: StatusGroup, currentUserId: string) => {
   return statusGroup?.items?.some(
@@ -32,7 +32,7 @@ interface StatusListItemData {
 }
 
 export const StatusListComponent: React.FC<StatusListProps> = ({ onViewStatus }) => {
-  const { user } = useAuth(); // Get current user
+const { user } = useAppSelector((state) => state.auth); 
   const currentUserId = user?._id || '';
 
   const { data: feedData, isLoading: isFeedLoading } = useGetStatusFeedQuery(undefined, {

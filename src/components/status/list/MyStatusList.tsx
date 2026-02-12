@@ -1,6 +1,5 @@
 import { CameraIcon, ClockIcon, EyeIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { CreateStatusButton } from '../CreateStatusButton';
-import { useAuth } from '../../../context/AuthContext';
 import {
   getTimeRemaining,
   StatusGroup,
@@ -11,6 +10,7 @@ import { UserAvatar } from '../StatusAvatar';
 import { timeAgo } from '../../../utils';
 import { Fragment } from 'react';
 import { useStatusStories } from '../../../hooks/useStatusStories';
+import { useAppSelector } from '../../../redux/redux.hooks';
 
 interface MyStatusRowProps {
   myStatus: StatusGroup | null;
@@ -28,7 +28,7 @@ export const MyStatusListComponent: React.FC<StatusListProps> = ({
   showMyStatusList,
   onViewStatus,
 }) => {
-  const { user } = useAuth(); // Get current user
+  const { user } = useAppSelector((state) => state.auth); // Get current user
 
   const { data: myStatusData, isLoading: isMyStatusLoading } = useGetUserStatusesQuery(undefined, {
     pollingInterval: 30000,

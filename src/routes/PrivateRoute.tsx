@@ -1,14 +1,11 @@
-import React from "react";
-import { Navigate } from "react-router-dom";
-import { useAppSelector } from "../redux/redux.hooks";
-import { RootState } from "../app/store";
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useAppSelector } from '../redux/redux.hooks';
 
-export const PrivateRoutes: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAppSelector((state: RootState) => state.auth);
+// PROTECTED: Only for logged-in users
+export const PrivateRoute = () => {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const location = useLocation();
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-
-  console.log(isAuthenticated);
-
-  return children;
+  // state={{ from: location }} allows you to redirect them back after they log in
+  return isAuthenticated ? <Outlet /> : <Navigate to='/login' state={{ from: location }} replace />;
 };
