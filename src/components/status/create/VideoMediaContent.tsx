@@ -11,12 +11,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStatusStories } from '../../../hooks/useStatusStories';
 import { MediaContentTypes } from './MediaContentTypes';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useObjectURL } from '../../../hooks/useObjectUrl';
 import { toast } from 'react-toastify';
 import { classNames } from '../../../utils';
 import CameraViewfinder from '../CameraViewFinder';
 import CaptionInputComponent from '../CaptionInputComponent';
+import { StatusPrivacyDisplay, StatusPrivacySettings } from '../StatusPrivacySettings';
 
 const MAX_DURATION = 30;
 
@@ -31,6 +32,7 @@ export default function VideoMediaContent() {
 
   // Mode state: 'gallery' shows the upload/preview, 'camera' shows viewfinder
   const [viewMode, setViewMode] = useState<'gallery' | 'camera'>('gallery');
+  const [showPrivacySettings, setShowPrivacySettings] = useState(false);
   const selectedVideo = selectedVideoFiles[activeVideoFileIndex];
 
   const videoUrl = useObjectURL(selectedVideo);
@@ -84,115 +86,134 @@ export default function VideoMediaContent() {
   );
 
   return (
-    <motion.div
-      initial={{ scale: 0.85, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.85, opacity: 0 }}
-      className='flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16'>
-      <header className='h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 shrink-0'>
-        <button
-          type='button'
-          onClick={closeMediaContent}
-          className='size-8 flex items-center justify-center rounded-full'>
-          <XMarkIcon className='h-5 text-gray-800 dark:text-white' />
-        </button>
-        <MediaContentTypes />
-        <div className='w-10' />
-      </header>
+    <Fragment>
+      <motion.div
+        initial={{ scale: 0.85, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.85, opacity: 0 }}
+        className='flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16'>
+        <header className='h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 shrink-0'>
+          <button
+            type='button'
+            onClick={closeMediaContent}
+            className='size-8 flex items-center justify-center rounded-full'>
+            <XMarkIcon className='h-5 text-gray-800 dark:text-white' />
+          </button>
+          <MediaContentTypes />
+          <div className='w-10' />
+        </header>
 
-      <div className='flex-1 overflow-y-auto p-4 space-y-4 mb-20 lg:mb-0'>
-        {/* Source Switcher */}
-        <div className='flex justify-center shrink-0'>
-          <div className='flex bg-black/20 p-1 rounded-full'>
-            <button
-              type='button'
-              onClick={() => setViewMode('gallery')}
-              className={classNames(
-                'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
-                viewMode === 'gallery' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
-              )}>
-              Gallery
-            </button>
-            <button
-              type='button'
-              onClick={() => setViewMode('camera')}
-              className={classNames(
-                'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
-                viewMode === 'camera' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
-              )}>
-              Camera
-            </button>
+        <div className='flex-1 overflow-y-auto p-4 space-y-4 mb-20 lg:mb-0'>
+          {/* Source Switcher */}
+          <div className='flex justify-center shrink-0'>
+            <div className='flex bg-black/20 p-1 rounded-full'>
+              <button
+                type='button'
+                onClick={() => setViewMode('gallery')}
+                className={classNames(
+                  'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
+                  viewMode === 'gallery' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
+                )}>
+                Gallery
+              </button>
+              <button
+                type='button'
+                onClick={() => setViewMode('camera')}
+                className={classNames(
+                  'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
+                  viewMode === 'camera' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
+                )}>
+                Camera
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div className='relative aspect-[9/16] max-h-[520px] w-full mx-auto bg-black rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 shrink-0'>
-          <AnimatePresence mode='wait'>
-            {viewMode === 'camera' ? (
-              <motion.div
-                key='cam'
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className='h-full'>
-                <CameraViewfinder mode='video' onCapture={handleCapture} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key='gal'
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className='h-full'>
-                {videoUrl ? (
-                  <VideoPreviewPlayer file={selectedVideo} handleMetadata={handleMetadata} />
-                ) : (
-                  <label className='h-full flex flex-col items-center justify-center cursor-pointer p-10 text-center'>
-                    <div className='p-6 bg-gray-100 dark:bg-white/5 rounded-full mb-4'>
-                      <VideoCameraIcon className='h-12 w-12 text-gray-400' />
-                    </div>
-                    <p className='text-sm font-medium text-gray-500'>
-                      Tap to upload a video status
-                    </p>
-                    <p className='text-xs text-gray-400 mt-1'>Up to 30 seconds</p>
-                    <input
-                      type='file'
-                      hidden
-                      accept='video/*'
-                      multiple
-                      onChange={handleVideoSelection}
-                    />
-                  </label>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+          <div className='relative aspect-[9/16] max-h-[520px] w-full mx-auto bg-black rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 shrink-0'>
+            <AnimatePresence mode='wait'>
+              {viewMode === 'camera' ? (
+                <motion.div
+                  key='cam'
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className='h-full'>
+                  <CameraViewfinder mode='video' onCapture={handleCapture} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key='gal'
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className='h-full'>
+                  {videoUrl ? (
+                    <VideoPreviewPlayer file={selectedVideo} handleMetadata={handleMetadata} />
+                  ) : (
+                    <label className='h-full flex flex-col items-center justify-center cursor-pointer p-10 text-center'>
+                      <div className='p-6 bg-gray-100 dark:bg-white/5 rounded-full mb-4'>
+                        <VideoCameraIcon className='h-12 w-12 text-gray-400' />
+                      </div>
+                      <p className='text-sm font-medium text-gray-500'>
+                        Tap to upload a video status
+                      </p>
+                      <p className='text-xs text-gray-400 mt-1'>Up to 30 seconds</p>
+                      <input
+                        type='file'
+                        hidden
+                        accept='video/*'
+                        multiple
+                        onChange={handleVideoSelection}
+                      />
+                    </label>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-        {/* Caption Field - Only show if a video is selected and in gallery mode */}
-        {videoUrl && <CaptionInputComponent file={selectedVideo as File} type='video' />}
+          {/* Caption Field - Only show if a video is selected and in gallery mode */}
+          {videoUrl && <CaptionInputComponent file={selectedVideo as File} type='video' />}
 
-        <div className='flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide shrink-0'>
-          {/* Add More Button */}
-          {selectedVideoFiles.length < 6 && (
-            <label className='flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group'>
-              <PlusIcon className='size-6 text-gray-400 group-hover:text-blue-500' />
-              <input type='file' hidden accept='video/*' multiple onChange={handleVideoSelection} />
-            </label>
+          {(selectedVideoFiles.length > 0 || selectedVideo) && (
+            <div className='w-full mt-3 max-w-sm'>
+              <StatusPrivacyDisplay onOpenSettings={() => setShowPrivacySettings(true)} />
+            </div>
           )}
 
-          <AnimatePresence>
-            {selectedVideoFiles.map((file, idx) => (
-              <VideoThumbnail
-                key={file.name + idx}
-                file={file}
-                isActive={idx === activeVideoFileIndex}
-                onSelect={() => setActiveVideoFileIndex(idx)}
-                onRemove={() => removeVideo(idx)}
-              />
-            ))}
-          </AnimatePresence>
+          <div className='flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide shrink-0'>
+            {/* Add More Button */}
+            {selectedVideoFiles.length < 6 && (
+              <label className='flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group'>
+                <PlusIcon className='size-6 text-gray-400 group-hover:text-blue-500' />
+                <input
+                  type='file'
+                  hidden
+                  accept='video/*'
+                  multiple
+                  onChange={handleVideoSelection}
+                />
+              </label>
+            )}
+
+            <AnimatePresence>
+              {selectedVideoFiles.map((file, idx) => (
+                <VideoThumbnail
+                  key={file.name + idx}
+                  file={file}
+                  isActive={idx === activeVideoFileIndex}
+                  onSelect={() => setActiveVideoFileIndex(idx)}
+                  onRemove={() => removeVideo(idx)}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+
+      <StatusPrivacySettings
+        open={showPrivacySettings}
+        onClose={() => setShowPrivacySettings(false)}
+      />
+    </Fragment>
   );
 }
 

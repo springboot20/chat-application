@@ -10,6 +10,7 @@ import { getOrientation } from 'get-orientation/browser';
 import Cropper from 'react-easy-crop';
 import CameraViewfinder from '../CameraViewFinder';
 import CaptionInputComponent from '../CaptionInputComponent';
+import { StatusPrivacyDisplay, StatusPrivacySettings } from '../StatusPrivacySettings';
 
 const ORIENTATION_TO_ANGLE: Record<number, number> = {
   1: 0, // Standard orientation
@@ -30,6 +31,7 @@ export default function ImageMediaContent() {
   const [viewMode, setViewMode] = useState<'gallery' | 'camera'>('gallery');
   const [cameraMode, setCameraMode] = useState<'image' | 'video'>('image');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [showPrivacySettings, setShowPrivacySettings] = useState(false);
 
   // Cropper State
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -107,193 +109,214 @@ export default function ImageMediaContent() {
   );
 
   return (
-    <motion.div
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.9, opacity: 0 }}
-      className='flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16'>
-      <header className='h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 font-nunito shrink-0'>
-        <button
-          type='button'
-          onClick={closeMediaContent}
-          className='size-8 flex items-center justify-center rounded-full justify-self-end'>
-          <XMarkIcon className='h-5 text-gray-800 dark:text-white' />
-        </button>
-        <MediaContentTypes />
-        <div className='w-10' /> {/* Spacer for balance */}
-      </header>
+    <Fragment>
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className='flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16'>
+        <header className='h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 font-nunito shrink-0'>
+          <button
+            type='button'
+            onClick={closeMediaContent}
+            className='size-8 flex items-center justify-center rounded-full justify-self-end'>
+            <XMarkIcon className='h-5 text-gray-800 dark:text-white' />
+          </button>
+          <MediaContentTypes />
+          <div className='w-10' /> {/* Spacer for balance */}
+        </header>
 
-      <div className='p-4 space-y-4 flex-1 overflow-y-auto mb-20 lg:mb-0'>
-        {/* SUB-SWITCHER: Gallery vs Camera */}
-        <div className='flex justify-center'>
-          <div className='flex bg-black/20 p-1 rounded-full'>
-            <button
-              type='button'
-              onClick={() => setViewMode('gallery')}
-              className={classNames(
-                'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
-                viewMode === 'gallery' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
-              )}>
-              Gallery
-            </button>
-            <button
-              type='button'
-              onClick={() => {
-                setViewMode('camera');
-                setCameraMode('image');
-              }}
-              className={classNames(
-                'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
-                viewMode === 'camera' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
-              )}>
-              Camera
-            </button>
+        <div className='p-4 space-y-4 flex-1 overflow-y-auto mb-20 lg:mb-0'>
+          {/* SUB-SWITCHER: Gallery vs Camera */}
+          <div className='flex justify-center'>
+            <div className='flex bg-black/20 p-1 rounded-full'>
+              <button
+                type='button'
+                onClick={() => setViewMode('gallery')}
+                className={classNames(
+                  'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
+                  viewMode === 'gallery' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
+                )}>
+                Gallery
+              </button>
+              <button
+                type='button'
+                onClick={() => {
+                  setViewMode('camera');
+                  setCameraMode('image');
+                }}
+                className={classNames(
+                  'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
+                  viewMode === 'camera' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
+                )}>
+                Camera
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Main Preview Area */}
-        <div
-          className={classNames(
-            'relative aspect-square w-full bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 group',
-            mainPreviewUrl ? 'h-[35rem]' : 'h-[25rem]',
-          )}>
-          <AnimatePresence mode='wait'>
-            {viewMode === 'camera' ? (
-              <div className='h-full relative'>
-                <CameraViewfinder mode={cameraMode} onCapture={handleCapture} />
-              </div>
-            ) : (
-              <div className='h-full relative'>
-                {mainPreviewUrl ? (
-                  <Fragment>
+          {/* Main Preview Area */}
+          <div
+            className={classNames(
+              'relative aspect-square w-full bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 group',
+              mainPreviewUrl ? 'h-[35rem]' : 'h-[25rem]',
+            )}>
+            <AnimatePresence mode='wait'>
+              {viewMode === 'camera' ? (
+                <div className='h-full relative'>
+                  <CameraViewfinder mode={cameraMode} onCapture={handleCapture} />
+                </div>
+              ) : (
+                <div className='h-full relative'>
+                  {mainPreviewUrl ? (
+                    <Fragment>
+                      <button
+                        type='button'
+                        onClick={() => setEditingIndex(activeFileIndex)}
+                        className='absolute top-4 right-4 z-40 bg-gray-600/60 text-white backdrop-blur-md px-4 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-x-2'>
+                        Edit <PencilIcon className='size-4' />
+                      </button>
+                      <img
+                        src={mainPreviewUrl}
+                        className='h-full w-full object-contain'
+                        alt='Preview'
+                      />
+
+                      {/* MOVE CAPTION INSIDE THE RELATIVE CONTAINER AND POSITION ABSOLUTE */}
+                      <div className='absolute bottom-4 inset-x-0 px-4 z-30'>
+                        <CaptionInputComponent file={activeFile} type='image' />
+                      </div>
+                    </Fragment>
+                  ) : (
+                    <div className='h-full w-full flex flex-col items-center justify-center text-gray-400'>
+                      <PhotoIcon className='h-12 w-12 mb-2 opacity-20' />
+                      <p className='text-sm font-medium'>No image selected</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* CROPPER OVERLAY */}
+          <AnimatePresence>
+            {editingIndex !== null && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className='absolute inset-0 z-50 bg-black flex flex-col'>
+                <div className='relative flex-1'>
+                  <Cropper
+                    image={editingFileUrl || ''}
+                    crop={crop}
+                    zoom={zoom}
+                    rotation={rotation}
+                    aspect={4 / 5} // Standard Social Aspect Ratio
+                    onCropChange={setCrop}
+                    onRotationChange={setRotation}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                  />
+                </div>
+
+                <div className='p-6 bg-gray-900 space-y-6'>
+                  <div className='flex flex-col gap-2'>
+                    <fieldset>
+                      <label htmlFor='zoom-level' className='text-white text-xs font-nunito'>
+                        Zoom
+                      </label>
+                      <input
+                        id='zoom-level'
+                        type='range'
+                        min={1}
+                        max={3}
+                        step={0.1}
+                        value={zoom}
+                        onChange={(e) => setZoom(Number(e.target.value))}
+                        className='w-full'
+                      />
+                    </fieldset>
+
+                    <fieldset>
+                      <label
+                        htmlFor='rotation-angle'
+                        className='text-white text-xs mt-2 font-nunito'>
+                        Rotation: {rotation}°
+                      </label>
+                      <input
+                        id='rotation-angle'
+                        type='range'
+                        min={0}
+                        max={360}
+                        step={1}
+                        value={rotation}
+                        onChange={(e) => setRotation(Number(e.target.value))}
+                        className='w-full'
+                      />
+                    </fieldset>
+                  </div>
+
+                  <div className='flex gap-4'>
                     <button
                       type='button'
-                      onClick={() => setEditingIndex(activeFileIndex)}
-                      className='absolute top-4 right-4 z-40 bg-gray-600/60 text-white backdrop-blur-md px-4 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-x-2'>
-                      Edit <PencilIcon className='size-4' />
+                      onClick={() => setEditingIndex(null)}
+                      className='flex-1 py-3 text-white font-bold bg-white/10 rounded-xl'>
+                      Cancel
                     </button>
-                    <img
-                      src={mainPreviewUrl}
-                      className='h-full w-full object-contain'
-                      alt='Preview'
-                    />
-
-                    {/* MOVE CAPTION INSIDE THE RELATIVE CONTAINER AND POSITION ABSOLUTE */}
-                    <div className='absolute bottom-4 inset-x-0 px-4 z-30'>
-                      <CaptionInputComponent file={activeFile} type='image' />
-                    </div>
-                  </Fragment>
-                ) : (
-                  <div className='h-full w-full flex flex-col items-center justify-center text-gray-400'>
-                    <PhotoIcon className='h-12 w-12 mb-2 opacity-20' />
-                    <p className='text-sm font-medium'>No image selected</p>
+                    <button
+                      type='button'
+                      onClick={handleSaveCrop}
+                      className='flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl'>
+                      Apply Crop
+                    </button>
                   </div>
-                )}
-              </div>
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
-        </div>
 
-        {/* CROPPER OVERLAY */}
-        <AnimatePresence>
-          {editingIndex !== null && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className='absolute inset-0 z-50 bg-black flex flex-col'>
-              <div className='relative flex-1'>
-                <Cropper
-                  image={editingFileUrl || ''}
-                  crop={crop}
-                  zoom={zoom}
-                  rotation={rotation}
-                  aspect={4 / 5} // Standard Social Aspect Ratio
-                  onCropChange={setCrop}
-                  onRotationChange={setRotation}
-                  onCropComplete={onCropComplete}
-                  onZoomChange={setZoom}
+          {selectedFiles.length > 0 && (
+            <div className='w-full mt-3 max-w-sm'>
+              <StatusPrivacyDisplay onOpenSettings={() => setShowPrivacySettings(true)} />
+            </div>
+          )}
+          
+          {/* Thumbnail Gallery */}
+          <div className='flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide'>
+            {/* Add More Button */}
+            {selectedFiles.length < 6 && (
+              <label className='flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group'>
+                <PlusIcon className='size-6 text-gray-400 group-hover:text-blue-500' />
+                <input
+                  type='file'
+                  hidden
+                  accept='image/*'
+                  multiple
+                  onChange={handleFileSelection}
                 />
-              </div>
+              </label>
+            )}
 
-              <div className='p-6 bg-gray-900 space-y-6'>
-                <div className='flex flex-col gap-2'>
-                  <fieldset>
-                    <label htmlFor='zoom-level' className='text-white text-xs font-nunito'>
-                      Zoom
-                    </label>
-                    <input
-                      id='zoom-level'
-                      type='range'
-                      min={1}
-                      max={3}
-                      step={0.1}
-                      value={zoom}
-                      onChange={(e) => setZoom(Number(e.target.value))}
-                      className='w-full'
-                    />
-                  </fieldset>
-
-                  <fieldset>
-                    <label htmlFor='rotation-angle' className='text-white text-xs mt-2 font-nunito'>
-                      Rotation: {rotation}°
-                    </label>
-                    <input
-                      id='rotation-angle'
-                      type='range'
-                      min={0}
-                      max={360}
-                      step={1}
-                      value={rotation}
-                      onChange={(e) => setRotation(Number(e.target.value))}
-                      className='w-full'
-                    />
-                  </fieldset>
-                </div>
-
-                <div className='flex gap-4'>
-                  <button
-                    type='button'
-                    onClick={() => setEditingIndex(null)}
-                    className='flex-1 py-3 text-white font-bold bg-white/10 rounded-xl'>
-                    Cancel
-                  </button>
-                  <button
-                    type='button'
-                    onClick={handleSaveCrop}
-                    className='flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl'>
-                    Apply Crop
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Thumbnail Gallery */}
-        <div className='flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide'>
-          {/* Add More Button */}
-          {selectedFiles.length < 6 && (
-            <label className='flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group'>
-              <PlusIcon className='size-6 text-gray-400 group-hover:text-blue-500' />
-              <input type='file' hidden accept='image/*' multiple onChange={handleFileSelection} />
-            </label>
-          )}
-
-          <AnimatePresence>
-            {selectedFiles.map((file, idx) => (
-              <FileThumbnail
-                key={file.name + idx}
-                file={file}
-                isActive={idx === activeFileIndex}
-                onSelect={() => setActiveFileIndex(idx)}
-                onRemove={() => removeImage(idx)}
-              />
-            ))}
-          </AnimatePresence>
+            <AnimatePresence>
+              {selectedFiles.map((file, idx) => (
+                <FileThumbnail
+                  key={file.name + idx}
+                  file={file}
+                  isActive={idx === activeFileIndex}
+                  onSelect={() => setActiveFileIndex(idx)}
+                  onRemove={() => removeImage(idx)}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+
+      <StatusPrivacySettings
+        open={showPrivacySettings}
+        onClose={() => setShowPrivacySettings(false)}
+      />
+    </Fragment>
   );
 }
 

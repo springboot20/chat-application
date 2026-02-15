@@ -30,7 +30,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
   const state = api.getState() as RootState;
   const token = state.auth?.tokens?.accessToken;
   const url = typeof args === 'string' ? args : args.url;
-  
+
   // List of public endpoints that don't need a token
   const isPublicAction = url.includes('/login') || url.includes('/register');
 
@@ -93,6 +93,16 @@ export const rtkQueryErrorLogger: Middleware = (_: MiddlewareAPI) => (next) => (
 
 export const ApiService = createApi({
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Auth', 'Chat', 'User', 'Message', 'StatusFeed', 'UserStatuses'],
+  tagTypes: [
+    'Auth',
+    'Chat',
+    'User',
+    'Message',
+    'StatusFeed',
+    'UserStatuses',
+    'Contacts',
+    'SuggestedFriends',
+    'BlockedContacts',
+  ],
   endpoints: () => ({}),
 });

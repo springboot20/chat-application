@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState, Fragment } from 'react';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { ChatModal } from '../modal/ChatModal.tsx';
+// import { ChatModal } from '../modal/ChatModal.tsx';
 import { SearchInput } from '../panels/SearchInput.tsx';
 import { ChatItem } from '../chat/ChatItem.tsx';
 import { Loading } from '../Loading.tsx';
@@ -15,6 +15,7 @@ import { useDebounce } from '../../hooks/useDebounce.ts';
 import { useTyping } from '../../hooks/useTyping.ts';
 import { useChat } from '../../hooks/useChat.ts';
 import { useMessage } from '../../hooks/useMessage.ts';
+import { NewChatModal } from '../modal/NewChatModal.tsx';
 
 type MessageTabComponentProps = {
   open: boolean;
@@ -145,7 +146,8 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ close 
 
   return (
     <>
-      <ChatModal open={openChat} onClose={handleCloseChat} onSuccess={() => refetchChats()} />
+      {/* <ChatModal open={openChat} onClose={handleCloseChat} onSuccess={() => refetchChats()} /> */}
+      <NewChatModal open={openChat} onClose={handleCloseChat} />
       <div
         className={`fixed lg:left-20 w-[25rem] bg-white dark:bg-black flex-1 border-r-[1.5px] border-r-gray-600/30 h-screen z-50 hidden lg:block
         `}>

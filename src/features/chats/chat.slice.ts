@@ -45,21 +45,46 @@ export const ChatApiSlice = ApiService.injectEndpoints({
       }),
     }),
 
-    getAvailableUsers: builder.query<Response, void>({
-      query: () => ({
-        url: '/chat-app/chats/available-users',
-      }),
-      providesTags: (result) =>
-        result?.data?.length
-          ? [
-              // eslint-disable-next-line no-unsafe-optional-chaining
-              ...result?.data.map((chat: ChatListItemInterface) => ({
-                type: 'User' as const,
-                id: chat._id,
-              })),
-              { type: 'User', id: 'USER' },
-            ]
-          : [{ type: 'User', id: 'USER' }],
+    // features/chats/chat.slice.ts
+    getAvailableUsers: builder.query<any, { page?: number; search?: string }>({
+      query: ({ page, search }) => {
+        const params = new URLSearchParams({});
+
+        if (page) {
+          params.append('page', page.toString());
+        }
+
+        if (search) {
+          params.append('search', search);
+        }
+
+        const query = params.toString();
+
+        return {
+          url: `/chat-app/auth/users/available-users?${query ? query + '&limit=12' : ''}`,
+        };
+      },
+
+      // This tells RTK Query to keep the data when the page changes
+      serializeQueryArgs: ({ queryArgs }) => {
+        // We only reset the cache if the search term changes
+        return String(queryArgs?.search);
+      },
+
+      merge: (currentCache, newItems, { arg }) => {
+        if (arg.page === 1) {
+          // This is crucial: it clears the "old" discovery users
+          // when you reopen the modal or start a new search
+          currentCache.data.users = newItems.data.users;
+        } else {
+          currentCache.data.users.push(...newItems.data.users);
+        }
+        currentCache.data.pagination = newItems.data.pagination;
+      },
+
+      forceRefetch({ currentArg, previousArg }) {
+        return currentArg !== previousArg;
+      },
     }),
 
     createGroupChat: builder.mutation<Response, GroupChatInterface>({

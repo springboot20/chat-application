@@ -49,7 +49,12 @@ type StatusContextValue = {
   progress: number;
   isAddingNewMediaStatus: boolean;
   isAddingNewTextStatus: boolean;
+  // Privacy settings
+  privacy: PrivacyType;
+  selectedContacts: string[];
 
+  setPrivacy: React.Dispatch<React.SetStateAction<PrivacyType>>;
+  setSelectedContacts: React.Dispatch<React.SetStateAction<string[]>>;
   setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>;
   setSelectedVideoFiles: React.Dispatch<React.SetStateAction<File[]>>;
   editorRef: React.RefObject<HTMLDivElement>;
@@ -82,6 +87,8 @@ type CaptionsType = {
   video?: Array<CaptionEntry>;
 };
 
+export type PrivacyType = 'all_contacts' | 'selected' | 'except';
+
 export const StatusContext = createContext<StatusContextValue | null>(null);
 
 export const StatusProvider = ({ children }: { children: ReactNode }) => {
@@ -103,6 +110,10 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
   const { selectedStatusToView } = useAppSelector((state) => state.statusStories);
   const [activeStatusIndex, setActiveStatusIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+
+  // Privacy state
+  const [privacy, setPrivacy] = useState<PrivacyType>('all_contacts'); // Default to "My Contacts"
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
 
   const [captions, setCaptions] = useState<CaptionsType>({
     image: [],
@@ -191,6 +202,9 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
         type: mediaContentType,
         text: textContent,
         backgroundColor: selectedTextBackground,
+        privacyType: privacy,
+        selectedContacts:
+          privacy === 'selected' || privacy === 'except' ? selectedContacts : undefined,
       };
 
       await addNewTextStatus(payload).unwrap();
@@ -218,6 +232,10 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     overallFiles.forEach((file) => {
       formData.append('statusMedias', file);
     });
+
+    if (privacy === 'selected' || privacy === 'except') {
+      formData.append('selectedContacts', JSON.stringify(selectedContacts));
+    }
 
     // 3. Append the metadata as a string
     formData.append('metadata', JSON.stringify(metadata));
@@ -282,6 +300,11 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
       setProgress,
       isAddingNewMediaStatus,
       isAddingNewTextStatus,
+
+      privacy,
+      setPrivacy,
+      selectedContacts,
+      setSelectedContacts,
     }),
     [
       statusWindow,
@@ -309,6 +332,12 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
       setProgress,
       isAddingNewMediaStatus,
       isAddingNewTextStatus,
+
+      // Privacy settings
+      privacy,
+      setPrivacy,
+      selectedContacts,
+      setSelectedContacts,
     ],
   );
 

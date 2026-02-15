@@ -9,7 +9,7 @@ const AuthStorage = {
   set: (key: string, value: any) => LocalStorage.set(key, value),
   clear: () => {
     LocalStorage.set('user', null);
-    LocalStorage.set('authentified', false);
+    LocalStorage.set('authenticated', false);
     LocalStorage.set('tokens', null);
   },
 };
@@ -17,7 +17,7 @@ const AuthStorage = {
 const getInitialState = (): InitialState => ({
   tokens: LocalStorage.get('tokens') as Token,
   user: LocalStorage.get('user') as User,
-  isAuthenticated: LocalStorage.get('authentified') as boolean,
+  isAuthenticated: LocalStorage.get('authenticated') as boolean,
 });
 
 const initialState: InitialState = getInitialState();
@@ -32,7 +32,7 @@ const updateAuthState = (
 
   AuthStorage.set('tokens', tokens);
   AuthStorage.set('user', user);
-  AuthStorage.set('authentified', state.isAuthenticated);
+  AuthStorage.set('authenticated', state.isAuthenticated);
 };
 
 const AuthSlice = createSlice({
@@ -55,7 +55,7 @@ const AuthSlice = createSlice({
           state.isAuthenticated = true;
         }
 
-        AuthStorage.set('authentified', state.isAuthenticated);
+        AuthStorage.set('authenticated', state.isAuthenticated);
       } catch (error) {
         console.error('Error decoding token:', error);
         state.isAuthenticated = false;

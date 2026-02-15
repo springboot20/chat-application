@@ -35,10 +35,7 @@ import {
   setCurrentChat,
   updateMessageDelivery,
 } from '../features/chats/chat.reducer.ts';
-import {
-  useGetAvailableUsersQuery,
-  useGetChatMessagesQuery,
-} from '../features/chats/chat.slice.ts';
+import { useGetChatMessagesQuery } from '../features/chats/chat.slice.ts';
 import { useTheme } from '../context/ThemeContext';
 import { User } from '../types/auth.ts';
 import MessageInput from '../components/inout/MessageInput.tsx';
@@ -71,10 +68,6 @@ export const Chat = () => {
   const { isOnline: hasInternet } = useNetwork();
   const { isUserOnline, handleUserOnline, handleUserOffline, checkUsersOnlineStatus } =
     useOnlineUsers();
-  const { data: availableUsers } = useGetAvailableUsersQuery(undefined, {
-    skip: !isAuthenticated,
-  });
-  const users = availableUsers?.data as User[];
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const {
@@ -162,7 +155,6 @@ export const Chat = () => {
     if (!hasInternet) {
       toast.warning('You are offline. Messages will be queued.', {
         toastId: 'offline-warning',
-        autoClose: false,
       });
     } else {
       toast.dismiss('offline-warning');
@@ -364,7 +356,7 @@ export const Chat = () => {
     try {
       // 1. Stop all outgoing API calls immediately
       dispatch(ApiService.util.resetApiState());
-      
+
       // We call the API, but we don't wait for success to clear local UI
       // The Redux Slice extraReducers will handle the state wipe
       await logout().unwrap();
@@ -620,7 +612,6 @@ export const Chat = () => {
                                         <MessageItem
                                           message={msg}
                                           theme={theme}
-                                          users={users}
                                           containerRef={containerRef}
                                           highlightedMessageId={highlightedMessageId}
                                           isGroupChatMessage={currentChat?.isGroupChat}

@@ -14,6 +14,7 @@ import ContentEditable from 'react-contenteditable';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { useTheme } from '../../../context/ThemeContext';
 import { MediaContentTypes } from './MediaContentTypes';
+import { StatusPrivacyDisplay, StatusPrivacySettings } from '../StatusPrivacySettings';
 
 export default function TextMediaContent() {
   return (
@@ -52,6 +53,7 @@ const TextEditorContent = () => {
     isAddingNewTextStatus,
   } = useStatusStories();
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
+  const [showPrivacySettings, setShowPrivacySettings] = useState(false);
   const { theme } = useTheme();
 
   const [openEmoji, setOpenEmoji] = useState(false);
@@ -345,7 +347,18 @@ const TextEditorContent = () => {
             </motion.button>
           </div>
         </div>
+
+        {textContent.length > 0 && (
+          <div className='w-full mt-3'>
+            <StatusPrivacyDisplay onOpenSettings={() => setShowPrivacySettings(true)} />
+          </div>
+        )}
       </div>
+
+      <StatusPrivacySettings
+        open={showPrivacySettings}
+        onClose={() => setShowPrivacySettings(false)}
+      />
     </Fragment>
   );
 };

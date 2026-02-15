@@ -13,7 +13,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DocumentPreview } from '../file/DocumentPreview';
 import EmojiPicker, { Theme, type EmojiClickData } from 'emoji-picker-react';
 import { MessageMenuSelection } from '../menu/MessageMenu';
-import { User } from '../../types/auth';
 import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks';
 import { RootState } from '../../app/store';
 import { FilePreviewModal } from '../modal/FilePreviewModal';
@@ -80,7 +79,6 @@ interface MessageItemProps {
   isGroupChatMessage?: boolean;
   containerRef: React.MutableRefObject<HTMLDivElement | null>;
   theme: string;
-  users: User[];
   highlightedMessageId?: string;
   onSetHighlightedMessage?: (messageId: string | undefined) => void;
   setIsOwnedMessage: (value: React.SetStateAction<boolean>) => void;
