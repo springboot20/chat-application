@@ -20,7 +20,6 @@ import {
 } from '../features/chats/chat.reducer.ts';
 import {
   useDeleteChatMessageMutation,
-  useGetAvailableUsersQuery,
   useReplyToMessageMutation,
   useSendMessageMutation,
 } from '../features/chats/chat.slice.ts';
@@ -120,7 +119,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [sendMessage] = useSendMessageMutation();
   const [deleteChatMessage] = useDeleteChatMessageMutation();
   const [replyToChatMessage] = useReplyToMessageMutation();
-  const { data: availableUsers } = useGetAvailableUsersQuery();
 
   const [messageToReply, setMessageToReply] = useState('');
   const messageAudioManagerRef = useRef<AudioManager | null>(null);
@@ -134,7 +132,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
-  const users = availableUsers?.data as User[];
   const isAtBottomRef = useRef(true);
 
   const { isOnline } = useNetwork();
@@ -468,7 +465,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   const handleReplyToChatMessage = useCallback(async () => {
     if (!currentChat?._id || !socket) return;
 
-    const processedMessage = processMentionsContent(message, users);
+    const processedMessage = processMentionsContent(message, currentChat?.participants);
 
     const payload = {
       chatId: currentChat?._id as string,
@@ -504,7 +501,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     currentChat?._id,
     socket,
     message,
-    users,
     messageToReply,
     attachmentFiles.files,
     replyToChatMessage,
@@ -551,7 +547,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       clearTimeout(typingTimeoutRef.current);
     }
 
-    const processedMessage = processMentionsContent(message, users);
+    const processedMessage = processMentionsContent(message, currentChat?.participants);
 
     // Clear input fields immediately for better UX
     const files = attachmentFiles.files;
