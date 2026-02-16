@@ -3,11 +3,15 @@ import { ChatListItemInterface } from '../../types/chat';
 import { classNames, formatMessageTime, getMessageObjectMetaData } from '../../utils';
 import {
   CheckCircleIcon,
+  CheckIcon,
   EllipsisVerticalIcon,
   InformationCircleIcon,
   NoSymbolIcon,
-  PaperClipIcon,
   TrashIcon,
+  PhotoIcon,
+  VideoCameraIcon,
+  MicrophoneIcon,
+  DocumentIcon,
 } from '@heroicons/react/24/outline';
 import { useDeleteOneOneChatMessageMutation } from '../../features/chats/chat.slice';
 import { toast } from 'react-toastify';
@@ -213,8 +217,70 @@ export const ChatItem: React.FC<ChatItemProps> = ({
             </div>
 
             <div className='flex items-center gap-1 overflow-hidden h-5'>
-              {!chat?.lastMessage?.isDeleted && chat?.lastMessage?.attachments?.length > 0 && (
-                <PaperClipIcon className='h-3.5 w-3.5 text-gray-400 flex-shrink-0' />
+              {/* Message Status */}
+              {(chatMeta as any).isSender &&
+                !chat.lastMessage?.isDeleted &&
+                (chatMeta as any).status && (
+                  <div className='flex items-center mr-1'>
+                    {(chatMeta as any).status === 'sent' && (
+                      <CheckIcon className='w-3.5 h-3.5 text-gray-400' />
+                    )}
+                    {(chatMeta as any).status === 'delivered' && (
+                      <span className='text-gray-400'>
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          width='24'
+                          height='24'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          className='h-3.5 w-3.5'>
+                          <path d='M18 6 7 17l-5-5' />
+                          <path d='m22 10-7.5 7.5L13 16' />
+                        </svg>
+                      </span>
+                    )}
+                    {(chatMeta as any).status === 'seen' && (
+                      <span className='text-blue-500'>
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          width='24'
+                          height='24'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          className='h-3.5 w-3.5'>
+                          <path d='M18 6 7 17l-5-5' />
+                          <path d='m22 10-7.5 7.5L13 16' />
+                        </svg>
+                      </span>
+                    )}
+                  </div>
+                )}
+
+              {/* Attachment Icon */}
+              {!chat.lastMessage?.isDeleted && (chatMeta as any).attachmentType && (
+                <div className='flex-shrink-0 text-gray-500 dark:text-gray-400 mr-1'>
+                  {(chatMeta as any).attachmentType === 'image' && (
+                    <PhotoIcon className='h-3.5 w-3.5' />
+                  )}
+                  {(chatMeta as any).attachmentType === 'video' && (
+                    <VideoCameraIcon className='h-3.5 w-3.5' />
+                  )}
+                  {(chatMeta as any).attachmentType === 'voice' && (
+                    <MicrophoneIcon className='h-3.5 w-3.5' />
+                  )}
+                  {((chatMeta as any).attachmentType === 'document' ||
+                    (chatMeta as any).attachmentType === 'file') && (
+                    <DocumentIcon className='h-3.5 w-3.5' />
+                  )}
+                </div>
               )}
 
               {typingUsers && typingUsers.length > 0 ? (
