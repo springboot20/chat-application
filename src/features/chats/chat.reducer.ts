@@ -80,56 +80,57 @@ const ChatSlice = createSlice({
     },
 
     // ✅ ENHANCED: onMessageReceived to handle Status Updates and Merging
-    // Inside ChatSlice.reducers...
+onMessageReceived: (state, action: PayloadAction<{ data: ChatMessageInterface }>) => {
+  const message = action.payload.data;
+  const chatId = message.chat;
 
-    onMessageReceived: (state, action: PayloadAction<{ data: ChatMessageInterface }>) => {
-      const message = action.payload.data;
-      const chatId = message.chat;
+  if (!state.chatMessages[chatId]) {
+    state.chatMessages[chatId] = [];
+  }
 
-      // 1. Logic for storing messages (your existing logic)
-      if (!state.chatMessages[chatId]) {
-        state.chatMessages[chatId] = [];
-      }
-      const currentMessages = state.chatMessages[chatId];
-      const existingIndex = currentMessages.findIndex((msg) => msg._id === message._id);
+  // 1. Check if message already exists (by ID)
+  const isDuplicate = state.chatMessages[chatId].some(msg => msg._id === message._id);
+  if (isDuplicate) return; // Stop here if we already have it
 
-      if (existingIndex !== -1) {
-        state.chatMessages[chatId][existingIndex] = {
-          ...currentMessages[existingIndex],
-          ...message,
-          status: message.status || 'sent',
-        };
-      } else {
-        state.chatMessages[chatId].push(message);
+  // 2. Check for Optimistic matches (matching content/tempId for the sender)
+  const existingIndex = state.chatMessages[chatId].findIndex((msg) => {
+    const isTemp = msg._id.toString().startsWith('temp-') || msg.status === 'queued';
+    const sameContent = msg.content === message.content;
+    const sameSender = msg.sender._id === message.sender._id;
+    return isTemp && sameSender && sameContent;
+  });
 
-        // 2. WHATSAPP LOGIC: Handle Unread Count
-        // If the message is NOT from the current user AND the chat isn't currently active
-        const isNotFromMe = message.sender._id !== LocalStorage.get('user')?._id; // Ensure you have access to current user ID
-        const isNotCurrentChat = state.currentChat?._id !== chatId;
+  if (existingIndex !== -1) {
+    // Replace temporary message with the real one from server
+    state.chatMessages[chatId][existingIndex] = {
+      ...message,
+      status: message.status || 'sent',
+    };
+  } else {
+    // 3. If it's a brand new message from someone else, push it
+    state.chatMessages[chatId].push(message);
+    
+    // Handle Unread Logic (WhatsApp style)
+    const isNotCurrentChat = state.currentChat?._id !== chatId;
+    if (isNotCurrentChat) {
+      state.unreadMessages = [...(state.unreadMessages || []), message];
+    }
+  }
 
-        if (isNotFromMe && isNotCurrentChat) {
-          // Avoid duplicate unreads
-          const alreadyInUnread = state.unreadMessages.some((m) => m._id === message._id);
-          if (!alreadyInUnread) {
-            state.unreadMessages = [...(state.unreadMessages || []), message];
-            LocalStorage.set('unreadMessages', removeCircularReferences(state.unreadMessages));
-          }
-        }
-      }
+  // 4. Update Sidebar & Sort
+  const chatIndex = state.chats.findIndex((chat) => chat._id === chatId);
+  if (chatIndex !== -1) {
+    state.chats[chatIndex].lastMessage = message;
+    state.chats[chatIndex].updatedAt = message.createdAt;
+    
+    // Move chat to top
+    const [movedChat] = state.chats.splice(chatIndex, 1);
+    state.chats.unshift(movedChat);
+  }
 
-      // 3. Keep sidebar updated with the latest message
-      const chatIndex = state.chats.findIndex((chat) => chat._id === chatId);
-      if (chatIndex !== -1) {
-        state.chats[chatIndex].lastMessage = message;
-        state.chats[chatIndex].updatedAt = message.createdAt;
-        // Move chat to top of the list (WhatsApp behavior)
-        const [movedChat] = state.chats.splice(chatIndex, 1);
-        state.chats.unshift(movedChat);
-      }
-
-      LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
-      LocalStorage.set('chats', removeCircularReferences(state.chats));
-    },
+  LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
+  LocalStorage.set('chats', removeCircularReferences(state.chats));
+},
 
     updateMessageReactions: (
       state,
