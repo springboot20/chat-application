@@ -43,7 +43,6 @@ export const AuthApiSlice = ApiService.injectEndpoints({
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled;
-          dispatch(AuthApiSlice.util.resetApiState());
           dispatch(ApiService.util.resetApiState());
         } catch (error) {
           console.error('Logout failed, cache not cleared', error);

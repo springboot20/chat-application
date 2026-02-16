@@ -86,21 +86,28 @@ const ChatSlice = createSlice({
       const message = action.payload.data;
       const chatId = message.chat;
 
-      // 1. Logic for storing messages (your existing logic)
       if (!state.chatMessages[chatId]) {
         state.chatMessages[chatId] = [];
       }
       const currentMessages = state.chatMessages[chatId];
-      const existingIndex = currentMessages.findIndex((msg) => msg._id === message._id);
+
+      const isDuplicate = currentMessages.some((msg) => msg._id === message._id);
+      if (isDuplicate) return; // Stop here if we already have it
+
+      const existingIndex = currentMessages.findIndex((msg) => {
+        const isTemp = msg._id.toString().startsWith('temp-') || msg.status === 'queued';
+        const sameContent = msg.content === message.content;
+        const sameSender = msg.sender._id === message.sender._id;
+        return isTemp && sameSender && sameContent;
+      });
 
       if (existingIndex !== -1) {
-        state.chatMessages[chatId][existingIndex] = {
-          ...currentMessages[existingIndex],
+        currentMessages[existingIndex] = {
           ...message,
           status: message.status || 'sent',
         };
       } else {
-        state.chatMessages[chatId].push(message);
+        currentMessages.push(message);
 
         // 2. WHATSAPP LOGIC: Handle Unread Count
         // If the message is NOT from the current user AND the chat isn't currently active
