@@ -108,7 +108,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ close 
 
   const chatCounts = useMemo(() => {
     const all = chatsWithMeta?.length || 0;
-    const unread = chatsWithMeta?.filter((chat) => chat?.unreadCount > 0).length || 0;
+    const unread = chatsWithMeta?.filter((chat: any) => chat?.unreadCount > 0).length || 0;
     const read = all - unread;
     return { all, unread, read };
   }, [chatsWithMeta]);
@@ -154,7 +154,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ close 
               <FontAwesomeIcon icon={faCaretDown} className='text-gray-400 mt-1 cursor-pointer' />
             </div>
             <button
-            type="button"
+              type='button'
               onClick={() => setOpenChat(true)}
               className='p-2 rounded-full bg-[#615EF0] hover:bg-[#4f4dbf] transition-colors text-white shadow-lg'>
               <PlusIcon className='h-6 w-6' />
