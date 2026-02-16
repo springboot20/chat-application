@@ -33,9 +33,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
     const [isLoading, setIsLoading] = useState(false);
     const [audioDuration, setAudioDuration] = useState<number>(0);
 
-    console.log(file?.type);
-    console.log(attachment);
-
     const isImageFromAttachment =
       attachment?.url?.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i) || attachment?.fileType === 'image';
     const isPdfFromAttachment = attachment?.url?.match(/\.pdf$/i);

@@ -12,6 +12,8 @@ import { classNames, formatMessageTime, getDynamicUserColor } from '../../utils'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DocumentPreview } from '../file/DocumentPreview';
 import EmojiPicker, { Theme, type EmojiClickData } from 'emoji-picker-react';
+import { UserProfileModal } from '../modal/UserProfileModal';
+import { User } from '../../types/auth';
 import { MessageMenuSelection } from '../menu/MessageMenu';
 import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks';
 import { RootState } from '../../app/store';
@@ -146,8 +148,13 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isGlowing, setIsGlowing] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  // const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Partial<User> | null>(null);
+  // const [pickerPosition, setPickerPosition] = useState<'top' | 'bottom'>('top');
   const [showReactionTooltip, setShowReactionTooltip] = useState(false);
   const { isOnline: hasInternet } = useNetwork();
+
   // Optimized menu positioning that works in all scenarios
   const calculateMenuPosition = useCallback((clickX: number, clickY: number) => {
     if (!menuRef.current || !containerRef.current) return;
@@ -523,6 +530,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   useEffect(() => {
     setIsOwnedMessage(isOwnedMessage || message.sender?._id === user?._id);
   }, [isOwnedMessage, message.sender?._id, setIsOwnedMessage, user?._id]);
+
+  const handleOpenProfile = (targetUser: Partial<User>) => {
+    setSelectedUser(targetUser);
+    setShowProfileModal(true);
+  };
+
   const renderMessageWithMention = () => {
     const { content, mentions } = message;
     if (!mentions || mentions.length === 0) return <span>{content}</span>;
@@ -548,8 +561,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           )}
           onClick={(e) => {
             e.stopPropagation();
-            // Logic to open user profile
-            console.log('Navigating to profile:', mention.userId);
+            if (mention.userId) {
+              handleOpenProfile({ _id: mention.userId, username: mention.username });
+            }
           }}>
           {mentionText}
         </span>,
@@ -562,10 +576,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     }
     return parts;
   };
+
   const getGlowClass = () => {
     if (!isGlowing) return '';
     return isOwnedMessage ? 'animate-glow-purple' : 'animate-glow-green';
   };
+
   const categorizeReactions = (reactions: EmojiType[]) => {
     if (!reactions || !reactions.length) return [];
     const reactionMap = new Map<string, CategorizedReaction>();
@@ -591,21 +607,26 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       return a.emoji.localeCompare(b.emoji);
     });
   };
+
   const hasUserReacted = (reaction: CategorizedReaction, currentUserId: string): boolean => {
     return reaction?.userIds?.includes(currentUserId);
   };
+
   const categorizedReactionMemoized = useMemo(
     () => categorizeReactions(message.reactions || []),
     [message.reactions],
   );
+
   const getReactionStats = useCallback((): ReactionStats => {
     const totalReactions = categorizedReactionMemoized.reduce(
       (sum: number, r: CategorizedReaction) => sum + r.count,
       0,
     );
+
     const userHasReacted: boolean = categorizedReactionMemoized.some((r: CategorizedReaction) =>
       hasUserReacted(r, user?._id || ''),
     );
+
     // Normalize reactions to ensure all required fields are present
     const normalizedReactions = categorizedReactionMemoized.map((reaction) => ({
       ...reaction,
@@ -628,7 +649,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       categorizedReactions: normalizedReactions,
     };
   }, [categorizedReactionMemoized, user?._id]);
+
   const stats = useMemo(() => getReactionStats(), [getReactionStats]);
+
   const renderReactionsWithDuplicate = () => {
     if (!message.reactions || message.reactions.length === 0) return null;
     const { categorizedReactions, totalReactions } = stats;
@@ -661,6 +684,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       </div>
     );
   };
+
   const getAttachmentType = () => {
     if (!message.attachments || message.attachments.length === 0) return null;
     const types = message.attachments.map((a) => {
@@ -673,6 +697,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     // If multiple different types → mixed
     return new Set(types).size > 1 ? 'mixed' : types[0];
   };
+
   const renderAttachmentIcon = () => {
     const type = getAttachmentType();
     if (!type || message.isDeleted) return null;
@@ -692,6 +717,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         return <PaperClipIcon className={baseClass} />;
     }
   };
+
   return (
     <>
       <FilePreviewModal
@@ -708,11 +734,13 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         handleImageChange={handleImageChange}
         currentMessageImageIndex={currentMessageImageIndex}
       />
+
       <ReactionTooltip
         open={showReactionTooltip}
         onClose={() => setShowReactionTooltip(false)}
         stats={stats}
       />
+
       <div
         className={classNames(
           'flex items-start p-1.5 text-white text-base relative h-auto w-full gap-6',
@@ -787,7 +815,13 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           }}
           data-id={message._id}>
           {!isOwnedMessage && !isGroupChatMessage ? (
-            <button title='open user profile' className='self-start'>
+            <button
+              title='open user profile'
+              className='self-start'
+              onClick={(e) => {
+                e.stopPropagation();
+                if (message.sender) handleOpenProfile(message.sender);
+              }}>
               <span className='text-gray-800 font-nunito font-bold text-sm'>
                 ~{message.sender?.username}
               </span>
@@ -799,7 +833,13 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           )}
           <div className='relative'>
             {isGroupChatMessage && !isOwnedMessage && (
-              <button title='open user profile' className='self-start'>
+              <button
+                title='open user profile'
+                className='self-start'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (message.sender) handleOpenProfile(message.sender);
+                }}>
                 <span
                   title={message.sender?.username}
                   className='text-sm font-bold mb-0.5'
@@ -905,6 +945,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           </div>
         </div>
       </div>
+
+      <UserProfileModal
+        open={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={selectedUser}
+      />
     </>
   );
 };

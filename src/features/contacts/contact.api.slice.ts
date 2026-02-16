@@ -176,4 +176,5 @@ export const ContactApiSlice = ApiService.injectEndpoints({
   },
 });
 
-export const { useGetMyContactsQuery, useAddToContactMutation } = ContactApiSlice;
+export const { useGetMyContactsQuery, useAddToContactMutation, useToggleBlockContactMutation } =
+  ContactApiSlice;
