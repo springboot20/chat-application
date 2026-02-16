@@ -45,6 +45,7 @@ import { useMarkMessagesAsSeen } from '../hooks/useMarkMessagesAsSeen.ts';
 import { MobileBottomNav } from '../components/navigation/MobileNavigation.tsx';
 import { CreateOrViewStatusWindowPanel } from '../components/status/CreateOrViewStatusWindowPanel.tsx';
 import { ApiService } from '../app/services/api.service.ts';
+import { ChatMessageInterface } from '../types/chat.ts';
 
 export const Chat = () => {
   const { isAuthenticated, user } = useAppSelector((state: RootState) => state.auth);
@@ -125,7 +126,7 @@ export const Chat = () => {
   const otherParticipantId = useMemo(() => {
     if (!currentChat || currentChat.isGroupChat) return undefined;
 
-    const otherParticipant = currentChat.participants?.find((p) => p._id !== user?._id);
+    const otherParticipant = currentChat.participants?.find((p: User) => p._id !== user?._id);
 
     return otherParticipant?._id;
   }, [currentChat, user?._id]);
@@ -142,8 +143,8 @@ export const Chat = () => {
     if (!currentChat || !socket) return;
 
     const participantIds = currentChat.participants
-      ?.map((p) => p._id)
-      .filter((id) => id !== user?._id);
+      ?.map((p: User) => p._id)
+      .filter((id: string) => id !== user?._id);
 
     if (participantIds && participantIds.length > 0) {
       checkUsersOnlineStatus(participantIds);
@@ -323,7 +324,7 @@ export const Chat = () => {
     const isGroupChat = currentChat?.isGroupChat;
     const chatName = isGroupChat
       ? currentChat.name
-      : participants?.filter((p) => p._id !== user?._id)[0]?.username;
+      : participants?.filter((p: User) => p._id !== user?._id)[0]?.username;
 
     // const avatarUrl = isGroupChat
     //   ? participants?.slice(0, 3)
@@ -343,7 +344,7 @@ export const Chat = () => {
     const messages = reduxStateMessages[String(currentChat._id)];
     // Create a shallow copy to avoid proxy issues
     return messages
-      ? messages.map((m) => {
+      ? messages.map((m: ChatMessageInterface) => {
           return { ...m };
         })
       : [];
@@ -607,7 +608,7 @@ export const Chat = () => {
                               <div className='flex flex-col gap-6 h-full chat-container'>
                                 {currentChatMessages?.length > 0 ? (
                                   React.Children.toArray(
-                                    currentChatMessages?.map((msg) => {
+                                    currentChatMessages?.map((msg: ChatMessageInterface) => {
                                       return (
                                         <MessageItem
                                           message={msg}
