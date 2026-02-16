@@ -8,7 +8,7 @@ import {
   PaperClipIcon,
 } from '@heroicons/react/24/outline';
 import { ChatMessageInterface } from '../../types/chat';
-import { classNames, formatMessageTime } from '../../utils';
+import { classNames, formatMessageTime, getDynamicUserColor } from '../../utils';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DocumentPreview } from '../file/DocumentPreview';
 import EmojiPicker, { Theme, type EmojiClickData } from 'emoji-picker-react';
@@ -33,10 +33,13 @@ const MessageStatusTick = ({
   isOwnedMessage: boolean;
 }) => {
   if (!isOwnedMessage) return null;
-
   const icons = {
     queued: <ClockIcon className='w-3 h-3 text-gray-400' />,
-    sent: <CheckIcon className='w-3 h-3 text-gray-400' />,
+    sent: (
+      <CheckIcon
+        className={classNames('w-3 h-3', isOwnedMessage ? 'text-indigo-200' : 'text-gray-400')}
+      />
+    ),
     delivered: (
       <svg
         xmlns='http://www.w3.org/2000/svg'
@@ -48,7 +51,7 @@ const MessageStatusTick = ({
         strokeWidth='2'
         strokeLinecap='round'
         strokeLinejoin='round'
-        className='h-4 w-4 text-gray-400'>
+        className={classNames('h-4 w-4', isOwnedMessage ? 'text-indigo-200' : 'text-gray-400')}>
         <path d='M18 6 7 17l-5-5' />
         <path d='m22 10-7.5 7.5L13 16' />
       </svg>
@@ -64,13 +67,12 @@ const MessageStatusTick = ({
         strokeWidth='2'
         strokeLinecap='round'
         strokeLinejoin='round'
-        className='h-4 w-4 text-blue-500'>
+        className={classNames('h-4 w-4', isOwnedMessage ? 'text-blue-200' : 'text-blue-500')}>
         <path d='M18 6 7 17l-5-5' />
         <path d='m22 10-7.5 7.5L13 16' />
       </svg>
     ),
   };
-
   return <span className='ml-1 self-end'>{icons[status]}</span>;
 };
 
@@ -122,10 +124,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
   const [reactToMessage] = useReactToChatMessageMutation();
   const dispatch = useAppDispatch();
-
   const { handleDeleteChatMessage, handleSetOpenReply, messageToReply, messageItemRef } =
     useMessage();
-
   const messageFiles = message.attachments || [];
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [reactionLocation, setReactionLocation] = useState<{
@@ -148,52 +148,41 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [showReactionTooltip, setShowReactionTooltip] = useState(false);
   const { isOnline: hasInternet } = useNetwork();
-
   // Optimized menu positioning that works in all scenarios
   const calculateMenuPosition = useCallback((clickX: number, clickY: number) => {
     if (!menuRef.current || !containerRef.current) return;
-
     const menuRect = menuRef.current.getBoundingClientRect();
     const messageRect = containerRef.current.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-
     const PADDING = 10; // Padding from edges
-
     let x = clickX;
     let y = clickY;
-
     // Horizontal positioning
     // Check if menu would overflow right edge
     if (x + menuRect.width + PADDING > viewportWidth) {
       // Position to the left of click
       x = x - menuRect.width;
     }
-
     // Ensure menu doesn't go off left edge
     if (x < PADDING) {
       x = PADDING;
     }
-
     // Vertical positioning
     // Check if menu would overflow bottom edge
     if (y + menuRect.height + PADDING > viewportHeight) {
       // Position above the click
       y = y - menuRect.height;
     }
-
     // Ensure menu doesn't go off top edge
     if (y < PADDING) {
       y = PADDING;
     }
-
     // Convert to position relative to the message container
     const relativeX = x - messageRect.left;
     const relativeY = y - messageRect.top;
-
     setMenuPosition({ x: relativeX, y: relativeY });
   }, []);
-
   // Optimized emoji picker positioning
   const calculatePickerPosition = useCallback(() => {
     if (
@@ -204,57 +193,44 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     ) {
       return;
     }
-
     // Get the message element's bounding rect
     const messageRect = containerRef.current.getBoundingClientRect();
     const reactionRect = reactionRef.current.getBoundingClientRect();
-
     // Get the viewport dimensions
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-
     // Get scroll offsets
     const scrollX = messagesContainerRef.current.scrollWidth;
     const scrollY = messagesContainerRef.current.scrollHeight;
-
     // Constants for picker dimensions (you may need to adjust these)
     const MARGIN = 10;
-
     let x = doubleClickPosition.clientX;
     let y = doubleClickPosition.clientY;
-
     // Ensure picker stays within viewport bounds
     if (x + reactionRect.width > scrollX + viewportWidth) {
       x = scrollX + viewportWidth - reactionRect.width - MARGIN;
     }
-
     if (x < messageRect.left + scrollX) {
       x = messageRect.left + scrollX - MARGIN;
     }
-
     if (y + reactionRect.height > scrollY - viewportHeight) {
       y = scrollY + viewportHeight - reactionRect.height - MARGIN;
     }
-
     if (y < messageRect.top + scrollY) {
       y = messageRect.top + scrollY - MARGIN;
     }
-
     // Convert to position relative to the message element
     const relativeX = x - messageRect.left - scrollX;
     const relativeY = y - messageRect.top - scrollY;
-
     setReactionLocation({
       left: Math.min(0, Math.abs(relativeX)),
       top: Math.min(0, Math.abs(relativeY)),
     });
   }, [doubleClickPosition, messagesContainerRef]);
-
   const handleReactionPicker = useCallback(
     (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       event.preventDefault();
       event.stopPropagation();
-
       // ✅ Check if user is online
       if (!hasInternet) {
         toast.warning('You are offline. Cannot react to messages.', {
@@ -263,7 +239,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         });
         return;
       }
-
       // ✅ Check if message is queued
       if (message.status === 'queued') {
         toast.warning('Cannot react to queued messages.', {
@@ -272,14 +247,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         });
         return;
       }
-
       setShowReactionPicker(true);
-
       setDoubleClickPosition({
         clientX: event.clientX,
         clientY: event.clientY,
       });
-
       // Calculate position after state update
       // Use requestAnimationFrame to ensure DOM is updated
       requestAnimationFrame(() => {
@@ -288,18 +260,15 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     },
     [calculatePickerPosition, hasInternet, message.status],
   );
-
   const handleHideReactionPicker = useCallback(() => {
     setShowReactionPicker(false);
     setDoubleClickPosition(null);
   }, []);
-
   const handleSelectReactionEmoji = useCallback(
     async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
       if (event) {
         event.stopPropagation();
       }
-
       if (!hasInternet) {
         toast.error('You are offline. Cannot react to messages.', {
           position: 'top-center',
@@ -308,7 +277,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         handleHideReactionPicker();
         return;
       }
-
       if (message.status === 'queued') {
         toast.error('Cannot react to queued messages.', {
           position: 'top-center',
@@ -317,14 +285,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         handleHideReactionPicker();
         return;
       }
-
       const currentReactions = message.reactions || [];
-
       // 🔹 Step 1: Check if user previously reacted with this SAME emoji
       const userPreviouslyUsedThisEmoji = currentReactions.some(
         (r) => r.emoji === emojiData.emoji && r.userIds?.includes(String(user?._id)),
       );
-
       // 🔹 Step 2: Remove user from ALL reactions first
       let optimisticReactions = currentReactions
         .map((r) => ({
@@ -333,10 +298,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           users: [...(r.users || [])].filter((u: any) => u._id !== String(user?._id)),
         }))
         .filter((reaction) => reaction.userIds.length > 0);
-
       // 🔹 Step 3: Consolidate duplicate emojis
       const emojiMap = new Map<string, any>();
-
       for (const reaction of optimisticReactions) {
         if (emojiMap.has(reaction.emoji)) {
           const existing = emojiMap.get(reaction.emoji);
@@ -360,15 +323,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           });
         }
       }
-
       optimisticReactions = Array.from(emojiMap.values());
-
       // 🔹 Step 4: If NOT toggling off, add new reaction
       if (!userPreviouslyUsedThisEmoji) {
         const existingEmojiIndex = optimisticReactions.findIndex(
           (r) => r.emoji === emojiData.emoji,
         );
-
         if (existingEmojiIndex !== -1) {
           optimisticReactions[existingEmojiIndex].userIds.push(String(user?._id));
           optimisticReactions[existingEmojiIndex].users.push({
@@ -391,9 +351,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           });
         }
       }
-
       console.log('🎭 Optimistic reactions:', optimisticReactions);
-
       dispatch(
         updateMessageReactions({
           chatId: currentChat?._id || '',
@@ -401,16 +359,13 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           reactions: optimisticReactions,
         }),
       );
-
       try {
         const response = await reactToMessage({
           chatId: currentChat?._id || '',
           messageId: key,
           emoji: emojiData.emoji,
         }).unwrap();
-
         console.log('✅ Reaction response from server:', response);
-
         dispatch(
           updateMessageReactions({
             chatId: currentChat?._id || '',
@@ -420,12 +375,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         );
       } catch (error) {
         console.error('❌ Failed to send reaction:', error);
-
         toast.error('Failed to send reaction. Please try again.', {
           position: 'top-center',
           autoClose: 2000,
         });
-
         dispatch(
           updateMessageReactions({
             chatId: currentChat?._id || '',
@@ -434,7 +387,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           }),
         );
       }
-
       handleHideReactionPicker();
     },
     [
@@ -450,36 +402,30 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       reactToMessage,
     ],
   );
-
   const handleReactionClickOutside = useCallback((event: MouseEvent) => {
     const target = event.target as HTMLElement;
     if (!target.closest('.EmojiPickerReact')) {
       setShowReactionPicker(false);
     }
   }, []);
-
   const handleReactionKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       setShowReactionPicker(false);
     }
   }, []);
-
   const handleClickOutside = useCallback((event: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(event.target as HTMLElement)) {
       setShowMenu(false);
     }
   }, []);
-
   useEffect(() => {
     document.addEventListener('mousedown', handleReactionClickOutside);
     document.addEventListener('keydown', handleReactionKeyDown);
-
     return () => {
       document.removeEventListener('mousedown', handleReactionClickOutside);
       document.removeEventListener('keydown', handleReactionKeyDown);
     };
   }, [handleReactionClickOutside, handleReactionKeyDown]);
-
   useEffect(() => {
     if (showReactionPicker && doubleClickPosition) {
       // Use requestAnimationFrame to ensure DOM is updated
@@ -488,14 +434,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       });
     }
   }, [doubleClickPosition, showReactionPicker, calculatePickerPosition]);
-
   const handleContextMenu = useCallback(
     (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       event.preventDefault();
       event.stopPropagation();
-
       setShowMenu(true);
-
       // Calculate position after menu renders
       requestAnimationFrame(() => {
         calculateMenuPosition(event.clientX, event.clientY);
@@ -503,39 +446,31 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     },
     [calculateMenuPosition],
   );
-
   const handleCloseMenu = useCallback(() => {
     setShowMenu(false);
   }, []);
-
   useEffect(() => {
     if (showMenu) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('contextmenu', handleClickOutside);
-
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('contextmenu', handleClickOutside);
       };
     }
   }, [showMenu, handleClickOutside]);
-
   const handleNextImage = useCallback(() => {
     setCurrentMessageImageIndex((prev) => (prev + 1) % messageFiles.length);
   }, [messageFiles.length]);
-
   const handleImageChange = useCallback((index: number) => {
     setCurrentMessageImageIndex(index);
   }, []);
-
   const handlePreviousImage = useCallback(() => {
     setCurrentMessageImageIndex((prev) => (prev - 1 + messageFiles.length) % messageFiles.length);
   }, [messageFiles.length]);
-
   const handleCloseModal = useCallback(() => {
     setCurrentMessageImageIndex(-1);
   }, []);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (currentMessageImageIndex >= 0) {
@@ -554,7 +489,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     },
     [currentMessageImageIndex, handleCloseModal, handlePreviousImage, handleNextImage],
   );
-
   useEffect(() => {
     if (currentMessageImageIndex >= 0) {
       document.addEventListener('keydown', handleKeyDown);
@@ -562,13 +496,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     } else {
       document.body.style.overflow = 'unset';
     }
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
   }, [currentMessageImageIndex, handleKeyDown]);
-
   useEffect(() => {
     if (highlightedMessageId === message._id) {
       setIsGlowing(true);
@@ -579,7 +511,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       return () => clearTimeout(timer);
     }
   }, [highlightedMessageId, message._id, onSetHighlightedMessage]);
-
   useEffect(() => {
     if (messageToReply === message._id) {
       setIsAnimating(true);
@@ -589,21 +520,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       return () => clearTimeout(timer);
     }
   }, [message._id, messageToReply]);
-
   useEffect(() => {
     setIsOwnedMessage(isOwnedMessage || message.sender?._id === user?._id);
   }, [isOwnedMessage, message.sender?._id, setIsOwnedMessage, user?._id]);
-
   const renderMessageWithMention = () => {
     const { content, mentions } = message;
     if (!mentions || mentions.length === 0) return <span>{content}</span>;
-
     // Sort mentions by position to process the string linearly
     const sortedMentions = [...mentions].sort((a, b) => a.position - b.position);
-
     const parts = [];
     let lastIndex = 0;
-
     sortedMentions.forEach((mention, index) => {
       // Add text before the mention
       if (mention.position > lastIndex) {
@@ -611,7 +537,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           <span key={`text-${index}`}>{content.substring(lastIndex, mention.position)}</span>,
         );
       }
-
       // Add the styled mention
       const mentionText = `@${mention.username}`;
       parts.push(
@@ -629,28 +554,21 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           {mentionText}
         </span>,
       );
-
       lastIndex = mention.position + mentionText.length;
     });
-
     // Add remaining text
     if (lastIndex < content.length) {
       parts.push(<span key='text-end'>{content.substring(lastIndex)}</span>);
     }
-
     return parts;
   };
-
   const getGlowClass = () => {
     if (!isGlowing) return '';
     return isOwnedMessage ? 'animate-glow-purple' : 'animate-glow-green';
   };
-
   const categorizeReactions = (reactions: EmojiType[]) => {
     if (!reactions || !reactions.length) return [];
-
     const reactionMap = new Map<string, CategorizedReaction>();
-
     reactions?.forEach(({ emoji, userIds, ...rest }) => {
       if (reactionMap.has(emoji)) {
         const existing = reactionMap.get(emoji)!;
@@ -668,22 +586,18 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         });
       }
     });
-
     return Array.from(reactionMap.values())?.sort((a, b) => {
       if (b.count !== a.count) return b.count - a.count;
       return a.emoji.localeCompare(b.emoji);
     });
   };
-
   const hasUserReacted = (reaction: CategorizedReaction, currentUserId: string): boolean => {
     return reaction?.userIds?.includes(currentUserId);
   };
-
   const categorizedReactionMemoized = useMemo(
     () => categorizeReactions(message.reactions || []),
     [message.reactions],
   );
-
   const getReactionStats = useCallback((): ReactionStats => {
     const totalReactions = categorizedReactionMemoized.reduce(
       (sum: number, r: CategorizedReaction) => sum + r.count,
@@ -692,7 +606,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     const userHasReacted: boolean = categorizedReactionMemoized.some((r: CategorizedReaction) =>
       hasUserReacted(r, user?._id || ''),
     );
-
     // Normalize reactions to ensure all required fields are present
     const normalizedReactions = categorizedReactionMemoized.map((reaction) => ({
       ...reaction,
@@ -707,7 +620,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           },
         })) || [],
     }));
-
     return {
       totalReactions,
       uniqueEmojis: normalizedReactions.length,
@@ -716,15 +628,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       categorizedReactions: normalizedReactions,
     };
   }, [categorizedReactionMemoized, user?._id]);
-
   const stats = useMemo(() => getReactionStats(), [getReactionStats]);
-
   const renderReactionsWithDuplicate = () => {
     if (!message.reactions || message.reactions.length === 0) return null;
-
-    const categorizedReactions: CategorizedReaction[] = categorizeReactions(message.reactions);
-    const totalReactions = categorizedReactions.reduce((sum, r) => sum + r.count, 0);
-
+    const { categorizedReactions, totalReactions } = stats;
     return (
       <div
         className={classNames(
@@ -754,10 +661,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       </div>
     );
   };
-
   const getAttachmentType = () => {
     if (!message.attachments || message.attachments.length === 0) return null;
-
     const types = message.attachments.map((a) => {
       if (a.fileType === 'voice') return 'audio';
       if (a.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) return 'image';
@@ -765,39 +670,28 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       if (a.url?.match(/\.(doc|docx|ppt|pptx|xls|xlsx)$/i)) return 'document';
       return 'file';
     });
-
     // If multiple different types → mixed
     return new Set(types).size > 1 ? 'mixed' : types[0];
   };
-
   const renderAttachmentIcon = () => {
     const type = getAttachmentType();
-
     if (!type || message.isDeleted) return null;
-
     const baseClass = 'h-4 w-4 mr-2';
-
     switch (type) {
       case 'audio':
         return <MusicalNoteIcon className={baseClass} title='Audio message' />;
-
       case 'image':
         return <PhotoIcon className={baseClass} title='Image attachment' />;
-
       case 'pdf':
         return <DocumentTextIcon className={baseClass} title='PDF document' />;
-
       case 'document':
         return <DocumentTextIcon className={baseClass} title='Document attachment' />;
-
       case 'mixed':
         return <PaperClipIcon className={baseClass} title='Multiple attachments' />;
-
       default:
         return <PaperClipIcon className={baseClass} />;
     }
   };
-
   return (
     <>
       <FilePreviewModal
@@ -814,13 +708,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         handleImageChange={handleImageChange}
         currentMessageImageIndex={currentMessageImageIndex}
       />
-
       <ReactionTooltip
         open={showReactionTooltip}
         onClose={() => setShowReactionTooltip(false)}
         stats={stats}
       />
-
       <div
         className={classNames(
           'flex items-start p-1.5 text-white text-base relative h-auto w-full gap-6',
@@ -842,7 +734,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             handleSetOpenReply={() => handleSetOpenReply(message._id)}
           />
         )}
-
         {!message.isDeleted && showReactionPicker && (
           <div
             ref={reactionRef}
@@ -867,12 +758,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             </div>
           </div>
         )}
-
         {!message.isDeleted &&
           message.reactions &&
           message.reactions.length > 0 &&
           renderReactionsWithDuplicate()}
-
         <img
           src={message.sender?.avatar?.url || ''}
           alt={message.sender?.username}
@@ -884,7 +773,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             e.currentTarget.style.display = 'none';
           }}
         />
-
         <div
           id={`message-item-${message._id}`}
           className={classNames(
@@ -909,20 +797,19 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               <span className='text-gray-800 font-nunito font-bold text-sm'>You</span>
             )
           )}
-
           <div className='relative'>
             {isGroupChatMessage && !isOwnedMessage && (
               <button title='open user profile' className='self-start'>
                 <span
-                  className={classNames(
-                    'text-sm font-semibold mb-0.5',
-                    ['text-gray-800', 'text-[#615EF0]'][message?.sender?.username?.length % 2],
-                  )}>
+                  title={message.sender?.username}
+                  className='text-sm font-bold mb-0.5'
+                  style={{
+                    color: getDynamicUserColor(message.sender?._id || '', theme === 'dark'),
+                  }}>
                   ~{message.sender?.username}
                 </span>
               </button>
             )}
-
             {message.replyId && (
               <div
                 className={classNames(
@@ -961,7 +848,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   ))}
               </div>
             )}
-
             {message?.attachments?.length > 0 && !message.isDeleted && (
               <div
                 className={classNames(
@@ -985,7 +871,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 })}
               </div>
             )}
-
             {message.isDeleted ? (
               <div className='flex items-center'>
                 <NoSymbolIcon className='text-red-500 h-6 mr-2' strokeWidth={2} />
@@ -1001,7 +886,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 </p>
               )
             )}
-
             <div className='flex items-center justify-between'>
               <p
                 className={classNames(

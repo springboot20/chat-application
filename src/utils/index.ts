@@ -5,11 +5,10 @@ import { User } from '../types/auth';
 import moment from 'moment';
 
 export function getInitials({ username }: { username?: string }) {
-  console.log(username)
+  console.log(username);
   const parts = username?.split(/[^A-Za-z0-9]+/).filter(Boolean);
 
-
-  console.log(parts)
+  console.log(parts);
   return parts ? (parts[0]?.[0] || '') + (parts[1]?.[0] || '') : 'UN';
 }
 
@@ -177,35 +176,80 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
       description: chat?.isGroupChat
         ? `${chat?.participants?.length || 0} members in the group`
         : participant?.email,
+      status: null,
+      isSender: false,
+      attachmentType: undefined,
     };
   }
 
-  const lastMessage = chat.lastMessage.content || '';
-  // const replyLastMessage = chat.lastMessage.content || "";
+  const { lastMessage } = chat;
+  const isSelf = lastMessage.sender?._id === user?._id;
+  const messageContent = lastMessage.content ? truncate(lastMessage.content, 30) : '';
 
-  const attachmentText =
-    chat.lastMessage.attachments &&
-    chat.lastMessage.attachments.length > 0 &&
-    `${chat.lastMessage.attachments.length} ${chat.lastMessage.attachments.length > 1 ? 's' : ''}`;
+  let attachmentText = '';
+  let attachmentFileType: string | undefined = undefined;
+
+  if (lastMessage.attachments && lastMessage.attachments.length > 0) {
+    attachmentFileType = lastMessage.attachments[0].fileType || 'file';
+
+    if (lastMessage.attachments.length === 1 && !messageContent) {
+      const type = attachmentFileType;
+      attachmentText = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Attachment';
+    } else {
+      attachmentText = `${lastMessage.attachments.length} Attachment${
+        lastMessage.attachments.length > 1 ? 's' : ''
+      }`;
+    }
+  }
+
+  let displayMessage = messageContent;
+
+  // If there's no message content but there is an attachment, show the attachment text
+  if (!displayMessage && attachmentText) {
+    displayMessage = attachmentText;
+  }
+
   if (chat.isGroupChat) {
     return {
       title: chat.name,
-      lastMessage: chat.lastMessage.sender?.username
-        ? `${chat.lastMessage?.sender?.username}: ${truncate(lastMessage, 20)}${
-            attachmentText ? attachmentText : ''
-          }`
-        : lastMessage,
+      lastMessage: isSelf
+        ? `You: ${displayMessage}`
+        : `${lastMessage.sender?.username}: ${displayMessage}`,
       description: `${chat.participants?.length} members in the group`,
+      status: lastMessage.status,
+      isSender: isSelf,
+      attachmentType: attachmentFileType,
     };
   } else {
     const participant = chat.participants?.find((p) => p?._id !== user?._id);
 
     return {
       title: participant?.username,
-      lastMessage: lastMessage || 'No message yet',
+      lastMessage: isSelf ? `You: ${displayMessage}` : displayMessage,
       description: participant?.email,
+      status: lastMessage.status,
+      isSender: isSelf,
+      attachmentType: attachmentFileType,
     };
   }
+};
+
+export const getDynamicUserColor = (userId: string, isDarkMode: boolean = false) => {
+  if (!userId) return isDarkMode ? '#e5e7eb' : '#374151'; // Default gray
+
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash % 360);
+  // Ensure good visibility:
+  // Light mode: Saturation 65-85%, Lightness 35-45% (Darker text)
+  // Dark mode: Saturation 65-85%, Lightness 65-75% (Lighter text)
+  const saturation = 70 + (hash % 20);
+  const lightness = isDarkMode ? 70 + (hash % 10) : 40 + (hash % 10);
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
 export const truncate = (text: string, length: number) => {
