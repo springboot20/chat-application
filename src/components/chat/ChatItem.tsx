@@ -47,13 +47,10 @@ export const ChatItem: React.FC<ChatItemProps> = ({
 
   const toggleOptions = (id: string, evt: React.MouseEvent) => {
     evt.stopPropagation();
-
-    setOpenOptions((prev) => {
-      return {
-        ...prev,
-        [id]: !openOptions[id],
-      };
-    });
+    setOpenOptions((prev) => ({
+      ...prev,
+      [id]: !openOptions[id],
+    }));
   };
 
   const [deleteOneOneChatMessage] = useDeleteOneOneChatMessageMutation();
@@ -62,16 +59,14 @@ export const ChatItem: React.FC<ChatItemProps> = ({
     await deleteOneOneChatMessage(chat?._id)
       .unwrap()
       .then((response) => {
-        toast(response?.message, {
-          type: 'success',
-        });
+        toast.success(response?.message || 'Chat deleted');
         onChatDelete(chat?._id);
       })
       .catch((error: any) => {
-        toast(error?.data?.message, { type: 'error' });
+        toast.error(error?.data?.message || 'Failed to delete');
       });
   };
-  // Memoize the chat metadata to prevent unnecessary re-renders
+
   const chatMeta = useMemo(() => {
     return getMessageObjectMetaData(chat, user!);
   }, [user, chat]);
@@ -80,7 +75,6 @@ export const ChatItem: React.FC<ChatItemProps> = ({
     if (chat.lastMessage?.isDeleted) {
       return 'deleted message';
     }
-
     return chatMeta.lastMessage;
   }, [chatMeta, chat.lastMessage]);
 
@@ -96,30 +90,25 @@ export const ChatItem: React.FC<ChatItemProps> = ({
       <div
         role='button'
         className={classNames(
-          'hover:bg-gray-300/40 group flex items-start cursor-pointer bg-gray-100 px-1 py-2.5 justify-between dark:hover:bg-white/10',
+          'group flex items-start cursor-pointer px-3 py-3 justify-between transition-all duration-200 border-b border-gray-200 dark:border-white/5',
           isActive
-            ? 'bg-gray-300/40 border-[1.5px] border-zinc-300 dark:border-white/20 dark:bg-white/10'
-            : 'dark:bg-white/5',
-          unreadCount > 0 ? 'border-2 border-green-500 bg-green-100' : ''
+            ? 'bg-gray-200 dark:bg-white/10'
+            : 'bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-white/5',
         )}
         onClick={() => {
           onClick(chat);
           close();
         }}
-        onMouseLeave={(e) => toggleOptions(chat?._id, e)}>
-        <div className='flex items-center gap-3'>
-          <div className='flex items-center gap-4'>
+        onMouseLeave={() => setOpenOptions({})}>
+        <div className='flex items-center gap-3 w-full'>
+          {/* Options Menu Button (Hidden by default, shown on hover) */}
+          <div className='flex items-center flex-shrink-0'>
             <Menu as='div' className='relative'>
-              <div>
-                <Menu.Button
-                  onClick={(e) => {
-                    toggleOptions(chat?._id, e);
-                  }}
-                  className='flex dark:text-white text-gray-900'>
-                  <span className='sr-only'>Open auth menu</span>
-                  <EllipsisVerticalIcon className='group-hover:h-6 h-0 group-hover:opacity-100 opacity-0 transition-all ease-in-out duration-100 text-gray-600 dark:text-white' />
-                </Menu.Button>
-              </div>
+              <Menu.Button
+                onClick={(e) => toggleOptions(chat?._id, e)}
+                className='flex dark:text-white text-gray-900 focus:outline-none'>
+                <EllipsisVerticalIcon className='h-5 w-5 group-hover:opacity-100 opacity-0 transition-opacity text-gray-400' />
+              </Menu.Button>
               <Transition
                 as={Fragment}
                 enter='transition ease-out duration-100'
@@ -128,166 +117,138 @@ export const ChatItem: React.FC<ChatItemProps> = ({
                 leave='transition ease-in duration-75'
                 leaveFrom='transform opacity-100 scale-100'
                 leaveTo='transform opacity-0 scale-95'>
-                <Menu.Items className='absolute left-5 z-40 mt-10 w-max sm:min-w-[20rem] origin-top-right rounded-md bg-white dark:bg-gray-700 dark:ring-white/10 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none'>
-                  {openOptions && (
+                <Menu.Items className='absolute left-5 z-40 mt-2 w-56 rounded-md bg-white dark:bg-gray-800 shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border dark:border-white/10'>
+                  <div className='py-1'>
                     <Menu.Item>
                       {({ active }) => (
                         <button
-                          type='button'
-                          title='mark as read'
-                          className={classNames(
-                            active ? 'bg-gray-100 dark:bg-white/5' : '',
-                            'flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium dark:text-white'
-                          )}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setOpenOptions((prev) => ({ ...prev, [chat?._id]: false }));
+                            setOpenOptions({});
                           }}
-                          role='button'>
-                          <CheckCircleIcon className='h-4 w-4 mr-2' />
-                          Mark as read
+                          className={classNames(
+                            active ? 'bg-gray-100 dark:bg-white/5' : '',
+                            'flex w-full items-center px-4 py-2 text-sm dark:text-white',
+                          )}>
+                          <CheckCircleIcon className='h-4 w-4 mr-2' /> Mark as read
                         </button>
                       )}
                     </Menu.Item>
-                  )}
-
-                  {chat.isGroupChat ? (
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          type='button'
-                          title='check group info'
-                          className={classNames(
-                            active ? 'bg-gray-100 dark:bg-white/5' : '',
-                            'flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium dark:text-white'
-                          )}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenGroupInfo(true);
-
-                            dispatch(setCurrentChat({ chat }));
-                          }}
-                          role='button'>
-                          <InformationCircleIcon className='h-4 w-4 mr-2' /> About group
-                        </button>
-                      )}
-                    </Menu.Item>
-                  ) : (
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          type='button'
-                          title='delete messages'
-                          className={classNames(
-                            active ? 'bg-gray-100 dark:bg-white/5' : '',
-                            'flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 font-medium dark:text-white'
-                          )}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenOptions((prev) => ({ ...prev, [chat?._id]: false }));
-                            deleteChat();
-                          }}
-                          role='button'>
-                          <TrashIcon className='h-4 w-4 mr-2' />
-                          Delete message
-                        </button>
-                      )}
-                    </Menu.Item>
-                  )}
+                    {chat.isGroupChat ? (
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenGroupInfo(true);
+                              dispatch(setCurrentChat({ chat }));
+                            }}
+                            className={classNames(
+                              active ? 'bg-gray-100 dark:bg-white/5' : '',
+                              'flex w-full items-center px-4 py-2 text-sm dark:text-white',
+                            )}>
+                            <InformationCircleIcon className='h-4 w-4 mr-2' /> About group
+                          </button>
+                        )}
+                      </Menu.Item>
+                    ) : (
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteChat();
+                            }}
+                            className={classNames(
+                              active ? 'bg-red-50 dark:bg-red-900/20 text-red-600' : 'text-red-500',
+                              'flex w-full items-center px-4 py-2 text-sm font-medium',
+                            )}>
+                            <TrashIcon className='h-4 w-4 mr-2' /> Delete chat
+                          </button>
+                        )}
+                      </Menu.Item>
+                    )}
+                  </div>
                 </Menu.Items>
               </Transition>
             </Menu>
-            <div className='flex justify items-center flex-shrink-0'>
+
+            {/* Avatar Section */}
+            <div className='flex-shrink-0 ml-1'>
               {chat.isGroupChat ? (
-                <div className='w-12 relative h-12 flex-shrink-0 flex justify-start items-center flex-nowrap'>
-                  {React.Children.toArray(
-                    chat.participants &&
-                      chat.participants?.slice(0, 3)?.map((_, index) => (
-                        // <img
-                        //   src={p.avatar.url}
-                        //   className={classNames(
-                        //     "w-8 h-8 rounded-full border-[1.5px] border-gray-500 absolute",
-                        //     index === 0
-                        //       ? "left-0 z-30"
-                        //       : index == 1
-                        //       ? "left-2.5 z-20"
-                        //       : index === 2
-                        //       ? "left-3.5 z-20"
-                        //       : ""
-                        //   )}
-                        //   alt=""
-                        //   key={p?._id}
-                        // />
-                        <div
-                          className={classNames(
-                            'w-8 h-8 rounded-full border-[1.5px] border-gray-500 absolute',
-                            index === 0
-                              ? 'left-0 z-10 bg-green-500'
-                              : index == 1
-                              ? 'left-1.5 z-20 bg-indigo-500'
-                              : index === 2
-                              ? 'left-3.5 z-30 bg-violet-500'
-                              : ''
-                          )}></div>
-                      ))
-                  )}
-                </div>
-              ) : (
-                // <img
-                //   src={getMessageObjectMetaData(chat, user!).avatar}
-                //   className="w-12 h-12 rounded-full"
-                //   alt="user image"
-                // />
-                <div className='w-12 h-12 rounded-full border'></div>
-              )}
-            </div>
-          </div>
-
-          <div className='flex flex-col items-start'>
-            <p className='dark:text-white'>{getMessageObjectMetaData(chat, user!)?.title}</p>
-            <div className='flex items-center gap-1 text-gray-500'>
-              {!chat?.lastMessage?.isDeleted && chat?.lastMessage?.attachments?.length > 0 && (
-                <PaperClipIcon className='h-4 w-4' />
-              )}
-
-              {typingUsers && typingUsers.length > 0 ? (
-                // Show typing indicator INSTEAD of last message
-                <small className='italic text-gray-600 dark:text-gray-300'>
-                  {typingUsers.map((u) => u.username).join(', ')} typing...
-                </small>
-              ) : chat?.lastMessage?.isDeleted ? (
-                <div className='flex items-center space-x-1'>
-                  <small className='dark:text-white'>
-                    {user?._id === chat?.lastMessage?.sender._id
-                      ? 'You'
-                      : chat.lastMessage?.sender?.username}
-                    :
-                  </small>
-                  <div className='flex items-center'>
-                    <NoSymbolIcon className='text-gray-500 h-3 mr-0.5' strokeWidth={2} />
-                    <p className='text-xsm sm:text-sm italic font-normal text-gray-800 dark:text-gray-200 break-words'>
-                      deleted this message
-                    </p>
+                <div className='w-12 h-12 relative flex items-center justify-center'>
+                  <div className='w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-black'>
+                    {chat.name?.charAt(0) || 'G'}
                   </div>
                 </div>
               ) : (
-                <small className='dark:text-white'>{lastMessage}</small>
+                <div className='w-12 h-12 rounded-full border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5 flex items-center justify-center overflow-hidden'>
+                  <span className='text-gray-400 text-xs'>User</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Text Content */}
+          <div className='flex flex-col flex-1 overflow-hidden'>
+            <div className='flex justify-between items-center w-full'>
+              <p
+                className={classNames(
+                  'truncate transition-all',
+                  unreadCount > 0
+                    ? 'text-gray-900 dark:text-white font-bold'
+                    : 'text-gray-700 dark:text-gray-300 font-medium',
+                )}>
+                {chatMeta?.title}
+              </p>
+              <small
+                className={classNames(
+                  'flex-shrink-0 ml-2',
+                  unreadCount > 0
+                    ? 'text-green-600 dark:text-green-400 font-bold'
+                    : 'text-gray-400',
+                )}>
+                {formatMessageTime(chat.updatedAt)}
+              </small>
+            </div>
+
+            <div className='flex items-center gap-1 overflow-hidden h-5'>
+              {!chat?.lastMessage?.isDeleted && chat?.lastMessage?.attachments?.length > 0 && (
+                <PaperClipIcon className='h-3.5 w-3.5 text-gray-400 flex-shrink-0' />
+              )}
+
+              {typingUsers && typingUsers.length > 0 ? (
+                <small className='italic text-green-500 font-medium animate-pulse truncate'>
+                  {typingUsers.map((u) => u.username).join(', ')} typing...
+                </small>
+              ) : chat?.lastMessage?.isDeleted ? (
+                <div className='flex items-center space-x-1 overflow-hidden'>
+                  <NoSymbolIcon className='text-gray-400 h-3 flex-shrink-0' strokeWidth={2} />
+                  <p className='text-xs italic text-gray-400 truncate'>deleted this message</p>
+                </div>
+              ) : (
+                <small
+                  className={classNames(
+                    'truncate',
+                    unreadCount > 0
+                      ? 'text-gray-900 dark:text-gray-100 font-semibold'
+                      : 'text-gray-500 dark:text-gray-400',
+                  )}>
+                  {lastMessage}
+                </small>
               )}
             </div>
           </div>
         </div>
 
-        <div className='h-full flex flex-col justify-start'>
-          <small className='flex-shrink-0 inline-block w-full dark:text-white'>
-            {formatMessageTime(chat.updatedAt)}
-          </small>
-
-          {unreadCount > 0 && (
-            <small className='h-5 w-5 rounded-full flex items-center justify-center text-white bg-green-600'>
+        {/* Unread Badge Section */}
+        {unreadCount > 0 && (
+          <div className='flex flex-col justify-end items-center h-10 ml-2'>
+            <span className='h-5 min-w-[1.25rem] px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-green-500 shadow-sm'>
               {unreadCount > 9 ? '9+' : unreadCount}
-            </small>
-          )}
-        </div>
+            </span>
+          </div>
+        )}
       </div>
     </>
   );

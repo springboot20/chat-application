@@ -80,43 +80,55 @@ const ChatSlice = createSlice({
     },
 
     // ✅ ENHANCED: onMessageReceived to handle Status Updates and Merging
+    // Inside ChatSlice.reducers...
+
     onMessageReceived: (state, action: PayloadAction<{ data: ChatMessageInterface }>) => {
       const message = action.payload.data;
       const chatId = message.chat;
 
+      // 1. Logic for storing messages (your existing logic)
       if (!state.chatMessages[chatId]) {
         state.chatMessages[chatId] = [];
       }
-
       const currentMessages = state.chatMessages[chatId];
-
-      const existingIndex = currentMessages.findIndex((msg) => {
-        if (msg._id === message._id) return true;
-
-        const isTemp = msg._id.toString().startsWith('temp-') || msg.status === 'queued';
-        const sameContent = msg.content === message.content;
-        const sameSender = msg.sender._id === message.sender._id;
-
-        return isTemp && sameSender && sameContent;
-      });
+      const existingIndex = currentMessages.findIndex((msg) => msg._id === message._id);
 
       if (existingIndex !== -1) {
         state.chatMessages[chatId][existingIndex] = {
           ...currentMessages[existingIndex],
           ...message,
-          // Ensure we don't accidentally revert 'sent' to 'sending'
           status: message.status || 'sent',
         };
       } else {
         state.chatMessages[chatId].push(message);
+
+        // 2. WHATSAPP LOGIC: Handle Unread Count
+        // If the message is NOT from the current user AND the chat isn't currently active
+        const isNotFromMe = message.sender._id !== LocalStorage.get('user')?._id; // Ensure you have access to current user ID
+        const isNotCurrentChat = state.currentChat?._id !== chatId;
+
+        if (isNotFromMe && isNotCurrentChat) {
+          // Avoid duplicate unreads
+          const alreadyInUnread = state.unreadMessages.some((m) => m._id === message._id);
+          if (!alreadyInUnread) {
+            state.unreadMessages = [...(state.unreadMessages || []), message];
+            LocalStorage.set('unreadMessages', removeCircularReferences(state.unreadMessages));
+          }
+        }
       }
 
-      // Sort messages by creation time
-      state.chatMessages[chatId].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      );
+      // 3. Keep sidebar updated with the latest message
+      const chatIndex = state.chats.findIndex((chat) => chat._id === chatId);
+      if (chatIndex !== -1) {
+        state.chats[chatIndex].lastMessage = message;
+        state.chats[chatIndex].updatedAt = message.createdAt;
+        // Move chat to top of the list (WhatsApp behavior)
+        const [movedChat] = state.chats.splice(chatIndex, 1);
+        state.chats.unshift(movedChat);
+      }
 
       LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
+      LocalStorage.set('chats', removeCircularReferences(state.chats));
     },
 
     updateMessageReactions: (
@@ -171,8 +183,16 @@ const ChatSlice = createSlice({
     },
 
     setCurrentChat: (state, action) => {
-      state.currentChat = action.payload.chat;
-      LocalStorage.set('current-chat', action.payload.chat);
+      const chat = action.payload.chat;
+      state.currentChat = chat;
+
+      // Clear unread messages for THIS chat specifically
+      if (state.unreadMessages) {
+        state.unreadMessages = state.unreadMessages.filter((msg) => msg.chat !== chat._id);
+        LocalStorage.set('unreadMessages', removeCircularReferences(state.unreadMessages));
+      }
+
+      LocalStorage.set('current-chat', chat);
     },
 
     setUnreadMessages: (state, action: PayloadAction<{ chatId: string }>) => {

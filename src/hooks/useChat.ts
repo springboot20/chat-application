@@ -7,47 +7,68 @@ import {
   onChatLeave,
   updateChatLastMessage,
   updateGroupName,
+  setUnreadMessages, // Added this to clear unreads via hook if needed
 } from '../features/chats/chat.reducer';
 import { toast } from 'react-toastify';
 import { createSelector } from '@reduxjs/toolkit';
 import { useCallback, useMemo } from 'react';
 import { getMessageObjectMetaData } from '../utils/index.ts';
 
-const selectChats = createSelector([(state: RootState) => state.chat], (chatState) => ({
-  chats: chatState?.chats?.map((chat) => ({ ...chat })),
+// Refined selector to ensure we don't cause unnecessary re-renders
+const selectChatState = (state: RootState) => state.chat;
+
+const selectChatsData = createSelector([selectChatState], (chatState) => ({
+  chats: chatState.chats || [],
   currentChat: chatState.currentChat,
   chatMessages: chatState.chatMessages,
-  unreadMessages: chatState.unreadMessages,
+  unreadMessages: chatState.unreadMessages || [],
 }));
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
   const { user: currentUser } = useAppSelector((state: RootState) => state.auth);
 
-  const { data, isLoading: isLoadingChats, refetch: refetchChats } = useGetUserChatsQuery();
+  const { isLoading: isLoadingChats, refetch: refetchChats } = useGetUserChatsQuery();
 
-  const chatsFromState = useAppSelector(selectChats);
+  const {
+    chats: chatsFromState,
+    currentChat,
+    chatMessages,
+    unreadMessages,
+  } = useAppSelector(selectChatsData);
 
+  // Combine state and API data, prioritizing the Redux state (where socket updates happen)
   const chats = useMemo(() => {
-    if (chatsFromState.chats?.length > 0) {
-      return chatsFromState.chats;
-    }
+    return chatsFromState.length > 0 ? chatsFromState : [];
+  }, [chatsFromState]);
 
-    return data?.data;
-  }, [chatsFromState.chats, data?.data]);
-
+  // WhatsApp-style Meta Computing
   const chatsWithMeta = useMemo(() => {
-    return chats?.map((chat: ChatListItemInterface) => {
+    return chats.map((chat: ChatListItemInterface) => {
       const meta = getMessageObjectMetaData(chat, currentUser!);
+
+      // Calculate unread count for this specific chat
+      const chatUnreadCount = unreadMessages.filter(
+        (msg: ChatMessageInterface) => msg.chat === chat._id,
+      ).length;
+
       return {
         ...chat,
-        lastMessageText: meta.lastMessage, // explicitly computed
+        lastMessageText: meta.lastMessage,
         title: meta.title,
         description: meta.description,
-        lastMessageId: chat.lastMessage?._id || 'no-msg', // for memoization
+        unreadCount: chatUnreadCount, // Injected for easy UI access
+        isOnline: false, // You can hook this up to a presence system later
       };
     });
-  }, [chats, currentUser]);
+  }, [chats, currentUser, unreadMessages]);
+
+  const clearChatUnreadCount = useCallback(
+    (chatId: string) => {
+      dispatch(setUnreadMessages({ chatId }));
+    },
+    [dispatch],
+  );
 
   const _updateChatLastMessage = useCallback(
     (chatToUpdateId: string, message: ChatMessageInterface) => {
@@ -84,14 +105,15 @@ export const useChat = () => {
   return {
     isLoadingChats,
     chats,
+    chatsWithMeta, // Use this in your sidebar for the best experience
+    currentChat,
+    chatMessages,
+    unreadMessages,
+    clearChatUnreadCount,
     onNewChat,
     _onChatLeave,
     _updateChatLastMessage,
     refetchChats,
     onGroupChatRename,
-    currentChat: chatsFromState.currentChat,
-    chatMessages: chatsFromState.chatMessages,
-    unreadMessages: chatsFromState.unreadMessages,
-    chatsWithMeta,
   };
 };
