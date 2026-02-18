@@ -13,6 +13,7 @@ type NavigationProps = {
   open: boolean;
   close: () => any;
   currentChat: ChatListItemInterface;
+  onLogout?: () => void;
 };
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -21,11 +22,12 @@ export const Navigation: React.FC<NavigationProps> = ({
   activeTab,
   setActiveTab,
   currentChat,
+  onLogout,
 }) => {
   return (
     <Fragment>
       <Fragment>
-        <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} onLogout={onLogout} />
         {activeTab === 'chat_messages' && (
           <div
             className={classNames(

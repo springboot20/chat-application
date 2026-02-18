@@ -36,12 +36,8 @@ const MessageStatusTick = ({
 }) => {
   if (!isOwnedMessage) return null;
   const icons = {
-    queued: <ClockIcon className='w-3 h-3 text-gray-400' />,
-    sent: (
-      <CheckIcon
-        className={classNames('w-3 h-3', isOwnedMessage ? 'text-indigo-200' : 'text-gray-400')}
-      />
-    ),
+    queued: <ClockIcon className='w-3 h-3 text-[#667781] dark:text-[#8696a0]' />,
+    sent: <CheckIcon className='w-3 h-3 text-[#667781] dark:text-[#8696a0]' />,
     delivered: (
       <svg
         xmlns='http://www.w3.org/2000/svg'
@@ -53,7 +49,7 @@ const MessageStatusTick = ({
         strokeWidth='2'
         strokeLinecap='round'
         strokeLinejoin='round'
-        className={classNames('h-4 w-4', isOwnedMessage ? 'text-indigo-200' : 'text-gray-400')}>
+        className='h-4 w-4 text-[#667781] dark:text-[#8696a0]'>
         <path d='M18 6 7 17l-5-5' />
         <path d='m22 10-7.5 7.5L13 16' />
       </svg>
@@ -69,7 +65,7 @@ const MessageStatusTick = ({
         strokeWidth='2'
         strokeLinecap='round'
         strokeLinejoin='round'
-        className={classNames('h-4 w-4', isOwnedMessage ? 'text-blue-200' : 'text-blue-500')}>
+        className='h-4 w-4 text-[#53bdeb]'>
         <path d='M18 6 7 17l-5-5' />
         <path d='m22 10-7.5 7.5L13 16' />
       </svg>
@@ -409,22 +405,26 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       reactToMessage,
     ],
   );
+
   const handleReactionClickOutside = useCallback((event: MouseEvent) => {
     const target = event.target as HTMLElement;
     if (!target.closest('.EmojiPickerReact')) {
       setShowReactionPicker(false);
     }
   }, []);
+
   const handleReactionKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       setShowReactionPicker(false);
     }
   }, []);
+
   const handleClickOutside = useCallback((event: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(event.target as HTMLElement)) {
       setShowMenu(false);
     }
   }, []);
+
   useEffect(() => {
     document.addEventListener('mousedown', handleReactionClickOutside);
     document.addEventListener('keydown', handleReactionKeyDown);
@@ -433,6 +433,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       document.removeEventListener('keydown', handleReactionKeyDown);
     };
   }, [handleReactionClickOutside, handleReactionKeyDown]);
+
   useEffect(() => {
     if (showReactionPicker && doubleClickPosition) {
       // Use requestAnimationFrame to ensure DOM is updated
@@ -441,6 +442,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       });
     }
   }, [doubleClickPosition, showReactionPicker, calculatePickerPosition]);
+
   const handleContextMenu = useCallback(
     (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       event.preventDefault();
@@ -453,9 +455,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     },
     [calculateMenuPosition],
   );
+
   const handleCloseMenu = useCallback(() => {
     setShowMenu(false);
   }, []);
+
   useEffect(() => {
     if (showMenu) {
       document.addEventListener('mousedown', handleClickOutside);
@@ -466,18 +470,23 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       };
     }
   }, [showMenu, handleClickOutside]);
+
   const handleNextImage = useCallback(() => {
     setCurrentMessageImageIndex((prev) => (prev + 1) % messageFiles.length);
   }, [messageFiles.length]);
+
   const handleImageChange = useCallback((index: number) => {
     setCurrentMessageImageIndex(index);
   }, []);
+
   const handlePreviousImage = useCallback(() => {
     setCurrentMessageImageIndex((prev) => (prev - 1 + messageFiles.length) % messageFiles.length);
   }, [messageFiles.length]);
+
   const handleCloseModal = useCallback(() => {
     setCurrentMessageImageIndex(-1);
   }, []);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (currentMessageImageIndex >= 0) {
@@ -496,6 +505,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     },
     [currentMessageImageIndex, handleCloseModal, handlePreviousImage, handleNextImage],
   );
+
   useEffect(() => {
     if (currentMessageImageIndex >= 0) {
       document.addEventListener('keydown', handleKeyDown);
@@ -508,6 +518,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       document.body.style.overflow = 'unset';
     };
   }, [currentMessageImageIndex, handleKeyDown]);
+
   useEffect(() => {
     if (highlightedMessageId === message._id) {
       setIsGlowing(true);
@@ -518,6 +529,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       return () => clearTimeout(timer);
     }
   }, [highlightedMessageId, message._id, onSetHighlightedMessage]);
+
   useEffect(() => {
     if (messageToReply === message._id) {
       setIsAnimating(true);
@@ -527,6 +539,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       return () => clearTimeout(timer);
     }
   }, [message._id, messageToReply]);
+
   useEffect(() => {
     setIsOwnedMessage(isOwnedMessage || message.sender?._id === user?._id);
   }, [isOwnedMessage, message.sender?._id, setIsOwnedMessage, user?._id]);
@@ -557,7 +570,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           key={`mention-${mention.userId}-${index}`}
           className={classNames(
             'font-bold cursor-pointer hover:underline transition-colors',
-            isOwnedMessage ? 'text-indigo-200' : 'text-blue-600',
+            'text-[#027eb5] dark:text-[#53bdeb]',
           )}
           onClick={(e) => {
             e.stopPropagation();
@@ -658,10 +671,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     return (
       <div
         className={classNames(
-          'absolute z-10 -bottom-4 rounded-full px-2 py-1 justify-center flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity',
+          'absolute z-10 -bottom-4 rounded-full px-2 py-1 justify-center flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity border shadow-sm',
           isOwnedMessage
-            ? 'bg-[#615EF0] right-3 dark:bg-[#615EF0] dark:text-white border-2 dark:border-black'
-            : 'bg-green-500 dark:bg-green-200 dark:text-green-700 border-2 dark:border-black left-3',
+            ? 'bg-white dark:bg-[#1f2c34] border-gray-200 dark:border-[#3b4a54] right-3'
+            : 'bg-white dark:bg-[#1f2c34] border-gray-200 dark:border-[#3b4a54] left-3',
         )}
         onClick={(e) => {
           e.stopPropagation();
@@ -680,7 +693,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             {reaction.emoji}
           </span>
         ))}
-        <span className='text-xs font-medium ml-1'>{totalReactions}</span>
+        <span className='text-xs font-medium ml-1 text-[#667781] dark:text-[#8696a0]'>
+          {totalReactions}
+        </span>
       </div>
     );
   };
@@ -743,7 +758,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
       <div
         className={classNames(
-          'flex items-start p-1.5 text-white text-base relative h-auto w-full gap-6',
+          'flex items-start p-2 text-white text-base relative h-auto w-full gap-1.5',
           isOwnedMessage ? 'justify-end' : 'justify-start',
           getGlowClass(),
           isAnimating && (isOwnedMessage ? 'slide-right' : 'slide-left'),
@@ -786,50 +801,63 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             </div>
           </div>
         )}
+
         {!message.isDeleted &&
           message.reactions &&
           message.reactions.length > 0 &&
           renderReactionsWithDuplicate()}
-        <img
-          src={message.sender?.avatar?.url || ''}
-          alt={message.sender?.username}
-          className={classNames(
-            'h-10 w-10 object-cover rounded-full items-center justify-center flex flex-shrink-0 bg-white border-2',
-            isOwnedMessage ? 'order-1' : 'order-2',
-          )}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
+
+        {currentChat.participants.length > 2 &&
+          !isOwnedMessage &&
+          (message.sender?.avatar?.url ? (
+            <img
+              src={message.sender?.avatar?.url}
+              alt={message.sender?.username}
+              className={classNames(
+                'size-10 object-cover rounded-full items-center justify-center flex flex-shrink-0 bg-white border-2',
+                isOwnedMessage ? 'order-2' : 'order-1',
+              )}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                backgroundColor: getDynamicUserColor(message?.sender?._id, theme === 'dark'),
+              }}
+              className={classNames(
+                'flex justify-center items-center size-10 rounded-full shrink-0 capitalize font-nunito font-bold',
+                isOwnedMessage ? 'order-2' : 'order-1',
+              )}>
+              {message.sender?.username.split('')[0]}
+            </div>
+          ))}
         <div
           id={`message-item-${message._id}`}
           className={classNames(
-            'flex flex-col self-end w-auto p-2 relative max-w-md cursor-pointer',
+            'flex flex-col space-y-0.5 self-end w-auto px-[9px] py-[6px] relative max-w-md cursor-pointer shadow-sm',
             isOwnedMessage ? 'order-1' : 'order-2',
             isOwnedMessage
-              ? "before:absolute before:content-[''] before:border-[#615EF0] before:-right-5 before:-z-10 before:top-0 before:border-t-[15px] before:border-b-[15px] before:border-b-transparent before:border-l-[25px] before:border-r-[25px] before:border-r-transparent bg-[#615EF0] rounded-xl rounded-tr-none"
-              : "bg-green-500 before:absolute before:content-[''] before:-left-5 before:-z-10 before:top-0 before:border-b-[25px] before:border-t-transparent before:border-b-transparent before:border-r-[40px] before:border-green-500 rounded-xl rounded-tl-none",
+              ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-lg rounded-tr-none wa-tail-owned'
+              : 'bg-white dark:bg-[#202c33] rounded-lg rounded-tl-none wa-tail-received border dark:border-none',
           )}
           ref={(element) => {
             messageItemRef.current[message._id] = element;
           }}
           data-id={message._id}>
-          {!isOwnedMessage && !isGroupChatMessage ? (
+          {!isOwnedMessage && !isGroupChatMessage && (
             <button
               title='open user profile'
-              className='self-start'
+              className='self-start mb-0.5'
               onClick={(e) => {
                 e.stopPropagation();
                 if (message.sender) handleOpenProfile(message.sender);
               }}>
-              <span className='text-gray-800 font-nunito font-bold text-sm'>
+              <span className='text-[#111b21] dark:text-[#e9edef] font-nunito font-bold text-[13px]'>
                 ~{message.sender?.username}
               </span>
             </button>
-          ) : (
-            isOwnedMessage && (
-              <span className='text-gray-800 font-nunito font-bold text-sm'>You</span>
-            )
           )}
           <div className='relative'>
             {isGroupChatMessage && !isOwnedMessage && (
@@ -855,8 +883,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 className={classNames(
                   "mb-2 p-2 rounded-lg overflow-hidden before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full cursor-pointer relative",
                   isOwnedMessage
-                    ? 'bg-indigo-300/50 before:bg-indigo-100'
-                    : 'bg-green-100/50 before:bg-green-100',
+                    ? 'bg-[#c5f0c0]/60 dark:bg-[#025144]/60 before:bg-[#06cf9c]'
+                    : 'bg-[#f0f0f0]/60 dark:bg-[#1a2930]/60 before:bg-[#06cf9c]',
                 )}
                 onClick={() => {
                   if (message.repliedMessage && message.replyId) {
@@ -867,22 +895,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     }
                   }
                 }}>
-                <p
-                  className={classNames(
-                    'text-xs font-semibold',
-                    !isOwnedMessage ? 'dark:text-gray-700' : 'dark:text-gray-300',
-                  )}>
+                <p className='text-xs font-semibold text-[#06cf9c]'>
                   Replying to {message.repliedMessage?.sender?.username}
                 </p>
                 {message.repliedMessage &&
                   (message.repliedMessage.isDeleted ? (
-                    <p className='text-xs italic dark:text-gray-400'>Message deleted</p>
+                    <p className='text-xs italic text-[#667781] dark:text-[#8696a0]'>
+                      Message deleted
+                    </p>
                   ) : (
-                    <p
-                      className={classNames(
-                        'text-xs truncate',
-                        !isOwnedMessage ? 'dark:text-gray-100' : 'dark:text-gray-200',
-                      )}>
+                    <p className='text-xs truncate text-[#111b21] dark:text-[#e9edef]'>
                       {message.repliedMessage.content || 'Attachment'}
                     </p>
                   ))}
@@ -913,35 +935,35 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             )}
             {message.isDeleted ? (
               <div className='flex items-center'>
-                <NoSymbolIcon className='text-red-500 h-6 mr-2' strokeWidth={2} />
-                <p className='text-xsm sm:text-sm italic font-normal text-gray-800 break-words'>
+                <NoSymbolIcon
+                  className='text-[#667781] dark:text-[#8696a0] h-5 mr-1.5'
+                  strokeWidth={2}
+                />
+                <p className='text-[13px] italic font-normal text-[#667781] dark:text-[#8696a0] break-words'>
                   {user?._id === message.sender?._id ? 'you' : message.sender?.username} deleted
                   this message
                 </p>
               </div>
             ) : (
               message.content && (
-                <p className='text-base font-normal text-white break-words'>
+                <p className='text-[14.2px] font-normal text-[#111b21] dark:text-[#e9edef] break-words leading-[19px]'>
                   {renderMessageWithMention()}
+                  {/* Invisible spacer to reserve room for the inline timestamp */}
+                  <span className='inline-block w-[70px]' />
                 </p>
               )
             )}
-            <div className='flex items-center justify-between'>
-              <p
-                className={classNames(
-                  'mt-1.5 self-end text-xs inline-flex items-center dark:text-white',
-                  isOwnedMessage ? 'text-zinc-50' : 'text-gray-800',
-                )}>
-                {message.attachments?.length > 0 && !message.isDeleted && renderAttachmentIcon()}
-                {formatMessageTime(message.updatedAt)}
-              </p>
+            {/* WhatsApp-style inline timestamp — floats at bottom-right of message content */}
+            <span className='float-right relative ml-2 flex items-center gap-0.5 text-[11px] text-[#667781] dark:text-[#8696a0] whitespace-nowrap'>
+              {message.attachments?.length > 0 && !message.isDeleted && renderAttachmentIcon()}
+              {formatMessageTime(message.updatedAt)}
               {!message.isDeleted && (
                 <MessageStatusTick
                   status={message.status}
                   isOwnedMessage={Boolean(isOwnedMessage)}
                 />
               )}
-            </div>
+            </span>
           </div>
         </div>
       </div>

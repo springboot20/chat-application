@@ -1,6 +1,6 @@
 import React, { Fragment, useMemo, useState } from 'react';
 import { ChatListItemInterface } from '../../types/chat';
-import { classNames, formatMessageTime, getMessageObjectMetaData } from '../../utils';
+import { classNames, formatChatListTime, getMessageObjectMetaData } from '../../utils';
 import {
   CheckCircleIcon,
   CheckIcon,
@@ -18,8 +18,6 @@ import { toast } from 'react-toastify';
 import { Menu, Transition } from '@headlessui/react';
 import { GroupChatInfo } from '../modal/GroupChatInfo';
 import { User } from '../../types/auth';
-import { setCurrentChat } from '../../features/chats/chat.reducer';
-import { useAppDispatch } from '../../redux/redux.hooks';
 import { TypingUser } from '../../hooks/useTyping';
 
 interface ChatItemProps {
@@ -47,7 +45,6 @@ export const ChatItem: React.FC<ChatItemProps> = ({
 }) => {
   const [openGroupInfo, setOpenGroupInfo] = useState(false);
   const [openOptions, setOpenOptions] = useState<{ [key: string]: boolean }>({});
-  const dispatch = useAppDispatch();
 
   const toggleOptions = (id: string, evt: React.MouseEvent) => {
     evt.stopPropagation();
@@ -99,7 +96,10 @@ export const ChatItem: React.FC<ChatItemProps> = ({
             ? 'bg-gray-200 dark:bg-white/10'
             : 'bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-white/5',
         )}
-        onClick={() => {
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
           onClick(chat);
           close();
         }}
@@ -109,7 +109,10 @@ export const ChatItem: React.FC<ChatItemProps> = ({
           <div className='flex items-center flex-shrink-0'>
             <Menu as='div' className='relative'>
               <Menu.Button
-                onClick={(e) => toggleOptions(chat?._id, e)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleOptions(chat?._id, e);
+                }}
                 className='flex dark:text-white text-gray-900 focus:outline-none'>
                 <EllipsisVerticalIcon className='h-5 w-5 group-hover:opacity-100 opacity-0 transition-opacity text-gray-400' />
               </Menu.Button>
@@ -127,7 +130,9 @@ export const ChatItem: React.FC<ChatItemProps> = ({
                       {({ active }) => (
                         <button
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
+
                             setOpenOptions({});
                           }}
                           className={classNames(
@@ -143,9 +148,10 @@ export const ChatItem: React.FC<ChatItemProps> = ({
                         {({ active }) => (
                           <button
                             onClick={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
+
                               setOpenGroupInfo(true);
-                              dispatch(setCurrentChat({ chat }));
                             }}
                             className={classNames(
                               active ? 'bg-gray-100 dark:bg-white/5' : '',
@@ -160,7 +166,9 @@ export const ChatItem: React.FC<ChatItemProps> = ({
                         {({ active }) => (
                           <button
                             onClick={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
+
                               deleteChat();
                             }}
                             className={classNames(
@@ -212,7 +220,7 @@ export const ChatItem: React.FC<ChatItemProps> = ({
                     ? 'text-green-600 dark:text-green-400 font-bold'
                     : 'text-gray-400',
                 )}>
-                {formatMessageTime(chat.updatedAt)}
+                {formatChatListTime(chat.updatedAt)}
               </small>
             </div>
 

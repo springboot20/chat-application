@@ -13,6 +13,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import {
   useAddToContactMutation,
   useGetMyContactsQuery,
+  useToggleBlockContactMutation,
 } from '../../features/contacts/contact.api.slice';
 import { SelectModalInput } from './Select';
 import {
@@ -184,7 +185,7 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
   } = useGetMyContactsQuery({
     page: currentPage,
   });
-
+  const [toggleBlock, { isLoading: isBlocking }] = useToggleBlockContactMutation();
   const [createUserChat, { isLoading: isCreatingChat }] = useCreateUserChatMutation();
 
   const myContacts = useMemo(
@@ -193,6 +194,27 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
   );
 
   const hasMore = contactsResponse?.data?.pagination?.hasMore;
+
+  const handleBlockToggle = async (contactRecordId: string) => {
+    if (!contactRecordId) return;
+
+    const contactRecord = myContacts?.find((c) => c.contact._id === contactRecordId);
+    const isBlocked = contactRecord.isBlocked;
+
+    if (
+      !window.confirm(
+        `Are you sure you want to ${isBlocked ? 'unblock' : 'block'} ${contactRecord.contact.username}?`,
+      )
+    )
+      return;
+
+    try {
+      const res = await toggleBlock(contactRecord._id).unwrap();
+      toast.success(res.message || `User ${isBlocked ? 'unblocked' : 'blocked'} successfully`);
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to update block status');
+    }
+  };
 
   const lastUserElementRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -214,6 +236,7 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
     return myContacts.map((item) => ({
       label: item.contact.username,
       value: item.contact._id,
+      isBlocked: item.isBlocked,
       isContact: true,
     }));
   }, [myContacts]);
@@ -289,6 +312,9 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
             if (!val) setCurrentPage(1);
           }}
           isFetching={isFetching}
+          isBlocking={isBlocking}
+          showBlockContact={true}
+          onToggleBlockContact={handleBlockToggle}
           lastElementRef={lastUserElementRef}
         />
       </div>
@@ -334,6 +360,7 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
   });
 
   const [createNewGroupChat, { isLoading: isCreating }] = useCreateGroupChatMutation();
+  const [toggleBlock, { isLoading: isBlocking }] = useToggleBlockContactMutation();
 
   const myContacts = useMemo(
     () => (contactsResponse?.data?.contacts || []) as any[],
@@ -341,6 +368,27 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
   );
 
   const hasMore = contactsResponse?.data?.pagination?.hasMore;
+
+  const handleBlockToggle = async (contactRecordId: string) => {
+    if (!contactRecordId) return;
+
+    const contactRecord = myContacts?.find((c) => c.contact._id === contactRecordId);
+    const isBlocked = contactRecord.isBlocked;
+
+    if (
+      !window.confirm(
+        `Are you sure you want to ${isBlocked ? 'unblock' : 'block'} ${contactRecord.contact.username}?`,
+      )
+    )
+      return;
+
+    try {
+      const res = await toggleBlock(contactRecord._id).unwrap();
+      toast.success(res.message || `User ${isBlocked ? 'unblocked' : 'blocked'} successfully`);
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to update block status');
+    }
+  };
 
   const lastUserElementRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -362,6 +410,7 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
     return myContacts.map((item) => ({
       label: item.contact.username,
       value: item.contact._id,
+      isBlocked: item.isBlocked,
       isContact: true,
     }));
   }, [myContacts]);
@@ -465,6 +514,9 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
             if (!val) setCurrentPage(1);
           }}
           isFetching={isFetching}
+          isBlocking={isBlocking}
+          showBlockContact={true}
+          onToggleBlockContact={handleBlockToggle}
           lastElementRef={lastUserElementRef}
         />
       </div>

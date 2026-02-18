@@ -1,5 +1,10 @@
 import { Combobox } from '@headlessui/react';
-import { CheckIcon, ChevronUpDownIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import {
+  CheckIcon,
+  ChevronUpDownIcon,
+  NoSymbolIcon,
+  UserPlusIcon,
+} from '@heroicons/react/24/outline';
 import React, { useEffect, useState } from 'react';
 import { classNames } from '../../utils';
 
@@ -9,21 +14,28 @@ export const SelectModalInput: React.FC<{
     value: string;
     label: string;
     isContact?: boolean;
+    isBlocked?: boolean;
   }[];
   onChange: (value: { value: string; label: string; isContact?: boolean }) => void;
   placeholder: string;
   onAddToContact?: (userId: string) => void;
+  onToggleBlockContact?: (userId: string) => void;
   showAddToContact?: boolean;
+  showBlockContact?: boolean;
   onSearchChange?: (value: string) => void;
   lastElementRef: (node: HTMLDivElement | null) => void;
   isFetching: boolean;
+  isBlocking?: boolean;
 }> = ({
   options,
   value,
   onChange,
   placeholder,
   onAddToContact,
+  onToggleBlockContact,
   showAddToContact = false,
+  showBlockContact = false,
+  isBlocking = false,
   onSearchChange,
   lastElementRef,
   isFetching,
@@ -167,6 +179,27 @@ export const SelectModalInput: React.FC<{
                           title='Add to contacts'>
                           <UserPlusIcon className='h-4 w-4 text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform' />
                           <span className='text-white font-nunito text-xs'>Add</span>
+                        </button>
+                      )}
+
+                      {showBlockContact && isContact && onToggleBlockContact && (
+                        <button
+                          type='button'
+                          disabled={isBlocking}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onToggleBlockContact(opt.value);
+                          }}
+                          className={classNames(
+                            'inline-flex justify-center items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset transition-colors',
+                            opt.isBlocked
+                              ? 'bg-red-50 text-red-700 ring-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-900'
+                              : 'bg-white text-red-600 ring-red-200 hover:bg-red-50 dark:bg-transparent dark:text-red-400 dark:ring-red-900 dark:hover:bg-red-900/10',
+                          )}
+                          title='Add to contacts'>
+                          <NoSymbolIcon className='h-4 w-4' />
+                          {opt?.isBlocked ? 'Unblock' : 'Block'}
                         </button>
                       )}
                       {selected && (

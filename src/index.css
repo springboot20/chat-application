@@ -169,23 +169,75 @@
     }
   }
 
+  /* WhatsApp-style bubble tails */
+  .wa-tail-owned {
+    position: relative;
+  }
+  .wa-tail-owned::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -8px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid #d9fdd3;
+    border-top: 8px solid #d9fdd3;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+  }
+
+  .wa-tail-received {
+    position: relative;
+  }
+  .wa-tail-received::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-right: 8px solid #ffffff;
+    border-top: 8px solid #ffffff;
+    border-left: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+  }
+
+  /* Dark mode bubble tails */
+  :is(.dark .wa-tail-owned)::before {
+    border-left-color: #005c4b;
+    border-top-color: #005c4b;
+  }
+  :is(.dark .wa-tail-received)::before {
+    border-right-color: #202c33;
+    border-top-color: #202c33;
+  }
+
+  /* WhatsApp-style glow animations */
   @keyframes glow-purple {
     0%,
     100% {
-      background: linear-gradient(135deg, rgba(97, 94, 240, 0.5) 0%, rgba(97, 94, 240, 0.2) 100%);
+      background: linear-gradient(135deg, rgba(0, 92, 75, 0.4) 0%, rgba(0, 92, 75, 0.15) 100%);
     }
-    500% {
-      background: linear-gradient(135deg, rgba(97, 94, 240, 0.3) 0%, rgba(97, 94, 240, 0.1) 100%);
+    50% {
+      background: linear-gradient(135deg, rgba(0, 92, 75, 0.25) 0%, rgba(0, 92, 75, 0.08) 100%);
     }
   }
 
   @keyframes glow-green {
     0%,
     100% {
-      background: linear-gradient(135deg, rgba(0, 255, 0, 0.2) 0%, rgba(0, 255, 0, 0.2) 100%);
+      background: linear-gradient(
+        135deg,
+        rgba(217, 253, 211, 0.4) 0%,
+        rgba(217, 253, 211, 0.15) 100%
+      );
     }
     50% {
-      background: linear-gradient(135deg, rgba(0, 255, 0, 0.3) 0%, rgba(0, 255, 0, 0.1) 100%);
+      background: linear-gradient(
+        135deg,
+        rgba(217, 253, 211, 0.25) 0%,
+        rgba(217, 253, 211, 0.08) 100%
+      );
     }
   }
 

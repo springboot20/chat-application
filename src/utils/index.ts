@@ -26,31 +26,32 @@ export const timeAgo = (timestamp: string | Date) => {
 
 export const formatMessageTime = (timestamp: string | Date): string => {
   const messageDate = moment(timestamp);
+  // WhatsApp always shows time on message bubbles (e.g., "3:25 PM")
+  return messageDate.format('h:mm A');
+};
+
+/**
+ * WhatsApp-style time formatting for the chat list sidebar.
+ * - Today: "3:25 PM"
+ * - Yesterday: "Yesterday"
+ * - This week: "Monday", "Tuesday", etc.
+ * - Older: "1/15/2025"
+ */
+export const formatChatListTime = (timestamp: string | Date): string => {
+  const messageDate = moment(timestamp);
   const now = moment();
   const yesterday = moment().subtract(1, 'day');
 
-  // If message is from today, show time only (e.g., "10:30 AM")
   if (messageDate.isSame(now, 'day')) {
     return messageDate.format('h:mm A');
   }
-
-  // If message is from yesterday, show "Yesterday"
   if (messageDate.isSame(yesterday, 'day')) {
     return 'Yesterday';
   }
-
-  // If message is from this week, show day name (e.g., "Monday")
   if (messageDate.isSame(now, 'week')) {
     return messageDate.format('dddd');
   }
-
-  // If message is from this year, show date without year (e.g., "Jan 15")
-  if (messageDate.isSame(now, 'year')) {
-    return messageDate.format('MMM D');
-  }
-
-  // Otherwise, show full date (e.g., "Jan 15, 2023")
-  return messageDate.format('MMM D, YYYY');
+  return messageDate.format('M/D/YYYY');
 };
 
 export const requestHandler = async ({

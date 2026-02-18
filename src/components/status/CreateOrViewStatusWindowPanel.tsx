@@ -104,7 +104,7 @@ export const CreateStatusWindowPanelSlot = () => {
 
       <Fragment>
         {mediaContentType === null && (
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4 place-content-center place-items-center h-full pb-24 md:pb-0 p-4 max-w-2xl mx-auto'>
+          <div className='grid grid-cols-2 sm:grid-cols-3 gap-4 place-content-center place-items-center h-full pb-20 pt-16 md:pb-0 p-4 max-w-2xl mx-auto'>
             {MEDIA_TYPES.map((type) => (
               <MediaTypeButtonComponent
                 key={type}
