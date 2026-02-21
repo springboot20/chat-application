@@ -844,7 +844,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         <div
           id={`message-item-${message._id}`}
           className={classNames(
-            'flex flex-col space-y-0.5 self-end w-auto px-[9px] py-[6px] relative cursor-pointer shadow-sm',
+            'flex flex-col space-y-0.5 self-end w-auto px-[9px] py-[6px] relative cursor-pointer shadow-sm max-w-md',
             isOwnedMessage ? 'order-1' : 'order-2',
             isOwnedMessage
               ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-lg rounded-tr-none wa-tail-owned'
