@@ -28,9 +28,6 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
   isMessageDeleted,
   handleSetOpenReply,
 }) => {
-  console.log(menuRef!);
-  console.log(menuPosition);
-
   return createPortal(
     <Transition.Root show={open} as={Fragment}>
       <Disclosure.Panel as='div' className='fixed inset-0 z-[9999] pointer-events-none'>

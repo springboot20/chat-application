@@ -77,6 +77,22 @@ const ChatSlice = createSlice({
       LocalStorage.set('chats', removeCircularReferences(state.chats));
     },
 
+    updatePollVote: (
+      state,
+      action: PayloadAction<{ messageId: string; chatId: string; options: any[] }>,
+    ) => {
+      const { messageId, chatId, options } = action.payload;
+      if (!state.chatMessages[chatId]) return;
+      
+      const msgIndex = state.chatMessages[chatId].findIndex((m) => m._id === messageId);
+      if (msgIndex !== -1) {
+        state.chatMessages[chatId][msgIndex].polling.options = options;
+      }
+
+      // Sync with LocalStorage
+      LocalStorage.set('chatmessages', removeCircularReferences(state.chatMessages));
+    },
+
     // ✅ ENHANCED: onMessageReceived to handle Status Updates and Merging
     onMessageReceived: (state, action: PayloadAction<{ data: ChatMessageInterface }>) => {
       const message = action.payload.data;
@@ -449,4 +465,5 @@ export const {
   markMessagesAsSeen,
   updateMessageDelivery,
   replaceOptimisticMessage,
+  updatePollVote,
 } = ChatSlice.actions;

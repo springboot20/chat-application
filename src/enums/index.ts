@@ -19,7 +19,9 @@ export const MARK_MESSAGES_SEEN_EVENT = 'mark-message-seen';
 export const USER_ONLINE_EVENT = 'userOnline';
 export const USER_OFFLINE_EVENT = 'userOffline';
 
-  export const USER_WENT_ONLINE_EVENT = 'userWentOnline';
-  export const USER_WENT_OFFLINE_EVENT = 'userWentOffline';
-  export const CHECK_ONLINE_STATUS_EVENT = 'checkOnlineStatus';
-  export const ONLINE_STATUS_RESPONSE_EVENT = 'onlineStatusResponse'
+export const USER_WENT_ONLINE_EVENT = 'userWentOnline';
+export const USER_WENT_OFFLINE_EVENT = 'userWentOffline';
+export const CHECK_ONLINE_STATUS_EVENT = 'checkOnlineStatus';
+export const ONLINE_STATUS_RESPONSE_EVENT = 'onlineStatusResponse';
+
+export const POLL_VOTE_UPDATED = 'poll-vote-updated';
