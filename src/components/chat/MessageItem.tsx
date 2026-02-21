@@ -24,6 +24,7 @@ import { updateMessageReactions } from '../../features/chats/chat.reducer';
 import { useNetwork } from '../../hooks/useNetwork';
 import { toast } from 'react-toastify';
 import { useMessage } from '../../hooks/useMessage';
+import { PollingVoteMessage } from './PollingVoteMessage';
 
 type Status = 'queued' | 'sent' | 'delivered' | 'seen';
 
@@ -186,6 +187,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     const relativeY = y - messageRect.top;
     setMenuPosition({ x: relativeX, y: relativeY });
   }, []);
+
   // Optimized emoji picker positioning
   const calculatePickerPosition = useCallback(() => {
     if (
@@ -230,6 +232,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       top: Math.min(0, Math.abs(relativeY)),
     });
   }, [doubleClickPosition, messagesContainerRef]);
+
   const handleReactionPicker = useCallback(
     (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       event.preventDefault();
@@ -263,10 +266,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     },
     [calculatePickerPosition, hasInternet, message.status],
   );
+
   const handleHideReactionPicker = useCallback(() => {
     setShowReactionPicker(false);
     setDoubleClickPosition(null);
   }, []);
+
   const handleSelectReactionEmoji = useCallback(
     async (key: string, emojiData: EmojiClickData, event: MouseEvent) => {
       if (event) {
@@ -556,6 +561,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     const sortedMentions = [...mentions].sort((a, b) => a.position - b.position);
     const parts = [];
     let lastIndex = 0;
+
     sortedMentions.forEach((mention, index) => {
       // Add text before the mention
       if (mention.position > lastIndex) {
@@ -583,10 +589,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       );
       lastIndex = mention.position + mentionText.length;
     });
+
     // Add remaining text
     if (lastIndex < content.length) {
       parts.push(<span key='text-end'>{content.substring(lastIndex)}</span>);
     }
+
     return parts;
   };
 
@@ -836,7 +844,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         <div
           id={`message-item-${message._id}`}
           className={classNames(
-            'flex flex-col space-y-0.5 self-end w-auto px-[9px] py-[6px] relative max-w-md cursor-pointer shadow-sm',
+            'flex flex-col space-y-0.5 self-end w-auto px-[9px] py-[6px] relative cursor-pointer shadow-sm',
             isOwnedMessage ? 'order-1' : 'order-2',
             isOwnedMessage
               ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-lg rounded-tr-none wa-tail-owned'
@@ -859,7 +867,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               </span>
             </button>
           )}
-          <div className='relative'>
+
+          <div className='relative w-full'>
             {isGroupChatMessage && !isOwnedMessage && (
               <button
                 title='open user profile'
@@ -878,6 +887,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 </span>
               </button>
             )}
+
             {message.replyId && (
               <div
                 className={classNames(
@@ -910,6 +920,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   ))}
               </div>
             )}
+
             {message?.attachments?.length > 0 && !message.isDeleted && (
               <div
                 className={classNames(
@@ -933,7 +944,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 })}
               </div>
             )}
-            {message.isDeleted ? (
+
+            {message.isDeleted && (
               <div className='flex items-center'>
                 <NoSymbolIcon
                   className='text-[#667781] dark:text-[#8696a0] h-5 mr-1.5'
@@ -944,15 +956,20 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   this message
                 </p>
               </div>
-            ) : (
-              message.content && (
-                <p className='text-[14.2px] font-normal text-[#111b21] dark:text-[#e9edef] break-words leading-[19px]'>
-                  {renderMessageWithMention()}
-                  {/* Invisible spacer to reserve room for the inline timestamp */}
-                  <span className='inline-block w-[70px]' />
-                </p>
-              )
             )}
+
+            {message.content && (
+              <p className='text-[14.2px] font-normal text-[#111b21] dark:text-[#e9edef] break-words leading-[19px]'>
+                {renderMessageWithMention()}
+                {/* Invisible spacer to reserve room for the inline timestamp */}
+                <span className='inline-block w-[70px]' />
+              </p>
+            )}
+
+            {message.contentType === 'polling' && !message.isDeleted && (
+              <PollingVoteMessage message={message} isOwnedMessage={Boolean(isOwnedMessage)} />
+            )}
+
             {/* WhatsApp-style inline timestamp — floats at bottom-right of message content */}
             <span className='float-right relative ml-2 flex items-center gap-0.5 text-[11px] text-[#667781] dark:text-[#8696a0] whitespace-nowrap'>
               {message.attachments?.length > 0 && !message.isDeleted && renderAttachmentIcon()}

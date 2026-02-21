@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import {
   ArrowLeftIcon,
@@ -24,6 +24,7 @@ import {
   MESSAGE_SEEN_EVENT,
   USER_ONLINE_EVENT,
   USER_OFFLINE_EVENT,
+  POLL_VOTE_UPDATED,
 } from '../enums/index.ts';
 import { useChat } from '../hooks/useChat.ts';
 import { useTyping } from '../hooks/useTyping.ts';
@@ -39,11 +40,12 @@ import {
   markMessagesAsSeen,
   setCurrentChat,
   updateMessageDelivery,
+  updatePollVote,
 } from '../features/chats/chat.reducer.ts';
 import { useGetChatMessagesQuery } from '../features/chats/chat.slice.ts';
 import { useTheme } from '../context/ThemeContext';
 import { User } from '../types/auth.ts';
-import MessageInput from '../components/inout/MessageInput.tsx';
+import MessageInput from '../components/input/MessageInput.tsx';
 import { useSocketContext } from '../hooks/useSocket.ts';
 import { useOnlineUsers } from '../hooks/useOnlineUsers.ts';
 import { useMarkMessagesAsSeen } from '../hooks/useMarkMessagesAsSeen.ts';
@@ -89,6 +91,12 @@ export const Chat = () => {
   });
 
   const messageHook = useMessage();
+
+  const currentChatIdRef = useRef<string | undefined>(currentChat?._id);
+
+  useEffect(() => {
+    currentChatIdRef.current = currentChat?._id;
+  }, [currentChat?._id]);
 
   const {
     message,
@@ -259,6 +267,22 @@ export const Chat = () => {
     }
   }, [isTyping, scrollToBottom]);
 
+  const handlePollVoteUpdated = useCallback(
+    (payload: { messageId: string; options: any[] }) => {
+      const chatId = currentChatIdRef.current; // always fresh, no stale closure
+      if (!chatId) return;
+
+      dispatch(
+        updatePollVote({
+          messageId: payload.messageId,
+          chatId,
+          options: payload.options,
+        }),
+      );
+    },
+    [dispatch], // dispatch is stable, currentChatIdRef is a ref — no re-creates
+  );
+
   useEffect(() => {
     if (!socket) return;
 
@@ -266,20 +290,15 @@ export const Chat = () => {
     socket.on(USER_OFFLINE_EVENT, handleUserOffline);
     socket?.on(UPDATE_CHAT_LAST_MESSAGE_EVENT, onUpdateChatLastMessage);
     socket?.on(MESSAGE_RECEIVED_EVENT, onMessageReceive);
+    socket.on(POLL_VOTE_UPDATED, handlePollVoteUpdated);
     socket?.on(STOP_TYPING_EVENT, handleStopTyping);
     socket?.on(TYPING_EVENT, handleStartTyping);
-    socket?.on(REACTION_RECEIVED_EVENT, (p) => {
-      console.log('received');
-
-      onReactionUpdate(p);
-    });
+    socket?.on(REACTION_RECEIVED_EVENT, onReactionUpdate);
     socket?.on(CHAT_MESSAGE_DELETE_EVENT, onChatMessageDeleted);
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
     socket?.on(NEW_GROUP_NAME, onGroupChatRename);
     socket?.on(MESSAGE_DELIVERED_EVENT, (payload) => {
-      console.log(payload);
-
       dispatch(updateMessageDelivery(payload));
     });
     socket?.on(MESSAGE_SEEN_EVENT, (payload) => {
@@ -292,6 +311,7 @@ export const Chat = () => {
       socket?.off(TYPING_EVENT, handleStartTyping);
       socket?.off(STOP_TYPING_EVENT, handleStopTyping);
       socket?.off(MESSAGE_RECEIVED_EVENT, onMessageReceive);
+      socket.off(POLL_VOTE_UPDATED, handlePollVoteUpdated);
       socket?.off(REACTION_RECEIVED_EVENT, onReactionUpdate);
       socket?.off(NEW_CHAT_EVENT, onNewChat);
       socket?.off(CHAT_MESSAGE_DELETE_EVENT, onChatMessageDeleted);
@@ -319,6 +339,7 @@ export const Chat = () => {
     onUpdateChatLastMessage,
     handleUserOnline,
     handleUserOffline,
+    handlePollVoteUpdated,
   ]);
 
   // Get online status for display

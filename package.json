@@ -10,6 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/react": "^0.3.2",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@fortawesome/fontawesome-free-regular": "^5.0.13",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
@@ -21,6 +25,7 @@
     "@types/wavesurfer.js": "^6.0.12",
     "axios": "^1.13.2",
     "emoji-picker-react": "^4.16.1",
+    "formik": "^2.4.9",
     "framer-motion": "^12.28.1",
     "get-orientation": "^1.1.2",
     "heroicons": "^2.2.0",
@@ -59,6 +64,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
-    "vite": "^5.4.21"
+    "vite": "^5.4.21",
+    "yup": "^1.7.1"
   }
 }

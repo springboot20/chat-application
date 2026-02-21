@@ -18,6 +18,15 @@ interface GroupChatInterface {
   participants: string[];
 }
 
+interface PollingMutation {
+  chatId: string;
+  questionTitle: string;
+  options: Array<{
+    optionValue: string;
+  }>;
+  allowMultipleAnswer: boolean;
+}
+
 export const ChatApiSlice = ApiService.injectEndpoints({
   endpoints: (builder) => ({
     getUserChats: builder.query<Response, void>({
@@ -93,6 +102,29 @@ export const ChatApiSlice = ApiService.injectEndpoints({
           url: '/chat-app/chats/group-chat',
           body: { name, participants },
           method: 'POST',
+        };
+      },
+    }),
+
+    createPollingVoteMessage: builder.mutation<Response, PollingMutation>({
+      query: ({ allowMultipleAnswer, options, questionTitle, chatId }) => {
+        return {
+          url: `/chat-app/messages/${chatId}/polling-vote`,
+          body: { allowMultipleAnswer, options, questionTitle },
+          method: 'POST',
+        };
+      },
+    }),
+
+    toggleVoteToPollingVoteMessage: builder.mutation<
+      Response,
+      { chatId: string; messageId: string; optionId: string }
+    >({
+      query: ({ chatId, messageId, optionId }) => {
+        return {
+          url: `/chat-app/messages/${chatId}/${messageId}/polling-vote/vote/${optionId}`,
+          body: {},
+          method: 'PATCH',
         };
       },
     }),
@@ -287,4 +319,6 @@ export const {
   useDeleteChatMessageMutation,
   useReplyToMessageMutation,
   useMarkMessagesAsSeenMutation,
+  useCreatePollingVoteMessageMutation,
+  useToggleVoteToPollingVoteMessageMutation
 } = ChatApiSlice;

@@ -12,28 +12,44 @@ export interface Attachment {
   waveform?: number[]; // waveform data
 }
 
+export interface PollingVoteInterface {
+  questionTitle: string;
+  options: Array<{
+    _id: string;
+    optionValue: string;
+    responses: Array<User>;
+  }>;
+  allowMultipleAnswer: boolean;
+}
+
+type MentionType = Array<{
+  userId: string;
+  username: string;
+  position: number;
+}>;
+
+type ReactionType = {
+  emoji: string;
+  _id: string;
+  userIds: string[];
+  users: {
+    avatar?: { url?: string; localPath?: string; _id: string };
+    _id: string;
+    username: string;
+  }[];
+};
+
 export interface ChatMessageInterface {
   _id: string;
   sender: Pick<UserType, '_id' | 'username' | 'avatar' | 'email'>;
   content: string;
+  contentType: 'text-file' | 'polling' | 'contact';
+  polling: PollingVoteInterface;
   attachments: Array<Attachment>;
   replyId?: string;
-  mentions: Array<{
-    userId: string;
-    username: string;
-    position: number;
-  }>;
+  mentions: MentionType;
   isDeleted: boolean;
-  reactions: {
-    emoji: string;
-    _id: string;
-    userIds: string[];
-    users: {
-      avatar?: { url?: string; localPath?: string; _id: string };
-      _id: string;
-      username: string;
-    }[];
-  }[];
+  reactions: ReactionType[];
   chat: string;
   repliedMessage: ChatMessageInterface | null;
   status: 'sent' | 'delivered' | 'seen' | 'queued';
