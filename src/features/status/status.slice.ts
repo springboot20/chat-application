@@ -8,7 +8,7 @@ interface InitialState {
 }
 
 const initialState: InitialState = {
-  statusWindow: "view-status",
+  statusWindow: null,
   selectedStatusToView: null,
 };
 

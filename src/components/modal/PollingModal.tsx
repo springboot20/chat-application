@@ -183,11 +183,9 @@ export const PollingMessageModal: React.FC<{
                     console.error('Failed to create poll', error);
                   }
                 }}>
-                {({ values, setFieldValue, errors }) => {
-                  const canSendPollingVote = Object.keys(errors).length > 0;
-
-                  console.log(errors);
-                  console.log(canSendPollingVote);
+                {({ values, setFieldValue, isSubmitting, dirty }) => {
+                  // const canSendPollingVote = Object.values(errors).length > 0;
+                  console.log(dirty);
 
                   return (
                     <Form>
@@ -292,23 +290,27 @@ export const PollingMessageModal: React.FC<{
                           key='send-button'
                           title='Send message'
                           type='submit'
-                          disabled={canSendPollingVote || isLoading}
-                          initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
-                          animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                          exit={{ scale: 0.8, opacity: 0, rotate: 90 }}
+                          disabled={!!dirty || isLoading}
                           transition={{
                             duration: 0.2,
                             ease: [0.4, 0, 0.2, 1],
                           }}
                           className={classNames(
                             'p-3 rounded-full transition-colors duration-200 shadow-lg flex items-center space-x-3 justify-center',
-                            !canSendPollingVote
+                            !!dirty
                               ? 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white'
                               : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed',
                           )}
-                          whileHover={!canSendPollingVote ? { scale: 1.1 } : {}}
-                          whileTap={!canSendPollingVote ? { scale: 0.95 } : {}}>
-                          <PaperAirplaneIcon className='h-5 w-5' /> <span>Create Polling</span>
+                          whileHover={!dirty ? { scale: 1.1 } : {}}
+                          whileTap={!dirty ? { scale: 0.95 } : {}}>
+                          {isLoading || isSubmitting ? (
+                            <span className='size-4 rounded-full animate-spin border-t border-white' />
+                          ) : (
+                            <>
+                              <span>Create Polling</span>
+                              <PaperAirplaneIcon className='h-5 w-5' />
+                            </>
+                          )}
                         </motion.button>
                       </div>
                     </Form>

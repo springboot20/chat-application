@@ -153,40 +153,40 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const { isOnline: hasInternet } = useNetwork();
 
   // Optimized menu positioning that works in all scenarios
-  const calculateMenuPosition = useCallback((clickX: number, clickY: number) => {
-    if (!menuRef.current || !containerRef.current) return;
-    const menuRect = menuRef.current.getBoundingClientRect();
-    const messageRect = containerRef.current.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const PADDING = 10; // Padding from edges
-    let x = clickX;
-    let y = clickY;
-    // Horizontal positioning
-    // Check if menu would overflow right edge
-    if (x + menuRect.width + PADDING > viewportWidth) {
-      // Position to the left of click
-      x = x - menuRect.width;
-    }
-    // Ensure menu doesn't go off left edge
-    if (x < PADDING) {
-      x = PADDING;
-    }
-    // Vertical positioning
-    // Check if menu would overflow bottom edge
-    if (y + menuRect.height + PADDING > viewportHeight) {
-      // Position above the click
-      y = y - menuRect.height;
-    }
-    // Ensure menu doesn't go off top edge
-    if (y < PADDING) {
-      y = PADDING;
-    }
-    // Convert to position relative to the message container
-    const relativeX = x - messageRect.left;
-    const relativeY = y - messageRect.top;
-    setMenuPosition({ x: relativeX, y: relativeY });
-  }, []);
+  const calculateMenuPosition = useCallback(
+    (clickX: number, clickY: number) => {
+      if (!menuRef.current || !messagesContainerRef.current) return;
+
+      const menuRect = menuRef.current.getBoundingClientRect();
+      const containerRect = messagesContainerRef.current.getBoundingClientRect();
+      const PADDING = 10;
+
+      // Initial position
+      let x = clickX;
+      let y = clickY;
+
+      // Constrain horizontally within the messages list container
+      if (x + menuRect.width + PADDING > containerRect.right) {
+        x = containerRect.right - menuRect.width - PADDING;
+      }
+
+      if (x < containerRect.left + PADDING) {
+        x = containerRect.left + PADDING;
+      }
+
+      // Constrain vertically within the messages list container
+      if (y + menuRect.height + PADDING > containerRect.bottom) {
+        y = containerRect.bottom - menuRect.height - PADDING;
+      }
+      
+      if (y < containerRect.top + PADDING) {
+        y = containerRect.top + PADDING;
+      }
+
+      setMenuPosition({ x, y });
+    },
+    [messagesContainerRef],
+  );
 
   // Optimized emoji picker positioning
   const calculatePickerPosition = useCallback(() => {
@@ -198,35 +198,45 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     ) {
       return;
     }
+
     // Get the message element's bounding rect
     const messageRect = containerRef.current.getBoundingClientRect();
     const reactionRect = reactionRef.current.getBoundingClientRect();
+
     // Get the viewport dimensions
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+
     // Get scroll offsets
     const scrollX = messagesContainerRef.current.scrollWidth;
     const scrollY = messagesContainerRef.current.scrollHeight;
+
     // Constants for picker dimensions (you may need to adjust these)
     const MARGIN = 10;
     let x = doubleClickPosition.clientX;
     let y = doubleClickPosition.clientY;
+
     // Ensure picker stays within viewport bounds
     if (x + reactionRect.width > scrollX + viewportWidth) {
       x = scrollX + viewportWidth - reactionRect.width - MARGIN;
     }
+
     if (x < messageRect.left + scrollX) {
       x = messageRect.left + scrollX - MARGIN;
     }
+
     if (y + reactionRect.height > scrollY - viewportHeight) {
       y = scrollY + viewportHeight - reactionRect.height - MARGIN;
     }
+
     if (y < messageRect.top + scrollY) {
       y = messageRect.top + scrollY - MARGIN;
     }
+
     // Convert to position relative to the message element
     const relativeX = x - messageRect.left - scrollX;
     const relativeY = y - messageRect.top - scrollY;
+
     setReactionLocation({
       left: Math.min(0, Math.abs(relativeX)),
       top: Math.min(0, Math.abs(relativeY)),
@@ -237,6 +247,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       event.preventDefault();
       event.stopPropagation();
+
       // ✅ Check if user is online
       if (!hasInternet) {
         toast.warning('You are offline. Cannot react to messages.', {
@@ -265,6 +276,26 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       });
     },
     [calculatePickerPosition, hasInternet, message.status],
+  );
+
+  const handleDoubleClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      const isMobile = window.innerWidth <= 768; // Mobile breakpoint
+
+      if (isMobile) {
+        // On mobile, double click shows the message menu
+        event.preventDefault();
+        event.stopPropagation();
+        setShowMenu(true);
+        requestAnimationFrame(() => {
+          calculateMenuPosition(event.clientX, event.clientY);
+        });
+      } else {
+        // On desktop, double click shows reaction picker
+        handleReactionPicker(event);
+      }
+    },
+    [calculateMenuPosition, handleReactionPicker],
   );
 
   const handleHideReactionPicker = useCallback(() => {
@@ -772,7 +803,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           isAnimating && (isOwnedMessage ? 'slide-right' : 'slide-left'),
         )}
         ref={containerRef}
-        onDoubleClick={handleReactionPicker}
+        onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}>
         {showMenu && (
           <MessageMenuSelection
