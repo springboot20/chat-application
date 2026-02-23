@@ -27,29 +27,27 @@ export const StatusTabComponent = () => {
         </div>
       </div>
 
-      {statusWindow === null &&
-        statusWindow !== 'view-status' &&
-        statusWindow !== 'create-status' && (
-          <Disclosure.Panel
-            static
-            className={classNames(
-              'fixed w-full bg-white dark:bg-black z-30 lg:hidden',
-              'mobile-navigation border-r-[1.5px] border-r-gray-600/30',
-              'left-0 font-nunito',
-            )}>
-            <header className='fixed inset-x-0 h-14 border-b-[1.5px] border-b-gray-600/30'>
-              <div className='flex items-center justify-between h-full px-2'>
-                <h2 className='text-2xl font-semibold dark:text-white'>Status</h2>
-              </div>
-            </header>
-
-            <div className='mt-16'>
-              <div className='px-2'>
-                <StatusUpdates />
-              </div>
+      {statusWindow === null && (
+        <Disclosure.Panel
+          static
+          className={classNames(
+            'fixed w-full bg-white dark:bg-black z-30 lg:hidden',
+            'mobile-navigation border-r-[1.5px] border-r-gray-600/30',
+            'left-0 font-nunito h-screen',
+          )}>
+          <header className='fixed inset-x-0 h-14 border-b-[1.5px] border-b-gray-600/30'>
+            <div className='flex items-center justify-between h-full px-2'>
+              <h2 className='text-2xl font-semibold dark:text-white'>Status</h2>
             </div>
-          </Disclosure.Panel>
-        )}
+          </header>
+
+          <div className='mt-16'>
+            <div className='px-2'>
+              <StatusUpdates />
+            </div>
+          </div>
+        </Disclosure.Panel>
+      )}
     </Fragment>
   );
 };
