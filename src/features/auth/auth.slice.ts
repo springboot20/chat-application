@@ -1,9 +1,5 @@
 import { ApiService } from '../../app/services/api.service';
 
-interface RegisterRequest {
-  [key: string]: any;
-}
-
 interface Response {
   data: any;
   statusCode: number;
@@ -18,7 +14,7 @@ interface LoginRequest {
 
 export const AuthApiSlice = ApiService.injectEndpoints({
   endpoints: (builder) => ({
-    register: builder.mutation<Response, RegisterRequest>({
+    register: builder.mutation<Response, FormData>({
       query: (data) => ({
         url: '/chat-app/auth/users/register',
         body: data,
@@ -49,7 +45,47 @@ export const AuthApiSlice = ApiService.injectEndpoints({
         }
       },
     }),
+
+    getCurrentUser: builder.query<Response, void>({
+      query: () => ({
+        url: '/chat-app/auth/users/current-user',
+        method: 'GET',
+      }),
+      providesTags: ['Auth'],
+    }),
+
+    uploadAvatar: builder.mutation<Response, FormData>({
+      query: (data) => ({
+        url: '/chat-app/auth/users/upload-avatar',
+        body: data,
+        method: 'POST',
+      }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+
+          // Update the getCurrentUser cache data with the new avatar
+          dispatch(
+            AuthApiSlice.util.updateQueryData('getCurrentUser', undefined, (draft) => {
+              if (draft?.data?.user) {
+                draft.data.user.avatar = data.data;
+              }
+            }),
+          );
+        } catch (error) {
+          console.error('Error updating avatar cache:', error);
+        }
+      },
+
+      invalidatesTags: ['Auth'],
+    }),
   }),
 });
 
-export const { useLoginMutation, useRegisterMutation, useLogoutMutation } = AuthApiSlice;
+export const {
+  useLoginMutation,
+  useRegisterMutation,
+  useLogoutMutation,
+  useUploadAvatarMutation,
+  useGetCurrentUserQuery,
+} = AuthApiSlice;

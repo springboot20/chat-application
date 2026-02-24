@@ -2,13 +2,15 @@ import { EyeIcon, EyeSlashIcon, UserCircleIcon } from '@heroicons/react/24/outli
 import { Button } from '../../components/buttons/Buttons';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useLoginMutation } from '../../features/auth/auth.slice';
+import { AuthApiSlice, useLoginMutation } from '../../features/auth/auth.slice';
 import { toast } from 'react-toastify';
+import { useAppDispatch } from '../../redux/redux.hooks';
 
 export const Login = () => {
   const [login, { isLoading }] = useLoginMutation();
   const navigate = useNavigate();
   const [show, setShow] = useState<boolean>(false);
+  const dispatch = useAppDispatch();
 
   const [value, setValue] = useState({
     email: '',
@@ -27,9 +29,9 @@ export const Login = () => {
 
     try {
       const response = await login({ ...value }).unwrap();
+      dispatch(AuthApiSlice.endpoints.getCurrentUser.initiate()).unwrap();
 
       toast(response?.data?.message, { type: 'success' });
-
       await Promise.resolve(setTimeout(() => navigate('/chat'), 1200));
     } catch (error: any) {
       toast(error?.data?.message, { type: 'error' });

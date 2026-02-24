@@ -1,6 +1,9 @@
 import { ArrowRightOnRectangleIcon, CogIcon } from '@heroicons/react/24/outline';
 import { Settings } from '../../pages/settings/Settings';
+import { UserProfileModal } from '../modal/UserProfileModal';
 import { useState } from 'react';
+import { useAppSelector } from '../../redux/redux.hooks';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { classNames } from '../../utils';
 
 const navLinks = [
@@ -57,6 +60,8 @@ type Tab = 'status' | 'chat_messages' | 'settings';
 
 const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab, onLogout }) => {
   const [openSettings, setOpenSettings] = useState(false);
+  const [openProfile, setOpenProfile] = useState(false);
+  const currentUser = useAppSelector((state) => state.auth.user);
 
   return (
     <nav
@@ -103,7 +108,32 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab
             </ul>
           </div>
         </div>
-        <div className='hidden lg:block'>
+        <div className='hidden lg:block space-y-4'>
+          {/* Profile Avatar / Modal Trigger */}
+          <div className='flex items-center justify-center pb-2'>
+            <button
+              onClick={() => setOpenProfile(true)}
+              className='relative group flex-shrink-0 focus:outline-none'>
+              {currentUser?.avatar?.url ? (
+                <img
+                  src={currentUser.avatar.url}
+                  alt={currentUser.username}
+                  className='h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover ring-2 ring-gray-200 dark:ring-zinc-800 transition-all hover:ring-[#615EF0]'
+                />
+              ) : (
+                <div className='h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center ring-2 ring-gray-200 dark:ring-zinc-800 transition-all hover:ring-[#615EF0]'>
+                  <UserCircleIcon className='h-6 w-6 sm:h-8 sm:w-8 text-gray-400' />
+                </div>
+              )}
+            </button>
+          </div>
+
+          <UserProfileModal
+            open={openProfile}
+            onClose={() => setOpenProfile(false)}
+            user={currentUser}
+          />
+
           <div className='flex items-center'>
             {/* Mobile menu button*/}
             <button

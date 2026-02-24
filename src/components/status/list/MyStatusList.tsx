@@ -145,7 +145,7 @@ export const MyStatusRow = ({ myStatus, onViewStatus }: MyStatusRowProps) => {
       <div className='w-full h-full flex items-center gap-x-3'>
         {/* Avatar with status indicator */}
         <div className='relative'>
-          <div className='rounded-full relative size-14 border-2 border-gray-300 dark:border-gray-600'>
+          <div className='relative border-2 border-gray-300 dark:border-gray-600'>
             <UserAvatar imageUrl={myStatus.user?.avatar?.url || ''} />
           </div>
         </div>

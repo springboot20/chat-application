@@ -24,7 +24,11 @@ const initialState: InitialState = getInitialState();
 
 const updateAuthState = (
   state: InitialState,
-  { tokens, user, isAuthenticated }: { isAuthenticated: boolean; tokens: Token; user?: User },
+  {
+    tokens,
+    user,
+    isAuthenticated,
+  }: { isAuthenticated: boolean; tokens: Token; user?: User | null },
 ) => {
   state.tokens = tokens;
   state.user = user || null;
@@ -82,19 +86,32 @@ const AuthSlice = createSlice({
     /**
      * Register builder casing
      */
-    builder.addMatcher(AuthApiSlice.endpoints.register.matchFulfilled, (state, { payload }) => {
-      updateAuthState(state, { tokens: null!, user: payload.data.user, isAuthenticated: false });
+    builder.addMatcher(AuthApiSlice.endpoints.register.matchFulfilled, (state) => {
+      updateAuthState(state, { tokens: null!, user: null, isAuthenticated: false });
     });
 
+    builder.addMatcher(
+      AuthApiSlice.endpoints.getCurrentUser.matchFulfilled,
+      (state, { payload }) => {
+        updateAuthState(state, {
+          tokens: state.tokens!,
+          user: payload.data.user,
+          isAuthenticated: state.isAuthenticated,
+        });
+      },
+    );
+
     builder.addMatcher(AuthApiSlice.endpoints.login.matchFulfilled, (state, { payload }) => {
+      console.log(payload);
+
       // 1. Update State
       state.tokens = payload.data.tokens;
-      state.user = payload.data.user;
+      state.user = null;
       state.isAuthenticated = true;
 
       // 2. Persist to Storage (ONLY PLACE THIS HAPPENS)
       LocalStorage.set('tokens', payload.data.tokens);
-      LocalStorage.set('user', payload.data.user);
+      LocalStorage.set('user', null);
       LocalStorage.set('authenticated', true);
     });
 

@@ -33,7 +33,6 @@ export const Register = () => {
     ['.jpg', '.svg'],
   ];
 
-  const formData = new FormData();
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       setSelectedFile(event.target.files[0]);
@@ -46,6 +45,8 @@ export const Register = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    const formData = new FormData();
 
     if (selectedFile) {
       const fileExt = selectedFile.name.split('.').pop();
@@ -60,10 +61,16 @@ export const Register = () => {
       }
     }
 
-    formData.append('avatar', selectedFile as Blob);
+    formData.append('username', value.username);
+    formData.append('email', value.email);
+    formData.append('password', value.password);
+
+    if (selectedFile) {
+      formData.append('avatar', selectedFile as Blob);
+    }
 
     try {
-      const response = await register({ ...value }).unwrap();
+      const response = await register(formData).unwrap();
       toast(response?.data?.message, { type: 'success' });
       await Promise.resolve(setTimeout(() => navigate('/login'), 1200));
     } catch (error: any) {

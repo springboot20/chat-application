@@ -1,5 +1,5 @@
 import { Dialog, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
+import { Fragment, useRef } from 'react';
 import {
   UserPlusIcon,
   XMarkIcon,
@@ -20,6 +20,7 @@ import {
   useCreateUserChatMutation,
   useGetChatMessagesQuery,
 } from '../../features/chats/chat.slice';
+import { AuthApiSlice, useUploadAvatarMutation } from '../../features/auth/auth.slice';
 import { useChat } from '../../hooks/useChat';
 import { setCurrentChat } from '../../features/chats/chat.reducer';
 import { ChatListItemInterface, ChatMessageInterface } from '../../types/chat';
@@ -41,6 +42,9 @@ export const UserProfileModal = ({ open, onClose, user }: UserProfileModalProps)
   const [addToContact, { isLoading: isAdding }] = useAddToContactMutation();
   const [createChat, { isLoading: isCreatingChat }] = useCreateUserChatMutation();
   const [toggleBlock, { isLoading: isBlocking }] = useToggleBlockContactMutation();
+  const [uploadAvatar, { isLoading: isUploadingAvatar }] = useUploadAvatarMutation();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: contactsResponse } = useGetMyContactsQuery({ page: 1, limit: 1000 });
   const myContacts = contactsResponse?.data?.contacts || [];
@@ -124,6 +128,31 @@ export const UserProfileModal = ({ open, onClose, user }: UserProfileModalProps)
     }
   };
 
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Optional: Add basic extension check (sync with Register.tsx)
+    const validExtensions = ['.png', '.jpeg', '.jpg', '.svg'];
+    const fileExt = `.${file.name.split('.').pop()?.toLowerCase()}`;
+    if (!validExtensions.includes(fileExt)) {
+      toast.error('Invalid file extension. Please use PNG, JPEG, or SVG.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const res = await uploadAvatar(formData).unwrap();
+      toast.success(res.message || 'Avatar updated successfully');
+
+      dispatch(AuthApiSlice.endpoints.getCurrentUser.initiate()).unwrap();
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to update avatar');
+    }
+  };
+
   return (
     <Transition.Root show={open} as={Fragment}>
       <Dialog as='div' className='relative z-[100]' onClose={onClose}>
@@ -152,17 +181,43 @@ export const UserProfileModal = ({ open, onClose, user }: UserProfileModalProps)
 
                 <div className='px-4 pb-4 pt-5 sm:p-6 sm:pb-4'>
                   <div className='flex flex-col items-center justify-center text-center'>
-                    <div className='relative'>
+                    <div
+                      className={classNames('relative group', isMe && 'cursor-pointer')}
+                      onClick={() => isMe && fileInputRef.current?.click()}>
                       {user.avatar?.url ? (
                         <img
                           src={user.avatar.url}
                           alt={user.username}
-                          className='h-24 w-24 rounded-full object-cover ring-4 ring-white dark:ring-zinc-800'
+                          className='h-24 w-24 rounded-full object-cover ring-4 ring-white dark:ring-zinc-800 transition-opacity group-hover:opacity-75'
                         />
                       ) : (
-                        <div className='h-24 w-24 rounded-full bg-gray-200 dark:bg-zinc-800 flex items-center justify-center ring-4 ring-white dark:ring-zinc-800'>
+                        <div className='h-24 w-24 rounded-full bg-gray-200 dark:bg-zinc-800 flex items-center justify-center ring-4 ring-white dark:ring-zinc-800 transition-opacity group-hover:opacity-75'>
                           <UserIcon className='h-12 w-12 text-gray-400' />
                         </div>
+                      )}
+
+                      {isMe && (
+                        <div className='absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
+                          <div className='bg-black/40 rounded-full p-2'>
+                            <PhotoIcon className='h-6 w-6 text-white' />
+                          </div>
+                        </div>
+                      )}
+
+                      {isUploadingAvatar && (
+                        <div className='absolute inset-0 flex items-center justify-center bg-black/20 rounded-full'>
+                          <div className='w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin'></div>
+                        </div>
+                      )}
+
+                      {isMe && (
+                        <input
+                          type='file'
+                          ref={fileInputRef}
+                          className='hidden'
+                          accept='.png,.jpeg,.jpg,.svg'
+                          onChange={handleAvatarChange}
+                        />
                       )}
                     </div>
 
