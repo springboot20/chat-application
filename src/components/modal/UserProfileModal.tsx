@@ -7,6 +7,8 @@ import {
   UserIcon,
   NoSymbolIcon,
   PhotoIcon,
+  PowerIcon,
+  CheckBadgeIcon,
 } from '@heroicons/react/24/outline';
 import {
   useAddToContactMutation,
@@ -32,9 +34,10 @@ type UserProfileModalProps = {
   open: boolean;
   onClose: () => void;
   user: Partial<User> | null; // Allow partial user data since sometimes we only have ID/Username
+  onLogout?: () => void;
 };
 
-export const UserProfileModal = ({ open, onClose, user }: UserProfileModalProps) => {
+export const UserProfileModal = ({ open, onClose, user, onLogout }: UserProfileModalProps) => {
   const currentUser = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
   const { chatsWithMeta } = useChat();
@@ -222,12 +225,27 @@ export const UserProfileModal = ({ open, onClose, user }: UserProfileModalProps)
                     </div>
 
                     <div className='mt-4'>
-                      <Dialog.Title
-                        as='h3'
-                        className='text-xl font-semibold leading-6 text-gray-900 dark:text-white'>
-                        {user.username || 'Unknown User'}
-                      </Dialog.Title>
+                      <div className='flex items-center justify-center gap-2'>
+                        <Dialog.Title
+                          as='h3'
+                          className='text-xl font-semibold leading-6 text-gray-900 dark:text-white'>
+                          {user.username || 'Unknown User'}
+                        </Dialog.Title>
+                        {user.isEmailVerified && (
+                          <CheckBadgeIcon
+                            className='h-6 w-6 text-indigo-500 fill-indigo-500/10'
+                            title='Verified Account'
+                          />
+                        )}
+                      </div>
                       <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>{user.email}</p>
+                      {user.about && (
+                        <div className='mt-4 px-6 border-t dark:border-zinc-800 pt-4'>
+                          <p className='text-sm text-gray-600 dark:text-gray-300 italic'>
+                            "{user.about}"
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -274,6 +292,16 @@ export const UserProfileModal = ({ open, onClose, user }: UserProfileModalProps)
                       )}>
                       <NoSymbolIcon className='h-4 w-4' />
                       {isBlocked ? 'Unblock' : 'Block'}
+                    </button>
+                  )}
+
+                  {isMe && onLogout && (
+                    <button
+                      type='button'
+                      onClick={onLogout}
+                      className='inline-flex justify-center items-center gap-2 rounded-md bg-red-50 dark:bg-red-900/20 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors'>
+                      <PowerIcon className='h-4 w-4' />
+                      Log Out
                     </button>
                   )}
                 </div>

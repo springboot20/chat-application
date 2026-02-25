@@ -79,6 +79,43 @@ export const AuthApiSlice = ApiService.injectEndpoints({
 
       invalidatesTags: ['Auth'],
     }),
+
+    resendEmailVerification: builder.mutation<Response, void>({
+      query: () => ({
+        url: '/chat-app/auth/users/resend-email-verification',
+        method: 'POST',
+      }),
+    }),
+
+    updateAccount: builder.mutation<Response, { username?: string; about?: string }>({
+      query: (data) => ({
+        url: '/chat-app/auth/users/update-account',
+        body: data,
+        method: 'PATCH',
+      }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            AuthApiSlice.util.updateQueryData('getCurrentUser', undefined, (draft) => {
+              if (draft?.data?.user) {
+                Object.assign(draft.data.user, data.data);
+              }
+            }),
+          );
+        } catch (error) {
+          console.error('Error updating account cache:', error);
+        }
+      },
+    }),
+
+    changePassword: builder.mutation<Response, any>({
+      query: (data) => ({
+        url: '/chat-app/auth/users/change-current-password',
+        body: data,
+        method: 'POST',
+      }),
+    }),
   }),
 });
 
@@ -88,4 +125,7 @@ export const {
   useLogoutMutation,
   useUploadAvatarMutation,
   useGetCurrentUserQuery,
+  useChangePasswordMutation,
+  useResendEmailVerificationMutation,
+  useUpdateAccountMutation,
 } = AuthApiSlice;

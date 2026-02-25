@@ -1,4 +1,4 @@
-import { ArrowRightOnRectangleIcon, CogIcon } from '@heroicons/react/24/outline';
+import { CogIcon } from '@heroicons/react/24/outline';
 import { Settings } from '../../pages/settings/Settings';
 import { UserProfileModal } from '../modal/UserProfileModal';
 import { useState } from 'react';
@@ -132,6 +132,7 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab
             open={openProfile}
             onClose={() => setOpenProfile(false)}
             user={currentUser}
+            onLogout={onLogout}
           />
 
           <div className='flex items-center'>
@@ -146,22 +147,12 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab
           </div>
 
           {openSettings ? (
-            <Settings open={openSettings} onClose={() => setOpenSettings(!openSettings)} />
+            <Settings
+              open={openSettings}
+              onClose={() => setOpenSettings(!openSettings)}
+              onLogout={onLogout}
+            />
           ) : null}
-
-          {/* Logout button */}
-          {onLogout && (
-            <div className='flex items-center mt-3'>
-              <button
-                type='button'
-                onClick={onLogout}
-                title='Logout'
-                className='inline-flex items-center justify-center p-3 rounded-xl transition-all hover:rounded-full text-gray-600 bg-gray-50 border dark:text-white dark:bg-transparent hover:bg-red-500/80 hover:text-white focus:ring-2 focus:ring-inset focus:ring-white'>
-                <span className='sr-only'>Logout</span>
-                <ArrowRightOnRectangleIcon className='block h-5 w-5 stroke-2' aria-hidden='true' />
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </nav>

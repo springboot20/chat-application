@@ -13,6 +13,7 @@ export interface User {
   emailVerificationTokenExpiry?: string;
   forgotPasswordTokenExpiry?: string;
   role: string;
+  about?: string;
 }
 
 export type InitialState = {

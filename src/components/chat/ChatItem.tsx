@@ -19,6 +19,7 @@ import { Menu, Transition } from '@headlessui/react';
 import { GroupChatInfo } from '../modal/GroupChatInfo';
 import { User } from '../../types/auth';
 import { TypingUser } from '../../hooks/useTyping';
+import { UserAvatar } from '../status/StatusAvatar';
 
 interface ChatItemProps {
   chat: ChatListItemInterface;
@@ -78,6 +79,8 @@ export const ChatItem: React.FC<ChatItemProps> = ({
     }
     return chatMeta.lastMessage;
   }, [chatMeta, chat.lastMessage]);
+
+  const chatImage = chat.participants.filter((u) => u._id !== user!._id)[0]?.avatar;
 
   return (
     <>
@@ -193,6 +196,8 @@ export const ChatItem: React.FC<ChatItemProps> = ({
                     {chat.name?.charAt(0) || 'G'}
                   </div>
                 </div>
+              ) : chatImage ? (
+                <UserAvatar imageUrl={chatImage.url || ''} />
               ) : (
                 <div className='w-12 h-12 rounded-full border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5 flex items-center justify-center overflow-hidden'>
                   <span className='text-gray-400 text-xs'>User</span>
