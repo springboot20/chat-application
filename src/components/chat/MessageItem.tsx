@@ -81,7 +81,6 @@ interface MessageItemProps {
   theme: string;
   highlightedMessageId?: string;
   onSetHighlightedMessage?: (messageId: string | undefined) => void;
-  setIsOwnedMessage: (value: React.SetStateAction<boolean>) => void;
   message: ChatMessageInterface;
   otherParticipantId?: string;
 }
@@ -108,12 +107,10 @@ type ReactionStats = {
 type CategorizedReaction = EmojiType & { count: number };
 
 export const MessageItem: React.FC<MessageItemProps> = ({
-  isOwnedMessage,
   isGroupChatMessage,
   theme,
   onSetHighlightedMessage,
   highlightedMessageId,
-  setIsOwnedMessage,
   message,
   containerRef: messagesContainerRef,
 }) => {
@@ -152,6 +149,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const x = useMotionValue(0);
   const [isDragging, setIsDragging] = useState(false);
   const swipeThreshold = 60;
+
+  // ✅ Local derivation of ownership
+  const isOwnedMessage = useMemo(
+    () => message.sender?._id === user?._id,
+    [message.sender?._id, user?._id],
+  );
 
   // Dynamic transforms based on ownership
   const replyIconOpacity = useTransform(
@@ -605,10 +608,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       });
     }
   }, [message._id, messageToReply, swipeThreshold, x, isOwnedMessage]);
-
-  useEffect(() => {
-    setIsOwnedMessage(isOwnedMessage || message.sender?._id === user?._id);
-  }, [isOwnedMessage, message.sender?._id, setIsOwnedMessage, user?._id]);
 
   const handleOpenProfile = (targetUser: Partial<User>) => {
     setSelectedUser(targetUser);

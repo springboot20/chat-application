@@ -27,13 +27,12 @@ import { messageQueue } from '../../utils/messageQueue';
 import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks';
 import { onMessageReceived, replaceOptimisticMessage } from '../../features/chats/chat.reducer';
 import { useRecordingLock } from '../../hooks/useRecordingLock';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, animate } from 'framer-motion';
 import { useMessage } from '../../hooks/useMessage';
 import { PollingMessageModal } from '../modal/PollingModal';
 
 interface MessageInputProps {
   reduxStateMessages: ChatMessageInterface[];
-  isOwnedMessage: boolean;
   textareaRef: React.MutableRefObject<HTMLTextAreaElement | null>;
   theme: string;
   currentChat: ChatListItemInterface;
@@ -53,6 +52,7 @@ const MessageInput = ({
     recordingTime,
     audioBlob,
     audioUrl,
+    audioLevel, // Get real audio level
     startRecording,
     pauseRecording,
     resumeRecording,
@@ -87,12 +87,11 @@ const MessageInput = ({
   const {
     uiState,
     onStart,
-    onMove,
-    onEnd,
+    x,
+    y,
     reset: resetLock,
-    micRef,
-    cancelRef,
-    lockRef,
+    LOCK_THRESHOLD,
+    CANCEL_THRESHOLD,
   } = useRecordingLock();
 
   const { isOnline } = useNetwork();
@@ -240,35 +239,31 @@ const MessageInput = ({
     [handleSendMessageLocal],
   );
 
-  // ✅ FIXED: Proper drag gesture lifecycle management
-  const handleMicPointerDown = (e: React.PointerEvent) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-
-    setIsDraggingMic(true); // Mark as dragging
-    resetLock();
-    onStart(e.clientX, e.clientY);
+  // ✅ Drag gesture lifecycle management via MotionValues
+  const handleMicDragStart = () => {
+    onStart();
     startRecording();
+    setIsDraggingMic(true);
   };
 
-  const handleMicPointerMove = (e: React.PointerEvent) => {
-    if (uiState === 'recording' || isDraggingMic) {
-      onMove(e.clientX, e.clientY);
-    }
-  };
+  const handleMicDragEnd = () => {
+    setIsDraggingMic(false);
 
-  const handleMicPointerUp = () => {
-    setIsDraggingMic(false); // Drag gesture complete
-    onEnd(); // Reset transforms
-
-    // Handle state transitions AFTER drag completes
+    // Check if we hit thresholds before resetting
     if (uiState === 'cancelled') {
       cancelRecording();
-      resetLock();
     } else if (uiState === 'recording') {
-      // If released without locking, stop recording
-      // (You might want different behavior here)
+      // WhatsApp behavior: Release in neutral zone = Stop and Send
+      stopRecording();
+      // Need a slight delay to ensure blob is ready
+      setTimeout(() => {
+        handleSendVoiceMessage();
+      }, 50);
     }
-    // If locked, do nothing - let user use the controls
+
+    // Snap back to origin
+    animate(x, 0, { type: 'spring', stiffness: 500, damping: 30 });
+    animate(y, 0, { type: 'spring', stiffness: 500, damping: 30 });
   };
 
   // ✅ Auto-reset on cancel
@@ -475,7 +470,7 @@ const MessageInput = ({
                 isRecording={isRecording}
                 isPaused={isPaused}
                 recordingTime={recordingTime}
-                audioLevel={1}
+                audioLevel={audioLevel}
                 onPause={pauseRecording}
                 onResume={resumeRecording}
                 onCancel={cancelRecording}
@@ -483,9 +478,9 @@ const MessageInput = ({
                 hasRecording={!!audioUrl && !isRecordingCancelled}
                 isRecordingCancelled={isRecordingCancelled}
                 stopRecording={stopRecording}
-                micRef={micRef}
-                cancelRef={cancelRef}
-                lockRef={lockRef}
+                x={x}
+                y={y}
+                audioUrl={audioUrl}
               />
             </div>
           )}
@@ -520,10 +515,17 @@ const MessageInput = ({
                 <motion.button
                   key='mic-button'
                   type='button'
-                  onPointerDown={handleMicPointerDown}
-                  onPointerMove={handleMicPointerMove}
-                  onPointerUp={handleMicPointerUp}
-                  onPointerCancel={handleMicPointerUp}
+                  drag
+                  dragConstraints={{
+                    top: -LOCK_THRESHOLD - 60,
+                    left: -CANCEL_THRESHOLD - 60,
+                    right: 40,
+                    bottom: 40,
+                  }}
+                  dragElastic={0.15}
+                  onDragStart={handleMicDragStart}
+                  onDragEnd={handleMicDragEnd}
+                  style={{ x, y }}
                   initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
                   animate={{ scale: 1, opacity: 1, rotate: 0 }}
                   exit={{ scale: 0.8, opacity: 0, rotate: 90 }}

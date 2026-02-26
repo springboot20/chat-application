@@ -135,7 +135,6 @@ export const Chat = () => {
     user,
   });
 
-  const [isOwnedMessage, setIsOwnedMessage] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | undefined>(undefined);
 
   const handleSetHighlightedMessage = (messageId: string | undefined) => {
@@ -500,9 +499,7 @@ export const Chat = () => {
                                                   : '',
                                           )}
                                           key={p._id}>
-                                          <UserAvatar
-                                            imageUrl={p?.avatar?.url || ''}
-                                          />
+                                          <UserAvatar imageUrl={p?.avatar?.url || ''} />
                                         </div>
                                       ))}
                                   </div>
@@ -658,8 +655,6 @@ export const Chat = () => {
                                           containerRef={containerRef}
                                           highlightedMessageId={highlightedMessageId}
                                           isGroupChatMessage={currentChat?.isGroupChat}
-                                          isOwnedMessage={msg.sender?._id === user?._id}
-                                          setIsOwnedMessage={setIsOwnedMessage}
                                           onSetHighlightedMessage={handleSetHighlightedMessage}
                                         />
                                       );
@@ -700,7 +695,6 @@ export const Chat = () => {
 
                         <MessageInput
                           reduxStateMessages={currentChatMessages}
-                          isOwnedMessage={isOwnedMessage}
                           theme={theme}
                           textareaRef={messageInputRef}
                           handleSendMessage={handleSendMessage}
