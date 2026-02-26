@@ -191,16 +191,27 @@ export const ChatItem: React.FC<ChatItemProps> = ({
             {/* Avatar Section */}
             <div className='flex-shrink-0 ml-1'>
               {chat.isGroupChat ? (
-                <div className='w-12 h-12 relative flex items-center justify-center'>
-                  <div className='w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-black'>
-                    {chat.name?.charAt(0) || 'G'}
-                  </div>
+                <div className='w-12 relative h-12 flex-shrink-0 flex justify-start items-center flex-nowrap'>
+                  {chat?.participants?.slice(0, 4).map((p: User, index: number) => (
+                    <div
+                      className={classNames(
+                        'h-full w-full absolute',
+                        index === 0
+                          ? '-left-0.5 z-[3]'
+                          : index === 1
+                            ? 'left-1 z-[2]'
+                            : index === 2
+                              ? 'left-2.5 z-[1]'
+                              : '',
+                      )}
+                      key={p._id}>
+                      <UserAvatar imageUrl={p?.avatar?.url || ''} />
+                    </div>
+                  ))}
                 </div>
-              ) : chatImage ? (
-                <UserAvatar imageUrl={chatImage.url || ''} />
               ) : (
-                <div className='w-12 h-12 rounded-full border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-white/5 flex items-center justify-center overflow-hidden'>
-                  <span className='text-gray-400 text-xs'>User</span>
+                <div className='size-12'>
+                  <UserAvatar imageUrl={chatImage?.url || ''} />
                 </div>
               )}
             </div>

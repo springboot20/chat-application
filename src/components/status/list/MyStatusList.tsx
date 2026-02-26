@@ -76,7 +76,7 @@ export const MyStatusListComponent: React.FC<StatusListProps> = ({
                 <div className='w-full h-full flex items-center gap-x-3'>
                   {/* Avatar */}
                   <div className='relative'>
-                    <div className='rounded-full relative size-14 border-2 border-gray-300 dark:border-gray-600'>
+                    <div className='rounded-full relative size-16 border-2 border-gray-300 dark:border-gray-600'>
                       <UserAvatar
                         imageUrl={myStatus.user?.avatar?.url || user?.avatar?.url || ''}
                       />

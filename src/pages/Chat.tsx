@@ -408,6 +408,8 @@ export const Chat = () => {
     }
   };
 
+  console.log(currentChat);
+
   return (
     <Disclosure as={Fragment}>
       {({ open, close }) => (
@@ -456,8 +458,7 @@ export const Chat = () => {
                         className={classNames(
                           'fixed top-0 right-0 p-2 left-0 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all lg:left-[30rem]',
                         )}>
-                        <div
-                          className={classNames('flex justify-between items-center h-full ml-6')}>
+                        <div className={classNames('flex justify-between items-center h-full')}>
                           <div className='flex items-center gap-2'>
                             <button
                               type='button'
@@ -483,13 +484,32 @@ export const Chat = () => {
                               }}>
                               <div className='flex-shrink-0'>
                                 {currentChat.isGroupChat ? (
-                                  <div className='w-12 h-12 relative flex items-center justify-center'>
-                                    <div className='w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-black'>
-                                      {currentChat.name?.charAt(0) || 'G'}
-                                    </div>
+                                  <div className='w-12 relative h-12 flex-shrink-0 flex justify-start items-center flex-nowrap'>
+                                    {currentChat?.participants
+                                      ?.slice(0, 4)
+                                      .map((p: User, index: number) => (
+                                        <div
+                                          className={classNames(
+                                            'size-10 absolute',
+                                            index === 0
+                                              ? 'left-0 z-[3]'
+                                              : index === 1
+                                                ? 'left-2.5 z-[2]'
+                                                : index === 2
+                                                  ? 'left-[18px] z-[1]'
+                                                  : '',
+                                          )}
+                                          key={p._id}>
+                                          <UserAvatar
+                                            imageUrl={p?.avatar?.url || ''}
+                                          />
+                                        </div>
+                                      ))}
                                   </div>
                                 ) : (
-                                  <UserAvatar imageUrl={processChat(user!)?.avatarUrl || ''} />
+                                  <div className='size-12'>
+                                    <UserAvatar imageUrl={processChat(user!)?.avatarUrl || ''} />
+                                  </div>
                                 )}
                               </div>
                               <div className='flex flex-col'>

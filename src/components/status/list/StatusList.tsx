@@ -135,7 +135,7 @@ const OthersStatusRow = ({ statusGroup, currentUserId, onViewStatus }: OthersSta
         {/* Avatar with gradient ring for unviewed */}
         <div className='relative'>
           <div
-            className={`rounded-full relative size-14 ${
+            className={`rounded-full relative size-16 ${
               hasUnviewed
                 ? 'p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500'
                 : 'border-2 border-gray-300 dark:border-gray-600'

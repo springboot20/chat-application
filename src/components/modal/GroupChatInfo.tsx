@@ -23,6 +23,8 @@ import { User } from '../../types/auth';
 import { toast } from 'react-toastify';
 import { useGetMyContactsQuery } from '../../features/contacts/contact.api.slice';
 import { AttachmentItem } from '../shared/AttachmentItem';
+import { UserAvatar } from '../status/StatusAvatar';
+import { classNames } from '../../utils';
 
 type GroupInfoProps = {
   open: boolean;
@@ -210,15 +212,25 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
 
                       {/* Avatar & Name */}
                       <div className='mt-6 flex flex-col items-center'>
-                        <div className='flex -space-x-4 overflow-hidden mb-4'>
-                          {groupChatDetails?.participants?.slice(0, 4).map((p) => (
-                            <img
-                              key={p._id}
-                              className='inline-block h-16 w-16 rounded-full ring-2 ring-white dark:ring-zinc-900 object-cover'
-                              src={p.avatar?.url}
-                              alt={p.username}
-                            />
-                          ))}
+                        <div className='w-20 relative h-20 flex-shrink-0 flex justify-start items-center flex-nowrap mb-4'>
+                          {groupChatDetails?.participants
+                            ?.slice(0, 4)
+                            .map((p: User, index: number) => (
+                              <div
+                                className={classNames(
+                                  'h-full w-full absolute',
+                                  index === 0
+                                    ? 'left-0 z-[3]'
+                                    : index === 1
+                                      ? 'left-3.5 z-[2]'
+                                      : index === 2
+                                        ? 'left-7 z-[1]'
+                                        : '',
+                                )}
+                                key={p._id}>
+                                <UserAvatar imageUrl={p?.avatar?.url || ''} />
+                              </div>
+                            ))}
                         </div>
 
                         {renamingName ? (
