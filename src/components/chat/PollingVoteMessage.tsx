@@ -117,7 +117,7 @@ const PollOption: React.FC<{
 
   return (
     <div
-      className='relative flex items-center gap-x-2 cursor-pointer group'
+      className='relative flex items-center gap-x-2 cursor-pointer group select-none touch-manipulation'
       onClick={() => !isPending && onSelect(option._id)}>
       <div className='space-y-1.5 w-full'>
         <div className='flex items-center gap-2'>
@@ -247,40 +247,47 @@ export const PollingVoteMessage: React.FC<PollingVoteMessageProps> = ({
     const chatId = currentChat._id as string;
     const messageId = message._id;
 
-    // Step 1 — Build optimistic options, mirroring toggleVoteToPollingVote server logic
-    let optimisticOptions = options.map((o) => ({ ...o, responses: [...o.responses] }));
+    // Build optimistic options by first checking the current state
+    const alreadyVotedThisOption = options
+      .find((o) => o._id === optionId)
+      ?.responses.some((r) => r._id === currentUserId);
 
-    if (!allowMultipleAnswer) {
-      // Server clears current user from ALL options first
-      optimisticOptions = optimisticOptions.map((o) => ({
-        ...o,
-        responses: o.responses.filter((r) => r._id !== currentUserId),
-      }));
-    }
+    const optimisticOptions = options.map((o) => {
+      // Start with a copy of the responses
+      let newResponses = [...o.responses];
 
-    const target = optimisticOptions.find((o) => o._id === optionId);
-    if (target) {
-      const alreadyVoted = target.responses.some((r) => r._id === currentUserId);
-      if (alreadyVoted) {
-        target.responses = target.responses.filter((r) => r._id !== currentUserId);
-      } else {
-        // Push the real user object so the avatar renders immediately
-        target.responses.push({
-          _id: currentUserId,
-          username: user?.username ?? 'You',
-          avatar: user?.avatar,
-        } as any);
+      if (!allowMultipleAnswer) {
+        // If single choice, always remove the user from other options first
+        newResponses = newResponses.filter((r) => r._id !== currentUserId);
+
+        // If we are clicking the CURRENTLY voted option, it's already removed above (unvote)
+        // If we are clicking a DIFFERENT option, it will be added below (change vote)
       }
-    }
 
-    // Step 2 — Write optimistic result directly into Redux (no local state = no flicker)
+      if (o._id === optionId) {
+        if (!alreadyVotedThisOption) {
+          // Vote (Add user)
+          newResponses.push({
+            _id: currentUserId,
+            username: user?.username ?? 'You',
+            avatar: user?.avatar,
+          } as any);
+        } else if (allowMultipleAnswer) {
+          // Unvote for multiple choice (Already handled for single choice by filter above,
+          // but we explicitly filter again here if it was multi-choice)
+          newResponses = newResponses.filter((r) => r._id !== currentUserId);
+        }
+      }
+
+      return { ...o, responses: newResponses };
+    });
+
+    // Step 2 — Write optimistic result directly into Redux
     dispatch(updatePollVote({ messageId, chatId, options: optimisticOptions }));
 
     // Step 3 — Fire the API call
     try {
       await toggleVoteToPollingVoteMessage({ chatId, messageId, optionId }).unwrap();
-      // The socket POLL_VOTE_UPDATED event will dispatch(updatePollVote({ options: serverOptions }))
-      // which reconciles any diff. Since it's the same reducer path, no flicker occurs.
     } catch (err) {
       console.error('[PollVote] failed, rolled back:', err);
     }

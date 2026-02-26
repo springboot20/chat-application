@@ -1,12 +1,4 @@
-import {
-  DocumentTextIcon,
-  PhotoIcon,
-  MusicalNoteIcon,
-  CheckIcon,
-  ClockIcon,
-  NoSymbolIcon,
-  PaperClipIcon,
-} from '@heroicons/react/24/outline';
+import { CheckIcon, ClockIcon, NoSymbolIcon } from '@heroicons/react/24/outline';
 import { ChatMessageInterface } from '../../types/chat';
 import { classNames, formatMessageTime, getDynamicUserColor } from '../../utils';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -36,6 +28,7 @@ const MessageStatusTick = ({
   isOwnedMessage: boolean;
 }) => {
   if (!isOwnedMessage) return null;
+
   const icons = {
     queued: <ClockIcon className='w-3 h-3 text-[#667781] dark:text-[#8696a0]' />,
     sent: <CheckIcon className='w-3 h-3 text-[#667781] dark:text-[#8696a0]' />,
@@ -119,6 +112,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   containerRef: messagesContainerRef,
 }) => {
   const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
   const [reactToMessage] = useReactToChatMessageMutation();
@@ -145,14 +139,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isGlowing, setIsGlowing] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  // const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Partial<User> | null>(null);
-  // const [pickerPosition, setPickerPosition] = useState<'top' | 'bottom'>('top');
   const [showReactionTooltip, setShowReactionTooltip] = useState(false);
   const { isOnline: hasInternet } = useNetwork();
 
-  // Optimized menu positioning that works in all scenarios
   const calculateMenuPosition = useCallback(
     (clickX: number, clickY: number) => {
       if (!menuRef.current || !messagesContainerRef.current) return;
@@ -161,11 +152,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       const containerRect = messagesContainerRef.current.getBoundingClientRect();
       const PADDING = 10;
 
-      // Initial position
       let x = clickX;
       let y = clickY;
 
-      // Constrain horizontally within the messages list container
       if (x + menuRect.width + PADDING > containerRect.right) {
         x = containerRect.right - menuRect.width - PADDING;
       }
@@ -174,11 +163,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         x = containerRect.left + PADDING;
       }
 
-      // Constrain vertically within the messages list container
       if (y + menuRect.height + PADDING > containerRect.bottom) {
         y = containerRect.bottom - menuRect.height - PADDING;
       }
-      
+
       if (y < containerRect.top + PADDING) {
         y = containerRect.top + PADDING;
       }
@@ -188,7 +176,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     [messagesContainerRef],
   );
 
-  // Optimized emoji picker positioning
   const calculatePickerPosition = useCallback(() => {
     if (
       !doubleClickPosition ||
@@ -199,24 +186,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       return;
     }
 
-    // Get the message element's bounding rect
     const messageRect = containerRef.current.getBoundingClientRect();
     const reactionRect = reactionRef.current.getBoundingClientRect();
-
-    // Get the viewport dimensions
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-
-    // Get scroll offsets
     const scrollX = messagesContainerRef.current.scrollWidth;
     const scrollY = messagesContainerRef.current.scrollHeight;
-
-    // Constants for picker dimensions (you may need to adjust these)
     const MARGIN = 10;
     let x = doubleClickPosition.clientX;
     let y = doubleClickPosition.clientY;
 
-    // Ensure picker stays within viewport bounds
     if (x + reactionRect.width > scrollX + viewportWidth) {
       x = scrollX + viewportWidth - reactionRect.width - MARGIN;
     }
@@ -233,7 +212,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       y = messageRect.top + scrollY - MARGIN;
     }
 
-    // Convert to position relative to the message element
     const relativeX = x - messageRect.left - scrollX;
     const relativeY = y - messageRect.top - scrollY;
 
@@ -248,7 +226,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       event.preventDefault();
       event.stopPropagation();
 
-      // ✅ Check if user is online
       if (!hasInternet) {
         toast.warning('You are offline. Cannot react to messages.', {
           position: 'top-center',
@@ -256,7 +233,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         });
         return;
       }
-      // ✅ Check if message is queued
       if (message.status === 'queued') {
         toast.warning('Cannot react to queued messages.', {
           position: 'top-center',
@@ -269,8 +245,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         clientX: event.clientX,
         clientY: event.clientY,
       });
-      // Calculate position after state update
-      // Use requestAnimationFrame to ensure DOM is updated
       requestAnimationFrame(() => {
         calculatePickerPosition();
       });
@@ -280,10 +254,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
   const handleDoubleClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-      const isMobile = window.innerWidth <= 768; // Mobile breakpoint
+      const isMobile = window.innerWidth <= 768;
 
       if (isMobile) {
-        // On mobile, double click shows the message menu
         event.preventDefault();
         event.stopPropagation();
         setShowMenu(true);
@@ -291,7 +264,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           calculateMenuPosition(event.clientX, event.clientY);
         });
       } else {
-        // On desktop, double click shows reaction picker
         handleReactionPicker(event);
       }
     },
@@ -308,6 +280,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       if (event) {
         event.stopPropagation();
       }
+
       if (!hasInternet) {
         toast.error('You are offline. Cannot react to messages.', {
           position: 'top-center',
@@ -316,6 +289,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         handleHideReactionPicker();
         return;
       }
+
       if (message.status === 'queued') {
         toast.error('Cannot react to queued messages.', {
           position: 'top-center',
@@ -324,12 +298,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         handleHideReactionPicker();
         return;
       }
+
       const currentReactions = message.reactions || [];
-      // 🔹 Step 1: Check if user previously reacted with this SAME emoji
       const userPreviouslyUsedThisEmoji = currentReactions.some(
         (r) => r.emoji === emojiData.emoji && r.userIds?.includes(String(user?._id)),
       );
-      // 🔹 Step 2: Remove user from ALL reactions first
+
       let optimisticReactions = currentReactions
         .map((r) => ({
           ...r,
@@ -337,18 +311,17 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           users: [...(r.users || [])].filter((u: any) => u._id !== String(user?._id)),
         }))
         .filter((reaction) => reaction.userIds.length > 0);
-      // 🔹 Step 3: Consolidate duplicate emojis
+
       const emojiMap = new Map<string, any>();
+
       for (const reaction of optimisticReactions) {
         if (emojiMap.has(reaction.emoji)) {
           const existing = emojiMap.get(reaction.emoji);
-          // Merge userIds
           reaction.userIds.forEach((userId: string) => {
             if (!existing.userIds.includes(userId)) {
               existing.userIds.push(userId);
             }
           });
-          // Merge users
           reaction.users?.forEach((user: any) => {
             if (!existing.users.some((u: any) => u._id === user._id)) {
               existing.users.push(user);
@@ -362,8 +335,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           });
         }
       }
+
       optimisticReactions = Array.from(emojiMap.values());
-      // 🔹 Step 4: If NOT toggling off, add new reaction
+
       if (!userPreviouslyUsedThisEmoji) {
         const existingEmojiIndex = optimisticReactions.findIndex(
           (r) => r.emoji === emojiData.emoji,
@@ -390,7 +364,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           });
         }
       }
-      console.log('🎭 Optimistic reactions:', optimisticReactions);
+
       dispatch(
         updateMessageReactions({
           chatId: currentChat?._id || '',
@@ -398,13 +372,14 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           reactions: optimisticReactions,
         }),
       );
+
       try {
         const response = await reactToMessage({
           chatId: currentChat?._id || '',
           messageId: key,
           emoji: emojiData.emoji,
         }).unwrap();
-        console.log('✅ Reaction response from server:', response);
+
         dispatch(
           updateMessageReactions({
             chatId: currentChat?._id || '',
@@ -413,7 +388,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           }),
         );
       } catch (error) {
-        console.error('❌ Failed to send reaction:', error);
         toast.error('Failed to send reaction. Please try again.', {
           position: 'top-center',
           autoClose: 2000,
@@ -472,7 +446,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
   useEffect(() => {
     if (showReactionPicker && doubleClickPosition) {
-      // Use requestAnimationFrame to ensure DOM is updated
       requestAnimationFrame(() => {
         calculatePickerPosition();
       });
@@ -484,7 +457,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       event.preventDefault();
       event.stopPropagation();
       setShowMenu(true);
-      // Calculate position after menu renders
       requestAnimationFrame(() => {
         calculateMenuPosition(event.clientX, event.clientY);
       });
@@ -513,6 +485,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
   const handleImageChange = useCallback((index: number) => {
     setCurrentMessageImageIndex(index);
+    setIsModalOpen(true);
   }, []);
 
   const handlePreviousImage = useCallback(() => {
@@ -520,12 +493,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   }, [messageFiles.length]);
 
   const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
+
+  const handleAfterLeave = useCallback(() => {
     setCurrentMessageImageIndex(-1);
   }, []);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (currentMessageImageIndex >= 0) {
+      if (isModalOpen) {
         switch (e.key) {
           case 'Escape':
             handleCloseModal();
@@ -543,7 +520,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   );
 
   useEffect(() => {
-    if (currentMessageImageIndex >= 0) {
+    if (isModalOpen) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
     } else {
@@ -553,7 +530,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [currentMessageImageIndex, handleKeyDown]);
+  }, [isModalOpen, handleKeyDown]);
 
   useEffect(() => {
     if (highlightedMessageId === message._id) {
@@ -588,19 +565,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const renderMessageWithMention = () => {
     const { content, mentions } = message;
     if (!mentions || mentions.length === 0) return <span>{content}</span>;
-    // Sort mentions by position to process the string linearly
     const sortedMentions = [...mentions].sort((a, b) => a.position - b.position);
     const parts = [];
     let lastIndex = 0;
 
     sortedMentions.forEach((mention, index) => {
-      // Add text before the mention
       if (mention.position > lastIndex) {
         parts.push(
           <span key={`text-${index}`}>{content.substring(lastIndex, mention.position)}</span>,
         );
       }
-      // Add the styled mention
       const mentionText = `@${mention.username}`;
       parts.push(
         <span
@@ -621,7 +595,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       lastIndex = mention.position + mentionText.length;
     });
 
-    // Add remaining text
     if (lastIndex < content.length) {
       parts.push(<span key='text-end'>{content.substring(lastIndex)}</span>);
     }
@@ -679,7 +652,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       hasUserReacted(r, user?._id || ''),
     );
 
-    // Normalize reactions to ensure all required fields are present
     const normalizedReactions = categorizedReactionMemoized.map((reaction) => ({
       ...reaction,
       users:
@@ -710,7 +682,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     return (
       <div
         className={classNames(
-          'absolute z-10 -bottom-4 rounded-full px-2 py-1 justify-center flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity border shadow-sm',
+          'absolute z-10 -bottom-3 rounded-full px-2 py-1 justify-center flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity border shadow-sm',
           isOwnedMessage
             ? 'bg-white dark:bg-[#1f2c34] border-gray-200 dark:border-[#3b4a54] right-3'
             : 'bg-white dark:bg-[#1f2c34] border-gray-200 dark:border-[#3b4a54] left-3',
@@ -724,7 +696,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             key={`${reaction.emoji}-${index}`}
             className={classNames(
               'text-xs transition-transform hover:scale-110 inline-block',
-              hasUserReacted(reaction, user?._id || '') ? 'animate-pulse' : '',
+              // hasUserReacted(reaction, user?._id || '') ? 'animate-pulse' : '',
             )}
             title={`${reaction.emoji} ${reaction.count} - ${reaction.users
               ?.map((u) => u.username)
@@ -739,48 +711,76 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     );
   };
 
-  const getAttachmentType = () => {
-    if (!message.attachments || message.attachments.length === 0) return null;
-    const types = message.attachments.map((a) => {
-      if (a.fileType === 'voice') return 'audio';
-      if (a.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) return 'image';
-      if (a.url?.match(/\.pdf$/i)) return 'pdf';
-      if (a.url?.match(/\.(doc|docx|ppt|pptx|xls|xlsx)$/i)) return 'document';
-      return 'file';
-    });
-    // If multiple different types → mixed
-    return new Set(types).size > 1 ? 'mixed' : types[0];
-  };
+  const renderMediaGrid = () => {
+    if (!message?.attachments || message.attachments.length === 0 || message.isDeleted) return null;
 
-  const renderAttachmentIcon = () => {
-    const type = getAttachmentType();
-    if (!type || message.isDeleted) return null;
-    const baseClass = 'h-4 w-4 mr-2';
-    switch (type) {
-      case 'audio':
-        return <MusicalNoteIcon className={baseClass} title='Audio message' />;
-      case 'image':
-        return <PhotoIcon className={baseClass} title='Image attachment' />;
-      case 'pdf':
-        return <DocumentTextIcon className={baseClass} title='PDF document' />;
-      case 'document':
-        return <DocumentTextIcon className={baseClass} title='Document attachment' />;
-      case 'mixed':
-        return <PaperClipIcon className={baseClass} title='Multiple attachments' />;
-      default:
-        return <PaperClipIcon className={baseClass} />;
-    }
+    const mediaAttachments = message.attachments.filter(
+      (a) => a.fileType === 'image' || a.fileType === 'video' || !a.fileType,
+    );
+    const otherAttachments = message.attachments.filter(
+      (a) => a.fileType === 'voice' || a.fileType === 'document',
+    );
+
+    const count = mediaAttachments.length;
+
+    return (
+      <div className='flex flex-col gap-2'>
+        {count > 0 && (
+          <div
+            className={classNames(
+              'grid gap-1 overflow-hidden rounded-lg mb-1',
+              count === 1 ? 'grid-cols-1' : 'grid-cols-2',
+            )}>
+            {mediaAttachments.slice(0, 4).map((file, index) => {
+              const isLast = index === 3 && count > 4;
+              return (
+                <div
+                  key={`${file._id}-${index}`}
+                  className={classNames(
+                    'relative overflow-hidden',
+                    count === 1 ? 'aspect-auto max-h-[350px] min-w-[200px]' : 'aspect-square',
+                    count === 3 && index === 0 ? 'col-span-2 aspect-[2/1]' : '',
+                  )}>
+                  <DocumentPreview
+                    attachment={file}
+                    index={index}
+                    onClick={() => handleImageChange(index)}
+                    showOverlay={true}
+                    isOwnedMessage={Boolean(isOwnedMessage)}
+                  />
+                  {isLast && (
+                    <div className='absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xl font-bold z-30 pointer-events-none'>
+                      +{count - 3}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {otherAttachments.length > 0 && (
+          <div className='flex flex-col gap-1 p-1'>
+            {otherAttachments.map((file, index) => (
+              <DocumentPreview
+                key={`${file._id}-${index}`}
+                attachment={file}
+                index={mediaAttachments.length + index}
+                showOverlay={true}
+                isOwnedMessage={Boolean(isOwnedMessage)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
     <>
       <FilePreviewModal
-        open={
-          messageFiles.length > 0 &&
-          currentMessageImageIndex >= 0 &&
-          currentMessageImageIndex < messageFiles.length
-        }
+        open={isModalOpen}
         handleCloseModal={handleCloseModal}
+        onAfterLeave={handleAfterLeave}
         messageFiles={messageFiles}
         message={message}
         handleNextImage={handleNextImage}
@@ -872,146 +872,105 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               {message.sender?.username.split('')[0]}
             </div>
           ))}
+
         <div
           id={`message-item-${message._id}`}
           className={classNames(
-            'flex flex-col space-y-0.5 self-end w-auto px-[9px] py-[6px] relative cursor-pointer shadow-sm max-w-md',
+            'flex flex-col self-end w-auto relative cursor-pointer shadow-sm max-w-md',
             isOwnedMessage ? 'order-1' : 'order-2',
             isOwnedMessage
-              ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-lg rounded-tr-none wa-tail-owned'
-              : 'bg-white dark:bg-[#202c33] rounded-lg rounded-tl-none wa-tail-received border dark:border-none',
+              ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-lg rounded-tr-none wa-tail-owned p-1'
+              : 'bg-white dark:bg-[#202c33] rounded-lg rounded-tl-none wa-tail-received border dark:border-none p-1',
           )}
           ref={(element) => {
             messageItemRef.current[message._id] = element;
           }}
           data-id={message._id}>
-          {!isOwnedMessage && !isGroupChatMessage && (
+          {/* Group Chat Sender Name */}
+          {isGroupChatMessage && !isOwnedMessage && (
             <button
               title='open user profile'
-              className='self-start mb-0.5'
+              className='self-start px-1.5'
               onClick={(e) => {
                 e.stopPropagation();
                 if (message.sender) handleOpenProfile(message.sender);
               }}>
-              <span className='text-[#111b21] dark:text-[#e9edef] font-nunito font-bold text-[13px]'>
+              <span
+                className='text-[12.5px] font-bold mb-0.5'
+                style={{
+                  color: getDynamicUserColor(message.sender?._id || '', theme === 'dark'),
+                }}>
                 ~{message.sender?.username}
               </span>
             </button>
           )}
 
-          <div className='relative w-full'>
-            {isGroupChatMessage && !isOwnedMessage && (
-              <button
-                title='open user profile'
-                className='self-start'
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (message.sender) handleOpenProfile(message.sender);
-                }}>
-                <span
-                  title={message.sender?.username}
-                  className='text-sm font-bold mb-0.5'
-                  style={{
-                    color: getDynamicUserColor(message.sender?._id || '', theme === 'dark'),
-                  }}>
-                  ~{message.sender?.username}
-                </span>
-              </button>
-            )}
-
-            {message.replyId && (
-              <div
-                className={classNames(
-                  "mb-2 p-2 rounded-lg overflow-hidden before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full cursor-pointer relative",
-                  isOwnedMessage
-                    ? 'bg-[#c5f0c0]/60 dark:bg-[#025144]/60 before:bg-[#06cf9c]'
-                    : 'bg-[#f0f0f0]/60 dark:bg-[#1a2930]/60 before:bg-[#06cf9c]',
-                )}
-                onClick={() => {
-                  if (message.repliedMessage && message.replyId) {
-                    onSetHighlightedMessage?.(message.replyId);
-                    const element = messageItemRef.current[message.replyId];
-                    if (element) {
-                      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+          {/* Reply Preview */}
+          {message.replyId && (
+            <div
+              className={classNames(
+                "mb-1 px-2 py-1.5 rounded-md overflow-hidden before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full cursor-pointer relative",
+                isOwnedMessage
+                  ? 'bg-[#c1e8b9]/60 dark:bg-[#025a4c]/60 before:bg-[#06cf9c]'
+                  : 'bg-[#f0f2f5]/80 dark:bg-[#1a2c33]/80 before:bg-[#06cf9c]',
+              )}
+              onClick={() => {
+                if (message.repliedMessage && message.replyId) {
+                  onSetHighlightedMessage?.(message.replyId);
+                  const element = messageItemRef.current[message.replyId];
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }
-                }}>
-                <p className='text-xs font-semibold text-[#06cf9c]'>
-                  Replying to {message.repliedMessage?.sender?.username}
-                </p>
-                {message.repliedMessage &&
-                  (message.repliedMessage.isDeleted ? (
-                    <p className='text-xs italic text-[#667781] dark:text-[#8696a0]'>
-                      Message deleted
-                    </p>
-                  ) : (
-                    <p className='text-xs truncate text-[#111b21] dark:text-[#e9edef]'>
-                      {message.repliedMessage.content || 'Attachment'}
-                    </p>
-                  ))}
-              </div>
-            )}
-
-            {message?.attachments?.length > 0 && !message.isDeleted && (
-              <div
-                className={classNames(
-                  'grid max-w-7xl gap-2',
-                  message.attachments?.length === 1 ? 'grid-cols-1' : '',
-                  message.attachments?.length === 2 ? 'grid-cols-2' : '',
-                  message.attachments?.length >= 3 ? 'grid-cols-3' : '',
-                  message.content ? 'mb-6' : '',
-                )}>
-                {message.attachments?.map((file, index) => {
-                  return (
-                    <DocumentPreview
-                      key={`${file._id}-${file.fileType}`}
-                      attachment={file}
-                      index={index}
-                      onClick={() => handleImageChange(index)}
-                      isModal={false}
-                      isOwnedMessage={Boolean(isOwnedMessage)}
-                    />
-                  );
-                })}
-              </div>
-            )}
-
-            {message.isDeleted && (
-              <div className='flex items-center'>
-                <NoSymbolIcon
-                  className='text-[#667781] dark:text-[#8696a0] h-5 mr-1.5'
-                  strokeWidth={2}
-                />
-                <p className='text-[13px] italic font-normal text-[#667781] dark:text-[#8696a0] break-words'>
-                  {user?._id === message.sender?._id ? 'you' : message.sender?.username} deleted
-                  this message
-                </p>
-              </div>
-            )}
-
-            {message.content && (
-              <p className='text-[14.2px] font-normal text-[#111b21] dark:text-[#e9edef] break-words leading-[19px]'>
-                {renderMessageWithMention()}
-                {/* Invisible spacer to reserve room for the inline timestamp */}
-                <span className='inline-block w-[70px]' />
+                }
+              }}>
+              <p className='text-[11px] font-semibold text-[#06cf9c]'>
+                {message.repliedMessage?.sender?.username}
               </p>
+              <p className='text-xs truncate text-[#111b21] dark:text-[#e9edef]'>
+                {message.repliedMessage?.content || 'Attachment'}
+              </p>
+            </div>
+          )}
+
+          {/* Media Grid / Attachments */}
+          {renderMediaGrid()}
+
+          {/* Message Content */}
+          <div className='px-1.5 pb-1'>
+            {message.isDeleted ? (
+              <div className='flex items-center text-[#667781] dark:text-[#8696a0] italic py-1'>
+                <NoSymbolIcon className='h-4 w-4 mr-1.5' />
+                <span className='text-[13.5px]'>
+                  {user?._id === message.sender?._id ? 'You' : message.sender?.username} deleted
+                  this message
+                </span>
+              </div>
+            ) : (
+              <>
+                {message.content && (
+                  <p className='text-[14.2px] font-normal text-[#111b21] dark:text-[#e9edef] break-words leading-[19px] py-1 inline-block'>
+                    {renderMessageWithMention()}
+                  </p>
+                )}
+
+                {message.contentType === 'polling' && (
+                  <PollingVoteMessage message={message} isOwnedMessage={Boolean(isOwnedMessage)} />
+                )}
+              </>
             )}
 
-            {message.contentType === 'polling' && !message.isDeleted && (
-              <PollingVoteMessage message={message} isOwnedMessage={Boolean(isOwnedMessage)} />
-            )}
-
-            {/* WhatsApp-style inline timestamp — floats at bottom-right of message content */}
-            <span className='float-right relative ml-2 flex items-center gap-0.5 text-[11px] text-[#667781] dark:text-[#8696a0] whitespace-nowrap'>
-              {message.attachments?.length > 0 && !message.isDeleted && renderAttachmentIcon()}
-              {formatMessageTime(message.updatedAt)}
+            {/* Inline Timestamp */}
+            <div className='flex items-center justify-end gap-1 ml-auto'>
+              <span className='text-[10px] text-[#667781] dark:text-[#8696a0]/80 whitespace-nowrap uppercase'>
+                {formatMessageTime(message.updatedAt)}
+              </span>
               {!message.isDeleted && (
                 <MessageStatusTick
                   status={message.status}
                   isOwnedMessage={Boolean(isOwnedMessage)}
                 />
               )}
-            </span>
+            </div>
           </div>
         </div>
       </div>

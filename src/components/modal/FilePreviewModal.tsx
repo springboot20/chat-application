@@ -1,6 +1,6 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { classNames } from '../../utils';
+import { classNames, formatMessageTime, getDynamicUserColor } from '../../utils';
 import { DocumentPreview } from '../file/DocumentPreview';
 import { ArrowLeftIcon, ArrowRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Attachment, ChatMessageInterface } from '../../types/chat';
@@ -16,6 +16,7 @@ interface FilePreviewModalProps {
   handleImageChange: (index: number) => void;
   handlePreviousImage: () => void;
   currentMessageImageIndex: number;
+  onAfterLeave?: () => void;
 }
 
 export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
@@ -27,10 +28,11 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   handleImageChange,
   handlePreviousImage,
   currentMessageImageIndex,
+  onAfterLeave,
 }) => {
   return (
-    <Transition.Root show={open} as={Fragment}>
-      <Dialog as='div' className='relative z-20' onClose={() => handleCloseModal()}>
+    <Transition.Root show={open} as={Fragment} afterLeave={onAfterLeave}>
+      <Dialog as='div' className='relative z-50' onClose={handleCloseModal}>
         <Transition.Child
           as={Fragment}
           enter='ease-out duration-300'
@@ -39,82 +41,115 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           leave='ease-in duration-200'
           leaveFrom='opacity-100'
           leaveTo='opacity-0'>
-          <div className='fixed inset-0 bg-black/25 dark:bg-black/70 bg-opacity-75 transition-opacity' />
+          <div className='fixed inset-0 bg-black/95 transition-opacity backdrop-blur-sm  lg:left-[30rem]' />
         </Transition.Child>
 
-        <div className='fixed inset-0 z-10 overflow-y-visible'>
-          <button
-            className='absolute top-4 right-4 z-[100] p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors'
-            onClick={handleCloseModal}
-            aria-label='Close preview'>
-            <XMarkIcon className='h-6 w-6 text-white' />
-          </button>
+        <div className='fixed inset-0 z-10 overflow-hidden flex flex-col lg:left-[30rem]'>
+          {/* Header */}
+          <div className='flex items-center justify-between px-4 py-3 z-50 bg-black/20 backdrop-blur-md'>
+            <div className='flex items-center gap-3'>
+              {message.sender?.avatar?.url ? (
+                <img
+                  src={message.sender.avatar.url}
+                  alt={message.sender.username}
+                  className='size-10 rounded-full object-cover border border-white/20'
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    backgroundColor: getDynamicUserColor(message.sender?._id || '', true),
+                  }}
+                  className='flex justify-center items-center size-10 rounded-full shrink-0 capitalize font-nunito font-bold text-white shadow-lg'>
+                  {message.sender?.username.substring(0, 1)}
+                </div>
+              )}
+              <div className='flex flex-col'>
+                <span className='text-white font-semibold text-sm'>{message.sender?.username}</span>
+                <span className='text-white/60 text-xs uppercase'>
+                  {formatMessageTime(message.updatedAt)}
+                </span>
+              </div>
+            </div>
 
-          {messageFiles.length > 1 && !message.isDeleted && (
-            <>
+            <div className='flex items-center gap-2'>
               <button
-                type='button'
-                className='absolute left-4 top-1/2 -translate-y-1/2 z-60 flex items-center justify-center rounded-full h-12 w-12 bg-white/20 hover:bg-white/30 transition-colors'
-                onClick={handlePreviousImage}
-                aria-label='Previous image'>
-                <ArrowLeftIcon className='h-6 w-6 text-white' />
+                className='p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all duration-200 active:scale-90 group'
+                onClick={handleCloseModal}
+                aria-label='Close preview'>
+                <XMarkIcon className='h-6 w-6 text-white group-hover:rotate-90 transition-transform duration-300' />
               </button>
+            </div>
+          </div>
 
-              <button
-                type='button'
-                className='absolute right-4 top-1/2 -translate-y-1/2 z-60 flex items-center justify-center rounded-full h-12 w-12 bg-white/20 hover:bg-white/30 transition-colors'
-                onClick={handleNextImage}
-                aria-label='Next image'>
-                <ArrowRightIcon className='h-6 w-6 text-white' />
-              </button>
-            </>
-          )}
+          {/* Main Area */}
+          <div className='relative flex-1 flex items-center justify-center p-4 min-h-0'>
+            {messageFiles.length > 1 && !message.isDeleted && (
+              <>
+                <button
+                  type='button'
+                  className='absolute left-4 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center rounded-full h-14 w-14 dark:bg-white/5 bg-gray-500 dark:hover:bg-white/15 hover:bg-gray-400 border border-white/10 hover:border-white/30 transition-all duration-300 active:scale-95 group backdrop-blur-sm'
+                  onClick={handlePreviousImage}
+                  aria-label='Previous image'>
+                  <ArrowLeftIcon className='h-7 w-7 text-white group-hover:-translate-x-1 transition-transform' />
+                </button>
 
-          <div className='flex min-h-full justify-center p-4 text-center items-center sm:p-0'>
+                <button
+                  type='button'
+                  className='absolute right-4 top-1/2 -translate-y-1/2 z-50 flex items-center justify-center rounded-full h-14 w-14 dark:bg-white/5 bg-gray-500 dark:hover:bg-white/15 hover:bg-gray-400 border border-white/10 hover:border-white/30 transition-all duration-300 active:scale-95 group backdrop-blur-sm'
+                  onClick={handleNextImage}
+                  aria-label='Next image'>
+                  <ArrowRightIcon className='h-7 w-7 text-white group-hover:translate-x-1 transition-transform' />
+                </button>
+              </>
+            )}
+
             <Transition.Child
               as={Fragment}
-              enter='ease-out duration-300'
-              enterFrom='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'
-              enterTo='opacity-100 translate-y-0 sm:scale-100'
-              leave='ease-in duration-200'
-              leaveFrom='opacity-100 translate-y-0 sm:scale-100'
-              leaveTo='opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'>
-              <Dialog.Panel
-                className='relative transform overflow-x-hidden rounded-lg px-4 pb-4 pt-5 text-left transition-all sm:my-8 w-full sm:max-w-xl sm:p-6 h-full'
-                style={{
-                  overflow: 'inherit',
-                }}>
-                <div className='relative max-w-4xl mx-auto flex flex-col items-center gap-6 w-full'>
-                  <div className='w-full max-h-[80vh] flex items-center justify-center'>
-                    <DocumentPreview
-                      attachment={messageFiles[currentMessageImageIndex]}
-                      index={currentMessageImageIndex}
-                      isModal={true}
-                    />
-                  </div>
-
-                  {messageFiles.length > 1 && (
-                    <div className='flex items-center gap-3 pb-2'>
-                      {messageFiles.map((file, index) => (
-                        <button
-                          key={file._id}
-                          onClick={() => handleImageChange(index)}
-                          className={classNames(
-                            'h-24 w-24 rounded overflow-hidden transition-all flex-shrink-0',
-                            index === currentMessageImageIndex
-                              ? 'ring-2 ring-white scale-110'
-                              : 'hover:scale-105 opacity-70 hover:opacity-100',
-                          )}
-                          aria-label={`View attachment ${index + 1}`}>
-                          <DocumentPreview attachment={file} index={index} />
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              enter='ease-out duration-400'
+              enterFrom='opacity-0 scale-90 translate-y-4'
+              enterTo='opacity-100 scale-100 translate-y-0'
+              leave='ease-in duration-300'
+              leaveFrom='opacity-100 scale-100 translate-y-0'
+              leaveTo='opacity-0 scale-90 translate-y-4'>
+              <div className='w-full h-full flex items-center justify-center'>
+                <div className='max-w-7xl max-h-full flex items-center justify-center relative shadow-2xl rounded-xl overflow-hidden'>
+                  <DocumentPreview
+                    attachment={messageFiles[currentMessageImageIndex]}
+                    index={currentMessageImageIndex}
+                    isModal={false}
+                  />
                 </div>
-              </Dialog.Panel>
+              </div>
             </Transition.Child>
           </div>
+
+          {/* Thumbnail Slider */}
+          {messageFiles.length > 1 && (
+            <div className='w-full px-4 py-6 bg-gradient-to-t from-black/80 to-transparent'>
+              <div className='flex items-center justify-center gap-3 overflow-x-auto py-2 scrollbar-hide'>
+                {messageFiles.map((file, index) => (
+                  <button
+                    key={`${file._id}-${index}`}
+                    onClick={() => handleImageChange(index)}
+                    className={classNames(
+                      'h-16 w-16 rounded-lg overflow-hidden transition-all duration-300 flex-shrink-0 relative group border-2',
+                      index === currentMessageImageIndex
+                        ? 'border-white scale-110'
+                        : 'border-transparent opacity-50 hover:opacity-80 scale-100',
+                    )}
+                    aria-label={`View attachment ${index + 1}`}>
+                    <DocumentPreview attachment={file} index={index} isModal={false} />
+                    {index === currentMessageImageIndex && (
+                      <div className='absolute inset-0 bg-white/10 pointer-events-none' />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Dialog>
     </Transition.Root>

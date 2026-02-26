@@ -57,7 +57,7 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
                 }}>
                 <div className='flex items-center gap-3'>
                   <ArrowUturnLeftIcon className='h-6 dark:stroke-white' />
-                  <span className='font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white'>
+                  <span className='font-nunito font-medium text-sm dark:text-white'>
                     Reply Message
                   </span>
                 </div>
@@ -73,7 +73,7 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
                 }}>
                 <div className='flex items-center gap-3'>
                   <DocumentDuplicateIcon className='h-6 dark:stroke-white' />
-                  <span className='font-nunito font-medium text-sm sm:text-base lg:text-lg dark:text-white'>
+                  <span className='font-nunito font-medium text-sm dark:text-white'>
                     Copy Message
                   </span>
                 </div>
@@ -89,9 +89,7 @@ export const MessageMenuSelection: React.FC<MessageMenuSelectionProps> = ({
               }}>
               <div className='flex items-center gap-3'>
                 <TrashIcon className='h-6 text-red-500' />
-                <span className='font-nunito font-medium text-sm sm:text-base lg:text-lg text-red-500'>
-                  Delete Message
-                </span>
+                <span className='font-nunito font-medium text-sm text-red-500'>Delete Message</span>
               </div>
             </button>
           </div>

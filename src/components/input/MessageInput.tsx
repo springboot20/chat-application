@@ -8,7 +8,12 @@ import {
   PaperAirplaneIcon,
   PaperClipIcon,
   XMarkIcon,
+  PhotoIcon,
+  VideoCameraIcon,
+  DocumentIcon,
+  Bars3BottomLeftIcon,
 } from '@heroicons/react/24/outline';
+import { getDynamicUserColor } from '../../utils';
 import { DocumentPreview } from '../file/DocumentPreview';
 import { Disclosure } from '@headlessui/react';
 import { ChatListItemInterface, ChatMessageInterface } from '../../types/chat';
@@ -37,7 +42,6 @@ interface MessageInputProps {
 
 const MessageInput = ({
   reduxStateMessages,
-  isOwnedMessage,
   theme,
   currentChat,
   textareaRef,
@@ -194,8 +198,8 @@ const MessageInput = ({
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      const newHeight = Math.min(textarea.scrollHeight, 200);
-      textarea.style.height = `${newHeight}px`;
+      // Set height to scrollHeight so it expands fully within the container
+      textarea.style.height = `${textarea.scrollHeight}px`;
     }
   }, [textareaRef]);
 
@@ -308,35 +312,104 @@ const MessageInput = ({
 
         {/* Reply Section */}
         {showReply && (
-          <div className='dark:bg-black border-b dark:border-white/10 animate-in p-3 w-full'>
+          <div className='dark:bg-[#111b21] bg-[#f0f2f5] border-b dark:border-white/5 animate-in p-2 w-full'>
             <div
               className={classNames(
-                "dark:bg-white/5 border dark:border-white/5 relative before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full px-3 py-1.5 overflow-hidden rounded-lg",
-                isOwnedMessage ? 'before:bg-[#615EF0]' : 'before:bg-green-500',
-              )}>
-              <button
-                type='button'
-                title='close'
-                onClick={handleSetCloseReply}
-                className='rounded-full h-6 w-6 dark:bg-white/10 right-2 absolute top-2 flex items-center justify-center ring-1 dark:ring-black/10 hover:bg-gray-100 dark:hover:bg-white/20 transition-colors'>
-                <XMarkIcon className='dark:text-white h-4' strokeWidth={2} />
-              </button>
+                'dark:bg-[#202c33] bg-white relative border-l-4 overflow-hidden rounded-lg flex',
+              )}
+              style={{
+                borderLeftColor: getDynamicUserColor(
+                  reduxStateMessages.find((msg) => msg._id === messageToReply)?.sender?._id || '',
+                  theme === 'dark',
+                ),
+              }}>
+              <div className='flex-1 p-2 min-w-0'>
+                {(() => {
+                  const replyMessage = reduxStateMessages.find(
+                    (msg) => msg._id.toString() === messageToReply.toString(),
+                  );
 
+                  const senderColor = getDynamicUserColor(
+                    replyMessage?.sender?._id || '',
+                    theme === 'dark',
+                  );
+
+                  return (
+                    <div className='flex flex-col'>
+                      <div className='flex items-center justify-between'>
+                        <span className='text-xs font-bold truncate' style={{ color: senderColor }}>
+                          {replyMessage?.sender?.username}
+                        </span>
+                        <button
+                          type='button'
+                          title='close'
+                          onClick={handleSetCloseReply}
+                          className='rounded-full p-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors ml-2'>
+                          <XMarkIcon className='dark:text-white/60 text-gray-400 h-4 w-4' />
+                        </button>
+                      </div>
+
+                      <div className='flex items-center gap-1.5 mt-0.5 text-gray-500 dark:text-gray-400'>
+                        {replyMessage?.attachments && replyMessage.attachments.length > 0 ? (
+                          <>
+                            {replyMessage.attachments[0].fileType === 'image' && (
+                              <PhotoIcon className='h-3.5 w-3.5' />
+                            )}
+                            {replyMessage.attachments[0].fileType === 'video' && (
+                              <VideoCameraIcon className='h-3.5 w-3.5' />
+                            )}
+                            {replyMessage.attachments[0].fileType === 'voice' && (
+                              <MicrophoneIcon className='h-3.5 w-3.5' />
+                            )}
+                            {(replyMessage.attachments[0].fileType === 'document' ||
+                              !replyMessage.attachments[0].fileType) && (
+                              <DocumentIcon className='h-3.5 w-3.5' />
+                            )}
+                            <span className='text-xs truncate'>
+                              {replyMessage.attachments[0].fileType === 'image'
+                                ? 'Photo'
+                                : replyMessage.attachments[0].fileType === 'video'
+                                  ? 'Video'
+                                  : replyMessage.attachments[0].fileType === 'voice'
+                                    ? 'Voice message'
+                                    : replyMessage.attachments[0].fileName || 'Document'}
+                            </span>
+                          </>
+                        ) : replyMessage?.contentType === 'polling' ? (
+                          <>
+                            <Bars3BottomLeftIcon className='h-3.5 w-3.5' />
+                            <span className='text-xs truncate'>
+                              Poll: {replyMessage.polling?.questionTitle}
+                            </span>
+                          </>
+                        ) : (
+                          <p className='text-xs truncate pr-4'>{replyMessage?.content}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Right preview thumbnail for media (Optional, but matches WhatsApp Desktop) */}
               {(() => {
                 const replyMessage = reduxStateMessages.find(
                   (msg) => msg._id.toString() === messageToReply.toString(),
                 );
+                const firstAttachment = replyMessage?.attachments?.[0];
 
-                return (
-                  <>
-                    <span className='text-sm font-bold font-nunito dark:text-white mb-2 block'>
-                      {replyMessage?.sender?.username}
-                    </span>
-                    <p className='text-lg font-normal font-nunito dark:text-white pr-8'>
-                      {replyMessage?.content}
-                    </p>
-                  </>
-                );
+                if (firstAttachment?.url && firstAttachment.fileType === 'image') {
+                  return (
+                    <div className='w-16 h-16 shrink-0'>
+                      <img
+                        src={firstAttachment.url}
+                        alt='Reply preview'
+                        className='w-full h-full object-cover'
+                      />
+                    </div>
+                  );
+                }
+                return null;
               })()}
             </div>
           </div>
@@ -344,14 +417,11 @@ const MessageInput = ({
 
         {/* File Attachments */}
         {attachmentFiles?.files && attachmentFiles.files.length > 0 && (
-          <div className='grid gap-4 bg-white dark:bg-black grid-cols-5 p-4 justify-start'>
+          <div className='flex items-center flex-wrap gap-4 bg-white dark:bg-black p-4 justify-start'>
             {attachmentFiles.files.map((file, i) => (
-              <DocumentPreview
-                key={`${file.name}-${i}`}
-                index={i}
-                onRemove={handleRemoveFile}
-                file={file}
-              />
+              <div key={`${file.name}-${i}`} className='size-24 rounded-lg overflow-hidden'>
+                <DocumentPreview index={i} onRemove={handleRemoveFile} file={file} />
+              </div>
             ))}
           </div>
         )}
@@ -422,23 +492,25 @@ const MessageInput = ({
 
           {/* Text Input */}
           {showTextInput && (
-            <textarea
-              title='message input'
-              ref={textareaRef}
-              value={message}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder='Type a message... (Shift+Enter for new line)'
-              className={classNames(
-                'w-full p-3 resize-none focus:outline-none rounded-lg border animate-in fade-in slide-in-from-bottom-2 duration-200',
-                'dark:border-white/5 dark:bg-white/5 bg-gray-50',
-                'dark:text-white text-gray-900',
-                'placeholder-gray-400 dark:placeholder-gray-500',
-                'overflow-y-auto transition-all',
-                'text-sm leading-relaxed lg:min-h-[48px] lg:max-h-[200px]',
-              )}
-              rows={1}
-            />
+            <div className='flex-1 max-h-[120px] lg:max-h-[200px] overflow-y-auto input-scrollbar transition-all duration-200'>
+              <textarea
+                title='message input'
+                ref={textareaRef}
+                value={message}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder='Type a message... (Shift+Enter for new line)'
+                className={classNames(
+                  'w-full p-3 resize-none focus:outline-none rounded-lg border animate-in fade-in slide-in-from-bottom-2 duration-200',
+                  'dark:border-white/5 dark:bg-white/5 bg-gray-50',
+                  'dark:text-white text-gray-900',
+                  'placeholder-gray-400 dark:placeholder-gray-500',
+                  'overflow-y-hidden transition-all',
+                  'text-sm leading-relaxed lg:min-h-[48px]',
+                )}
+                rows={1}
+              />
+            </div>
           )}
 
           {/* Action Buttons with Smooth Transitions */}

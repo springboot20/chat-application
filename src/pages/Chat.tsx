@@ -9,6 +9,8 @@ import {
 import { classNames } from '../utils/index.ts';
 import { Navigation } from '../components/navigation/navigation.tsx';
 import { useNavigate } from 'react-router-dom';
+import { UserAvatar } from '../components/status/StatusAvatar.tsx';
+import { UserProfileModal } from '../components/modal/UserProfileModal.tsx';
 import {
   JOIN_CHAT_EVENT,
   MESSAGE_RECEIVED_EVENT,
@@ -80,6 +82,7 @@ export const Chat = () => {
     useOnlineUsers();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [openGroupInfo, setOpenGroupInfo] = useState(false);
+  const [openUserInfo, setOpenUserInfo] = useState(false);
   const [__, setOpenOptions] = useState<boolean>(false);
 
   const {
@@ -352,18 +355,22 @@ export const Chat = () => {
     const participants = currentChat?.participants;
     const totalParticipant = participants?.length;
     const isGroupChat = currentChat?.isGroupChat;
-    const chatName = isGroupChat
-      ? currentChat.name
-      : participants?.filter((p: User) => p._id !== user?._id)[0]?.username;
 
-    // const avatarUrl = isGroupChat
-    //   ? participants?.slice(0, 3)
-    //   : participants?.filter((p) => p._id !== user._id)[0]?.avatar;
+    const otherParticipant = participants?.find((p: User) => p._id !== user?._id);
+
+    const chatName = isGroupChat ? currentChat.name : otherParticipant?.username || 'Unknown User';
+
+    const avatarUrl = isGroupChat
+      ? //@ts-ignore
+        currentChat?.avatar?.url
+      : otherParticipant?.avatar?.url;
 
     return {
       totalParticipant,
       isGroupChat,
       chatName,
+      avatarUrl,
+      otherParticipant,
     };
   };
 
@@ -413,6 +420,13 @@ export const Chat = () => {
             refetchChats={refetchChats}
           />
 
+          <UserProfileModal
+            open={openUserInfo}
+            onClose={() => setOpenUserInfo(false)}
+            user={processChat(user!)?.otherParticipant || null}
+            onLogout={handleLogout}
+          />
+
           <div className={classNames('w-full flex items-stretch h-screen flex-shrink-0')}>
             {/* LEFT SIDEBAR - Chat list / Status list / Settings */}
             <Navigation
@@ -440,11 +454,11 @@ export const Chat = () => {
                     <>
                       <header
                         className={classNames(
-                          'fixed top-0 right-0 p-1.5 left-0 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all lg:left-[30rem]',
+                          'fixed top-0 right-0 p-2 left-0 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 transition-all lg:left-[30rem]',
                         )}>
                         <div
                           className={classNames('flex justify-between items-center h-full ml-6')}>
-                          <div className='flex items-center gap-8'>
+                          <div className='flex items-center gap-2'>
                             <button
                               type='button'
                               title='close chat'
@@ -458,37 +472,58 @@ export const Chat = () => {
                               }}>
                               <ArrowLeftIcon className='h-5 w-5 dark:text-white' />
                             </button>
-                            <div>
-                              <h3 className='text-xl font-semibold text-gray-800 dark:text-white'>
-                                {processChat(user!)?.chatName}
-                              </h3>
-                              <p className='inline-flex items-center space-x-1.5'>
-                                {!hasInternet ? (
-                                  <>
-                                    <span className='h-3 w-3 rounded-full block bg-gray-400'></span>
-                                    <span className='text-sm font-semibold text-gray-400'>
-                                      You're offline
-                                    </span>
-                                  </>
+                            <div
+                              className='flex items-center gap-3 cursor-pointer'
+                              onClick={() => {
+                                if (currentChat.isGroupChat) {
+                                  setOpenGroupInfo(true);
+                                } else {
+                                  setOpenUserInfo(true);
+                                }
+                              }}>
+                              <div className='flex-shrink-0'>
+                                {currentChat.isGroupChat ? (
+                                  <div className='w-12 h-12 relative flex items-center justify-center'>
+                                    <div className='w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-black'>
+                                      {currentChat.name?.charAt(0) || 'G'}
+                                    </div>
+                                  </div>
                                 ) : (
-                                  <>
-                                    <span
-                                      className={classNames(
-                                        'h-3 w-3 rounded-full block',
-                                        isOtherUserOnline
-                                          ? 'bg-green-400 animate-pulse'
-                                          : 'bg-gray-400',
-                                      )}></span>
-                                    <span
-                                      className={classNames(
-                                        'text-sm font-semibold',
-                                        isOtherUserOnline ? 'text-green-600' : 'text-gray-500',
-                                      )}>
-                                      {isOtherUserOnline ? 'online' : 'offline'}
-                                    </span>
-                                  </>
+                                  <UserAvatar imageUrl={processChat(user!)?.avatarUrl || ''} />
                                 )}
-                              </p>
+                              </div>
+                              <div className='flex flex-col'>
+                                <h3 className='text-xl font-semibold text-gray-800 dark:text-white'>
+                                  {processChat(user!)?.chatName}
+                                </h3>
+                                <p className='inline-flex items-center space-x-1.5'>
+                                  {!hasInternet ? (
+                                    <>
+                                      <span className='h-3 w-3 rounded-full block bg-gray-400'></span>
+                                      <span className='text-sm font-semibold text-gray-400'>
+                                        You're offline
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span
+                                        className={classNames(
+                                          'h-3 w-3 rounded-full block',
+                                          isOtherUserOnline
+                                            ? 'bg-green-400 animate-pulse'
+                                            : 'bg-gray-400',
+                                        )}></span>
+                                      <span
+                                        className={classNames(
+                                          'text-sm font-semibold',
+                                          isOtherUserOnline ? 'text-green-600' : 'text-gray-500',
+                                        )}>
+                                        {isOtherUserOnline ? 'online' : 'offline'}
+                                      </span>
+                                    </>
+                                  )}
+                                </p>
+                              </div>
                             </div>
                           </div>
                           <div className='flex items-center gap-3'>
@@ -560,7 +595,7 @@ export const Chat = () => {
                         </div>
                       </header>
 
-                      <div className='relative left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto overflow-x-hidden mt-16 transition-all duration-200'>
+                      <div className='relative left-0 lg:w-full right-0 gap-6 h-screen flex flex-col flex-grow overflow-y-auto overflow-x-hidden mt-16 transition-all duration-200 chat-background'>
                         <div
                           ref={(e) => {
                             bottomRef.current = e;
@@ -592,7 +627,7 @@ export const Chat = () => {
                             </div>
                           ) : (
                             <>
-                              <div className='flex flex-col gap-6 h-full chat-container'>
+                              <div className='flex flex-col gap-y-2.5 h-full chat-container'>
                                 {currentChatMessages?.length > 0 ? (
                                   React.Children.toArray(
                                     currentChatMessages?.map((msg: ChatMessageInterface) => {

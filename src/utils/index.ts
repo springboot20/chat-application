@@ -210,6 +210,10 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
     displayMessage = attachmentText;
   }
 
+  if (lastMessage.contentType === 'polling' && lastMessage.polling) {
+    displayMessage = `Poll: ${lastMessage.polling.questionTitle}`;
+  }
+
   if (chat.isGroupChat) {
     return {
       title: chat.name,

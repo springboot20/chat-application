@@ -21,12 +21,13 @@ interface DocumentPreviewProps {
   attachment?: Attachment;
   onClick?: () => void;
   isModal?: boolean;
+  showOverlay?: boolean;
   isOwnedMessage?: boolean;
   file?: File;
 }
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
-  ({ attachment, onRemove, index, onClick, isModal = false, file, isOwnedMessage }) => {
+  ({ attachment, onRemove, index, onClick, isModal, file, isOwnedMessage, showOverlay }) => {
     const [imageUrl, setImageUrl] = useState<string>('');
     const [audioURL, setAudioURL] = useState<string>('');
     const [pdfError, setPdfError] = useState<string>('');
@@ -48,7 +49,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
 
     const isAudio = isAudioFromAttachment || isAudioFromFile;
     const isDocument = isDocFromAttachment;
-    const showOverlay = !isModal && !isAudio && !isDocument;
 
     useEffect(() => {
       if (file && isAudioFromFile) {
@@ -231,29 +231,22 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
     return (
       <div
         className={classNames(
-          'relative rounded-lg overflow-hidden group',
-          isAudio
-            ? 'w-full'
-            : isDocument
-              ? 'w-24 h-24'
-              : isModal
-                ? 'w-full h-auto max-w-xl'
-                : attachment?.url?.split('.').includes('pdf')
-                  ? 'h-24 w-24'
-                  : 'aspect-square cursor-pointer',
+          'relative overflow-hidden group w-full h-full',
+          isAudio ? 'h-auto' : '',
+          !isModal && !isAudio ? 'cursor-pointer' : '',
         )}>
         {isModal && attachment?.url && (
           <button
             type='button'
             onClick={handleDownload}
-            className='absolute top-2 left-2 z-10 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-colors'
+            className='absolute top-2 left-2 z-40 p-1.5 bg-black/40 rounded-full hover:bg-black/60 transition-colors'
             aria-label={`Download ${fileName}`}>
-            <ArrowDownTrayIcon className='h-6 w-6 text-white' />
+            <ArrowDownTrayIcon className='h-5 w-5 text-white' />
           </button>
         )}
 
-        {showOverlay && (
-          <div className='absolute inset-0 z-20 flex justify-center items-center w-full gap-2 h-full bg-black/60 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150'>
+        {showOverlay && !isAudio && (
+          <div className='absolute inset-0 flex justify-center items-center w-full gap-2 h-full bg-black/60 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150'>
             <button
               type='button'
               onClick={onClick}
@@ -278,7 +271,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
           <button
             type='button'
             onClick={() => onRemove(index)}
-            className='absolute top-1 right-1 z-30 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100'
+            className='absolute top-1 right-1 z-40 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100'
             aria-label='Remove file'>
             <XCircleIcon className='h-6 w-6 text-white' />
           </button>
