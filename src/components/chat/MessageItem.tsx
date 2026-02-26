@@ -1,7 +1,13 @@
-import { CheckIcon, ClockIcon, NoSymbolIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowUturnLeftIcon,
+  CheckIcon,
+  ClockIcon,
+  NoSymbolIcon,
+} from '@heroicons/react/24/outline';
 import { ChatMessageInterface } from '../../types/chat';
 import { classNames, formatMessageTime, getDynamicUserColor } from '../../utils';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { DocumentPreview } from '../file/DocumentPreview';
 import EmojiPicker, { Theme, type EmojiClickData } from 'emoji-picker-react';
 import { UserProfileModal } from '../modal/UserProfileModal';
@@ -137,12 +143,46 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const reactionRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isGlowing, setIsGlowing] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Partial<User> | null>(null);
   const [showReactionTooltip, setShowReactionTooltip] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { isOnline: hasInternet } = useNetwork();
+
+  const x = useMotionValue(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const swipeThreshold = 60;
+
+  // Dynamic transforms based on ownership
+  const replyIconOpacity = useTransform(
+    x,
+    isOwnedMessage ? [0, -swipeThreshold + 10] : [0, swipeThreshold - 10],
+    [0, 1],
+  );
+  const replyIconScale = useTransform(
+    x,
+    isOwnedMessage ? [0, -swipeThreshold] : [0, swipeThreshold],
+    [0.5, 1.2],
+  );
+
+  // Smoothly fade out the indicator when not dragging and x is 0
+  const indicatorVisible = useTransform(x, (val) => (isDragging || Math.abs(val) > 0 ? 1 : 0));
+
+  const handleDragEnd = useCallback(() => {
+    const currentX = x.get();
+    const thresholdMet = isOwnedMessage ? currentX <= -swipeThreshold : currentX >= swipeThreshold;
+
+    if (thresholdMet) {
+      handleSetOpenReply(message._id);
+    }
+
+    animate(x, 0, {
+      type: 'spring',
+      stiffness: 500,
+      damping: 30,
+    });
+    setIsDragging(false);
+  }, [message._id, handleSetOpenReply, x, isOwnedMessage, swipeThreshold]);
 
   const calculateMenuPosition = useCallback(
     (clickX: number, clickY: number) => {
@@ -188,11 +228,15 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
     const messageRect = containerRef.current.getBoundingClientRect();
     const reactionRect = reactionRef.current.getBoundingClientRect();
+
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+
     const scrollX = messagesContainerRef.current.scrollWidth;
     const scrollY = messagesContainerRef.current.scrollHeight;
+
     const MARGIN = 10;
+
     let x = doubleClickPosition.clientX;
     let y = doubleClickPosition.clientY;
 
@@ -545,13 +589,22 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
   useEffect(() => {
     if (messageToReply === message._id) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => {
-        setIsAnimating(false);
-      }, 2000);
-      return () => clearTimeout(timer);
+      // Trigger a brief swipe animation to give visual feedback
+      const targetX = isOwnedMessage ? -swipeThreshold : swipeThreshold;
+      animate(x, targetX, {
+        type: 'spring',
+        stiffness: 300,
+        damping: 30,
+        onComplete: () => {
+          animate(x, 0, {
+            type: 'spring',
+            stiffness: 300,
+            damping: 30,
+          });
+        },
+      });
     }
-  }, [message._id, messageToReply]);
+  }, [message._id, messageToReply, swipeThreshold, x, isOwnedMessage]);
 
   useEffect(() => {
     setIsOwnedMessage(isOwnedMessage || message.sender?._id === user?._id);
@@ -609,7 +662,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
   const categorizeReactions = (reactions: EmojiType[]) => {
     if (!reactions || !reactions.length) return [];
+
     const reactionMap = new Map<string, CategorizedReaction>();
+
     reactions?.forEach(({ emoji, userIds, ...rest }) => {
       if (reactionMap.has(emoji)) {
         const existing = reactionMap.get(emoji)!;
@@ -627,6 +682,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         });
       }
     });
+
     return Array.from(reactionMap.values())?.sort((a, b) => {
       if (b.count !== a.count) return b.count - a.count;
       return a.emoji.localeCompare(b.emoji);
@@ -665,6 +721,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           },
         })) || [],
     }));
+
     return {
       totalReactions,
       uniqueEmojis: normalizedReactions.length,
@@ -796,183 +853,217 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       />
 
       <div
-        className={classNames(
-          'flex items-start p-2 text-white text-base relative h-auto w-full gap-1.5',
-          isOwnedMessage ? 'justify-end' : 'justify-start',
-          getGlowClass(),
-          isAnimating && (isOwnedMessage ? 'slide-right' : 'slide-left'),
-        )}
+        className='relative w-full'
         ref={containerRef}
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}>
-        {showMenu && (
-          <MessageMenuSelection
-            open={showMenu}
-            menuRef={menuRef}
-            menuPosition={menuPosition}
-            handleDeleteChatMessage={() => handleDeleteChatMessage(message._id)}
-            closeMenu={handleCloseMenu}
-            isMessageDeleted={message.isDeleted}
-            handleSetOpenReply={() => handleSetOpenReply(message._id)}
-          />
-        )}
-        {!message.isDeleted && showReactionPicker && (
-          <div
-            ref={reactionRef}
-            className='absolute z-[999] animate-in fade-in-0 zoom-in-95 duration-200'
-            style={{
-              top: `${reactionLocation.top}px`,
-              left: `${reactionLocation.left}px`,
-            }}
-            onClick={(e) => e.stopPropagation()}>
-            <div className='relative shadow-2xl rounded-lg overflow-hidden'>
-              <EmojiPicker
-                onReactionClick={(emoji, event) =>
-                  handleSelectReactionEmoji(message._id, emoji, event)
-                }
-                reactionsDefaultOpen={true}
-                theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
-                searchDisabled={false}
-                width={window.innerWidth < 768 ? Math.min(350, window.innerWidth - 20) : 350}
-                height={window.innerWidth < 768 ? Math.min(400, window.innerHeight - 20) : 400}
-                lazyLoadEmojis
-              />
-            </div>
-          </div>
-        )}
-
-        {!message.isDeleted &&
-          message.reactions &&
-          message.reactions.length > 0 &&
-          renderReactionsWithDuplicate()}
-
-        {currentChat.participants.length > 2 &&
-          !isOwnedMessage &&
-          (message.sender?.avatar?.url ? (
-            <img
-              src={message.sender?.avatar?.url}
-              alt={message.sender?.username}
-              className={classNames(
-                'size-10 object-cover rounded-full items-center justify-center flex flex-shrink-0 bg-white border-2',
-                isOwnedMessage ? 'order-2' : 'order-1',
-              )}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                backgroundColor: getDynamicUserColor(message?.sender?._id, theme === 'dark'),
-              }}
-              className={classNames(
-                'flex justify-center items-center size-10 rounded-full shrink-0 capitalize font-nunito font-bold',
-                isOwnedMessage ? 'order-2' : 'order-1',
-              )}>
-              {message.sender?.username.split('')[0]}
-            </div>
-          ))}
-
-        <div
-          id={`message-item-${message._id}`}
+        {/* Reply Icon Indicator (Revealed from behind) */}
+        <motion.div
+          style={{ opacity: indicatorVisible }}
           className={classNames(
-            'flex flex-col self-end w-auto relative cursor-pointer shadow-sm max-w-md',
-            isOwnedMessage ? 'order-1' : 'order-2',
+            'absolute inset-y-0 flex items-center pointer-events-none',
+            isOwnedMessage ? 'right-0 pr-4' : 'left-0 pl-4',
+          )}>
+          <motion.div
+            style={{
+              opacity: replyIconOpacity,
+              scale: replyIconScale,
+            }}
+            className='bg-[#027eb5]/20 dark:bg-[#53bdeb]/20 p-2 rounded-full'>
+            <ArrowUturnLeftIcon className='h-5 w-5 text-[#027eb5] dark:text-[#53bdeb]' />
+          </motion.div>
+        </motion.div>
+
+        {/* Draggable Message Content */}
+        <motion.div
+          drag='x'
+          dragConstraints={
             isOwnedMessage
-              ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-lg rounded-tr-none wa-tail-owned p-1'
-              : 'bg-white dark:bg-[#202c33] rounded-lg rounded-tl-none wa-tail-received border dark:border-none p-1',
-          )}
-          ref={(element) => {
-            messageItemRef.current[message._id] = element;
-          }}
-          data-id={message._id}>
-          {/* Group Chat Sender Name */}
-          {isGroupChatMessage && !isOwnedMessage && (
-            <button
-              title='open user profile'
-              className='self-start px-1.5'
-              onClick={(e) => {
-                e.stopPropagation();
-                if (message.sender) handleOpenProfile(message.sender);
-              }}>
-              <span
-                className='text-[12.5px] font-bold mb-0.5'
-                style={{
-                  color: getDynamicUserColor(message.sender?._id || '', theme === 'dark'),
-                }}>
-                ~{message.sender?.username}
-              </span>
-            </button>
+              ? { left: -swipeThreshold - 20, right: 0 }
+              : { left: 0, right: swipeThreshold + 20 }
+          }
+          dragElastic={0.2}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={handleDragEnd}
+          style={{ x }}
+          className={classNames(
+            'flex items-start p-2 text-white text-base relative h-auto w-full gap-1.5',
+            isOwnedMessage ? 'justify-end' : 'justify-start',
+            getGlowClass(),
+          )}>
+          {showMenu && (
+            <MessageMenuSelection
+              open={showMenu}
+              menuRef={menuRef}
+              menuPosition={menuPosition}
+              handleDeleteChatMessage={() => handleDeleteChatMessage(message._id)}
+              closeMenu={handleCloseMenu}
+              isMessageDeleted={message.isDeleted}
+              handleSetOpenReply={() => handleSetOpenReply(message._id)}
+            />
           )}
 
-          {/* Reply Preview */}
-          {message.replyId && (
+          {!message.isDeleted && showReactionPicker && (
             <div
-              className={classNames(
-                "mb-1 px-2 py-1.5 rounded-md overflow-hidden before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full cursor-pointer relative",
-                isOwnedMessage
-                  ? 'bg-[#c1e8b9]/60 dark:bg-[#025a4c]/60 before:bg-[#06cf9c]'
-                  : 'bg-[#f0f2f5]/80 dark:bg-[#1a2c33]/80 before:bg-[#06cf9c]',
-              )}
-              onClick={() => {
-                if (message.repliedMessage && message.replyId) {
-                  onSetHighlightedMessage?.(message.replyId);
-                  const element = messageItemRef.current[message.replyId];
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              ref={reactionRef}
+              className='absolute z-[999] animate-in fade-in-0 zoom-in-95 duration-200'
+              style={{
+                top: `${reactionLocation.top}px`,
+                left: `${reactionLocation.left}px`,
+              }}
+              onClick={(e) => e.stopPropagation()}>
+              <div className='relative shadow-2xl rounded-lg overflow-hidden'>
+                <EmojiPicker
+                  onReactionClick={(emoji, event) =>
+                    handleSelectReactionEmoji(message._id, emoji, event)
                   }
-                }
-              }}>
-              <p className='text-[11px] font-semibold text-[#06cf9c]'>
-                {message.repliedMessage?.sender?.username}
-              </p>
-              <p className='text-xs truncate text-[#111b21] dark:text-[#e9edef]'>
-                {message.repliedMessage?.content || 'Attachment'}
-              </p>
+                  reactionsDefaultOpen={true}
+                  theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                  searchDisabled={false}
+                  width={window.innerWidth < 768 ? Math.min(350, window.innerWidth - 20) : 350}
+                  height={window.innerWidth < 768 ? Math.min(400, window.innerHeight - 20) : 400}
+                  lazyLoadEmojis
+                />
+              </div>
             </div>
           )}
 
-          {/* Media Grid / Attachments */}
-          {renderMediaGrid()}
+          {!message.isDeleted &&
+            message.reactions &&
+            message.reactions.length > 0 &&
+            renderReactionsWithDuplicate()}
 
-          {/* Message Content */}
-          <div className='px-1.5 pb-1'>
-            {message.isDeleted ? (
-              <div className='flex items-center text-[#667781] dark:text-[#8696a0] italic py-1'>
-                <NoSymbolIcon className='h-4 w-4 mr-1.5' />
-                <span className='text-[13.5px]'>
-                  {user?._id === message.sender?._id ? 'You' : message.sender?.username} deleted
-                  this message
-                </span>
-              </div>
+          {currentChat.participants.length > 2 &&
+            !isOwnedMessage &&
+            (message.sender?.avatar?.url ? (
+              <img
+                src={message.sender?.avatar?.url}
+                alt={message.sender?.username}
+                className={classNames(
+                  'size-10 object-cover rounded-full items-center justify-center flex flex-shrink-0 bg-white border-2',
+                  isOwnedMessage ? 'order-2' : 'order-1',
+                )}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             ) : (
-              <>
-                {message.content && (
-                  <p className='text-[14.2px] font-normal text-[#111b21] dark:text-[#e9edef] break-words leading-[19px] py-1 inline-block'>
-                    {renderMessageWithMention()}
-                  </p>
-                )}
+              <div
+                style={{
+                  backgroundColor: getDynamicUserColor(message?.sender?._id, theme === 'dark'),
+                }}
+                className={classNames(
+                  'flex justify-center items-center size-10 rounded-full shrink-0 capitalize font-nunito font-bold',
+                  isOwnedMessage ? 'order-2' : 'order-1',
+                )}>
+                {message.sender?.username.split('')[0]}
+              </div>
+            ))}
 
-                {message.contentType === 'polling' && (
-                  <PollingVoteMessage message={message} isOwnedMessage={Boolean(isOwnedMessage)} />
-                )}
-              </>
+          <motion.div
+            id={`message-item-${message._id}`}
+            className={classNames(
+              'flex flex-col self-end w-auto relative cursor-pointer shadow-sm max-w-md transition-shadow active:shadow-md touch-pan-y',
+              isOwnedMessage ? 'order-1' : 'order-2',
+              isOwnedMessage
+                ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-lg rounded-tr-none wa-tail-owned p-1'
+                : 'bg-white dark:bg-[#202c33] rounded-lg rounded-tl-none wa-tail-received border dark:border-none p-1',
+            )}
+            ref={(element) => {
+              messageItemRef.current[message._id] = element;
+            }}
+            data-id={message._id}>
+            {/* Group Chat Sender Name */}
+            {isGroupChatMessage && !isOwnedMessage && (
+              <button
+                title='open user profile'
+                className='self-start px-1.5'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (message.sender) handleOpenProfile(message.sender);
+                }}>
+                <span
+                  className='text-[12.5px] font-bold mb-0.5'
+                  style={{
+                    color: getDynamicUserColor(message.sender?._id || '', theme === 'dark'),
+                  }}>
+                  ~{message.sender?.username}
+                </span>
+              </button>
             )}
 
-            {/* Inline Timestamp */}
-            <div className='flex items-center justify-end gap-1 ml-auto'>
-              <span className='text-[10px] text-[#667781] dark:text-[#8696a0]/80 whitespace-nowrap uppercase'>
-                {formatMessageTime(message.updatedAt)}
-              </span>
-              {!message.isDeleted && (
-                <MessageStatusTick
-                  status={message.status}
-                  isOwnedMessage={Boolean(isOwnedMessage)}
-                />
+            {/* Reply Preview */}
+            {message.replyId && (
+              <div
+                className={classNames(
+                  "mb-1 px-2 py-1.5 rounded-md overflow-hidden before:content-[''] before:w-1 before:left-0 before:block before:absolute before:top-0 before:h-full cursor-pointer relative",
+                  isOwnedMessage
+                    ? 'bg-[#c1e8b9]/60 dark:bg-[#025a4c]/60 before:bg-[#06cf9c]'
+                    : 'bg-[#f0f2f5]/80 dark:bg-[#1a2c33]/80 before:bg-[#06cf9c]',
+                )}
+                onClick={() => {
+                  if (message.repliedMessage && message.replyId) {
+                    onSetHighlightedMessage?.(message.replyId);
+                    const element = messageItemRef.current[message.replyId];
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }
+                }}>
+                <p className='text-[11px] font-semibold text-[#06cf9c]'>
+                  {message.repliedMessage?.sender?.username}
+                </p>
+                <p className='text-xs truncate text-[#111b21] dark:text-[#e9edef]'>
+                  {message.repliedMessage?.content || 'Attachment'}
+                </p>
+              </div>
+            )}
+
+            {/* Media Grid / Attachments */}
+            {renderMediaGrid()}
+
+            {/* Message Content */}
+            <div className='px-1.5 pb-1'>
+              {message.isDeleted ? (
+                <div className='flex items-center text-[#667781] dark:text-[#8696a0] italic py-1'>
+                  <NoSymbolIcon className='h-4 w-4 mr-1.5' />
+                  <span className='text-[13.5px]'>
+                    {user?._id === message.sender?._id ? 'You' : message.sender?.username} deleted
+                    this message
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {message.content && (
+                    <p className='text-[14.2px] font-normal text-[#111b21] dark:text-[#e9edef] break-words leading-[19px] py-1 inline-block'>
+                      {renderMessageWithMention()}
+                    </p>
+                  )}
+
+                  {message.contentType === 'polling' && (
+                    <PollingVoteMessage
+                      message={message}
+                      isOwnedMessage={Boolean(isOwnedMessage)}
+                    />
+                  )}
+                </>
               )}
+
+              {/* Inline Timestamp */}
+              <div className='flex items-center justify-end gap-1 ml-auto'>
+                <span className='text-[10px] text-[#667781] dark:text-[#8696a0]/80 whitespace-nowrap uppercase'>
+                  {formatMessageTime(message.updatedAt)}
+                </span>
+                {!message.isDeleted && (
+                  <MessageStatusTick
+                    status={message.status}
+                    isOwnedMessage={Boolean(isOwnedMessage)}
+                  />
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
 
       <UserProfileModal
