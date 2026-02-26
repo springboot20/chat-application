@@ -870,7 +870,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               scale: replyIconScale,
             }}
             className='bg-[#027eb5]/20 dark:bg-[#53bdeb]/20 p-2 rounded-full'>
-            <ArrowUturnLeftIcon className='h-5 w-5 text-[#027eb5] dark:text-[#53bdeb]' />
+            <ArrowUturnLeftIcon className='size-3.5 lg:size-5 text-[#027eb5] dark:text-[#53bdeb]' />
           </motion.div>
         </motion.div>
 

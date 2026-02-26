@@ -182,13 +182,16 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       const textBeforeCursor = message.substring(0, cursorPosition);
       const textAfterCursor = message.substring(cursorPosition);
 
-      // Find the last '@' before the cursor to replace the query string
-      const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+      // We need to find the trigger '@' which is:
+      // either at the start of the string or preceded by a space
+      // and is followed by our current query
+      const wordsBefore = textBeforeCursor.split(' ');
+      const lastWord = wordsBefore[wordsBefore.length - 1];
 
-      if (lastAtIndex !== -1) {
-        const newTextBefore = textBeforeCursor.substring(0, lastAtIndex);
-        const completedMention = `@${selectedUser.username} `; // Added space for UX
-        const newMessage = newTextBefore + completedMention + textAfterCursor;
+      if (lastWord.startsWith('@')) {
+        wordsBefore[wordsBefore.length - 1] = `@${selectedUser.username} `;
+        const newTextBefore = wordsBefore.join(' ');
+        const newMessage = newTextBefore + textAfterCursor;
 
         setMessage(newMessage);
         setShowMentionUserMenu(false);
@@ -197,7 +200,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         // Senior Tip: Refocus and place cursor AFTER the new mention
         setTimeout(() => {
-          const newPos = lastAtIndex + completedMention.length;
+          const newPos = newTextBefore.length;
           input.setSelectionRange(newPos, newPos);
           input.focus();
         }, 0);
@@ -211,23 +214,20 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     const value = event.target.value;
     const cursorPosition = event.target.selectionStart;
 
-    // Look for the last '@' before the cursor
-    const lastAtIndex = value.lastIndexOf('@', cursorPosition - 1);
+    // Split text into words to find the current word being typed
+    const textBeforeCursor = value.substring(0, cursorPosition);
+    const words = textBeforeCursor.split(' ');
+    const currentWord = words[words.length - 1];
 
-    if (lastAtIndex !== -1) {
-      // Extract the text between '@' and the cursor (e.g., "jhn")
-      const query = value.substring(lastAtIndex + 1, cursorPosition);
-
-      // Check if there's a space in the query (mentions usually stop at a space)
-      if (!query.includes(' ')) {
-        setMentionQuery(query);
-        setShowMentionUserMenu(true);
-        return;
-      }
+    if (currentWord.startsWith('@')) {
+      // The query is everything after the first '@' in the current word
+      const query = currentWord.substring(1);
+      setMentionQuery(query);
+      setShowMentionUserMenu(true);
+    } else {
+      setShowMentionUserMenu(false);
+      setMentionQuery('');
     }
-
-    setShowMentionUserMenu(false);
-    setMentionQuery('');
   }, []);
 
   const checkScrollPosition = useCallback(() => {
@@ -427,7 +427,10 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   );
 
   const processMentionsContent = (message: string, availableUsers: User[]) => {
-    const mentionRegex = /(?:^|\s)@([\w\d._]+)/g;
+    // regex updated to handle @ in usernames
+    // it looks for @ followed by characters until it hits a space or end of string
+    // then it verifies if that "word" matches a known username
+    const mentionRegex = /(?:^|\s)@([^\s]+)/g;
     const mentions: Array<{
       userId: string;
       username: string;
@@ -437,14 +440,14 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     let match: any;
 
     while ((match = mentionRegex.exec(message)) !== null) {
-      const fullMatch = match[0]; // e.g., " @john"
-      const username = match[1]; // e.g., "john"
+      const fullMatch = match[0]; // e.g., " @john@dev"
+      const rawUsername = match[1]; // e.g., "john@dev"
 
       // Calculate the exact start position of the '@' character
       const atIndex = match.index + (fullMatch.startsWith(' ') ? 1 : 0);
 
       const mentionedUser = availableUsers.find(
-        (user) => user.username.toLowerCase() === username.toLowerCase(),
+        (user) => user.username.toLowerCase() === rawUsername.toLowerCase(),
       );
 
       if (mentionedUser) {
