@@ -112,7 +112,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   containerRef: messagesContainerRef,
 }) => {
   const [currentMessageImageIndex, setCurrentMessageImageIndex] = useState<number>(-1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
   const [reactToMessage] = useReactToChatMessageMutation();
@@ -142,6 +141,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Partial<User> | null>(null);
   const [showReactionTooltip, setShowReactionTooltip] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { isOnline: hasInternet } = useNetwork();
 
   const calculateMenuPosition = useCallback(
@@ -516,7 +516,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         }
       }
     },
-    [currentMessageImageIndex, handleCloseModal, handlePreviousImage, handleNextImage],
+    [isModalOpen, handleCloseModal, handlePreviousImage, handleNextImage],
   );
 
   useEffect(() => {
@@ -780,13 +780,13 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       <FilePreviewModal
         open={isModalOpen}
         handleCloseModal={handleCloseModal}
-        onAfterLeave={handleAfterLeave}
         messageFiles={messageFiles}
         message={message}
         handleNextImage={handleNextImage}
         handlePreviousImage={handlePreviousImage}
         handleImageChange={handleImageChange}
         currentMessageImageIndex={currentMessageImageIndex}
+        onAfterLeave={handleAfterLeave}
       />
 
       <ReactionTooltip
