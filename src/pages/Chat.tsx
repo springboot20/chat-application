@@ -616,7 +616,7 @@ export const Chat = () => {
                             bottomRef.current = e;
                             containerRef.current = e;
                           }}
-                          className='flex flex-col flex-grow overflow-y-auto gap-10 overflow-x-hidden mb-[5.5rem] md:mb-[4.15rem] lg:mb-[4.35rem]'>
+                          className='flex flex-col flex-grow overflow-y-auto gap-10 overflow-x-hidden mb-[8rem] lg:mb-[8.25rem]'>
                           {showScrollButton && (
                             <button
                               onClick={scrollToBottom}

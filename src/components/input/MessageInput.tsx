@@ -280,7 +280,7 @@ const MessageInput = ({
 
       <div
         className={classNames(
-          'fixed bottom-0 gap-2 left-0 lg:left-[30rem] right-0 bg-white dark:bg-black z-10 border-t-[1.5px] border-b-[1.5px] dark:border-white/10 border-gray-600/30 transition-all duration-200',
+          'fixed bottom-0 left-0 lg:left-[30rem] right-0 bg-white dark:bg-black z-10 border-t dark:border-white/10 transition-all duration-200',
           (attachmentFiles.files && attachmentFiles?.files?.length) || showReply
             ? 'h-auto'
             : 'min-h-16',
@@ -427,160 +427,152 @@ const MessageInput = ({
         )}
 
         {/* Input Section */}
-        <div className='flex items-end justify-between mx-auto max-w-8xl relative z-20 px-2 py-2 gap-2'>
-          {/* Utility Buttons (Emoji & Attachment) */}
-          {!isActivelyRecording && !hasReviewableAudio && !isDraggingMic && (
-            <div className='flex items-center gap-4 animate-in fade-in duration-200'>
-              {/* Emoji Button */}
-              <button
-                onClick={handleOpenAndCloseEmoji}
-                className='cursor-pointer h-8 w-8 lg:h-12 lg:w-12 shrink-0 mb-1'
-                type='button'
-                title='Add emoji'>
-                <span className='flex items-center justify-center h-full w-full dark:bg-transparent bg-gray-50 dark:hover:bg-white/10 hover:bg-gray-100 rounded-lg transition-colors'>
-                  <FaceSmileIcon className='h-6 dark:text-white/60' />
-                </span>
-              </button>
+        <div className='max-w-8xl mx-auto px-4 py-3'>
+          <div
+            className={classNames(
+              'flex flex-col rounded-lg border-[1.5px] transition-all duration-200 overflow-hidden',
+              'dark:border-white/10 border-gray-300 focus-within:border-indigo-500 dark:focus-within:border-indigo-400',
+              'bg-gray-50 dark:bg-[#1a1d21]',
+            )}>
+            {/* Text Input Area */}
+            <div className='flex items-start px-2 pt-2'>
+              {showTextInput && (
+                <div className='flex-1 max-h-[120px] lg:max-h-[300px] overflow-y-auto input-scrollbar transition-all duration-200'>
+                  <textarea
+                    title='message input'
+                    ref={textareaRef}
+                    value={message}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder={`Message ${currentChat.participants.length > 2 ? '#' + currentChat.participants.map((p) => p.username).join(', ') : currentChat.participants.find((p) => p._id !== user?._id)?.username || 'Chat'}`}
+                    className={classNames(
+                      'w-full p-2 resize-none focus:outline-none bg-transparent',
+                      'dark:text-white text-gray-900',
+                      'placeholder-gray-400 dark:placeholder-gray-500',
+                      'text-[15px] leading-relaxed min-h-[40px]',
+                    )}
+                    rows={1}
+                  />
+                </div>
+              )}
 
-              {/* File Attachment */}
-              <Disclosure>
-                {({ close, open }) => (
-                  <>
-                    <Disclosure.Button className='cursor-pointer h-8 w-8 lg:h-12 lg:w-12 shrink-0 mb-1'>
-                      <span className='sr-only'>Open file menu</span>
-                      <span className='flex items-center justify-center h-full w-full dark:bg-transparent bg-gray-50 dark:hover:bg-white/10 hover:bg-gray-100 rounded-lg transition-colors'>
-                        <PaperClipIcon className='cursor-pointer h-6 fill-none stroke-gray-400 dark:stroke-white hover:stroke-gray-700 dark:hover:stroke-gray-300 transition-colors' />
-                      </span>
-                    </Disclosure.Button>
-
-                    <FileSelection
-                      imageInputRef={imageInputRef}
-                      documentInputRef={documentInputRef}
-                      handleFileChange={handleFileChange}
-                      handleOpenPolling={setOpenPolling}
-                      close={close}
-                      open={open}
-                    />
-                  </>
-                )}
-              </Disclosure>
+              {/* Voice Recorder (Full overlay within the input box area if needed, or inline) */}
+              {showVoiceRecorder && (
+                <div className='flex-1 min-h-[40px] flex items-center px-2 animate-in fade-in slide-in-from-bottom-2 duration-200'>
+                  <VoiceRecorder
+                    uiState={uiState}
+                    isRecording={isRecording}
+                    isPaused={isPaused}
+                    recordingTime={recordingTime}
+                    audioLevel={audioLevel}
+                    onPause={pauseRecording}
+                    onResume={resumeRecording}
+                    onCancel={cancelRecording}
+                    onSend={handleSendVoiceMessage}
+                    hasRecording={!!audioUrl && !isRecordingCancelled}
+                    isRecordingCancelled={isRecordingCancelled}
+                    stopRecording={stopRecording}
+                    x={x}
+                    y={y}
+                    audioUrl={audioUrl}
+                  />
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Voice Recorder */}
-          {showVoiceRecorder && (
-            <div className='flex-1 animate-in fade-in slide-in-from-bottom-4 duration-300'>
-              <VoiceRecorder
-                uiState={uiState}
-                isRecording={isRecording}
-                isPaused={isPaused}
-                recordingTime={recordingTime}
-                audioLevel={audioLevel}
-                onPause={pauseRecording}
-                onResume={resumeRecording}
-                onCancel={cancelRecording}
-                onSend={handleSendVoiceMessage}
-                hasRecording={!!audioUrl && !isRecordingCancelled}
-                isRecordingCancelled={isRecordingCancelled}
-                stopRecording={stopRecording}
-                x={x}
-                y={y}
-                audioUrl={audioUrl}
-              />
-            </div>
-          )}
+            {/* Bottom Toolbar */}
+            <div className='flex items-center justify-between px-2 py-1.5 border-t dark:border-white/5 bg-gray-100/50 dark:bg-black/20'>
+              <div className='flex items-center gap-1'>
+                {/* File Attachment */}
+                <Disclosure>
+                  {({ close, open }) => (
+                    <>
+                      <Disclosure.Button className='p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400'>
+                        <span className='sr-only'>Open file menu</span>
+                        <PaperClipIcon className='h-5 w-5' />
+                      </Disclosure.Button>
 
-          {/* Text Input */}
-          {showTextInput && (
-            <div className='flex-1 max-h-[120px] lg:max-h-[200px] overflow-y-auto input-scrollbar transition-all duration-200'>
-              <textarea
-                title='message input'
-                ref={textareaRef}
-                value={message}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder='Type a message... (Shift+Enter for new line)'
-                className={classNames(
-                  'w-full p-3 resize-none focus:outline-none rounded-lg border animate-in fade-in slide-in-from-bottom-2 duration-200',
-                  'dark:border-white/5 dark:bg-white/5 bg-gray-50',
-                  'dark:text-white text-gray-900',
-                  'placeholder-gray-400 dark:placeholder-gray-500',
-                  'overflow-y-hidden transition-all',
-                  'text-sm leading-relaxed lg:min-h-[48px]',
-                )}
-                rows={1}
-              />
-            </div>
-          )}
-
-          {/* Action Buttons with Smooth Transitions */}
-          <AnimatePresence mode='wait' initial={false}>
-            {shouldShowMicButton && (
-              <div className='relative w-12 h-12 shrink-0'>
-                <motion.button
-                  key='mic-button'
-                  type='button'
-                  drag
-                  dragConstraints={{
-                    top: -LOCK_THRESHOLD - 60,
-                    left: -CANCEL_THRESHOLD - 60,
-                    right: 40,
-                    bottom: 40,
-                  }}
-                  dragElastic={0.15}
-                  onDragStart={handleMicDragStart}
-                  onDragEnd={handleMicDragEnd}
-                  style={{ x, y }}
-                  initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
-                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                  exit={{ scale: 0.8, opacity: 0, rotate: 90 }}
-                  transition={{
-                    duration: 0.2,
-                    ease: [0.4, 0, 0.2, 1],
-                  }}
-                  className={classNames(
-                    'absolute inset-0 p-3 rounded-full transition-colors duration-200',
-                    uiState === 'locked'
-                      ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700'
-                      : 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700',
-                    'text-white shadow-lg touch-none',
+                      <FileSelection
+                        imageInputRef={imageInputRef}
+                        documentInputRef={documentInputRef}
+                        handleFileChange={handleFileChange}
+                        handleOpenPolling={setOpenPolling}
+                        close={close}
+                        open={open}
+                      />
+                    </>
                   )}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  title='Hold to record voice message'>
-                  <MicrophoneIcon className='h-6 w-6' />
-                </motion.button>
-              </div>
-            )}
+                </Disclosure>
 
-            {shouldShowSendButton && (
-              <div className='relative w-12 h-12 shrink-0'>
-                <motion.button
-                  key='send-button'
-                  title='Send message'
+                {/* Emoji Button */}
+                <button
+                  onClick={handleOpenAndCloseEmoji}
+                  className='p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400'
                   type='button'
-                  disabled={!canSendMessage}
-                  onClick={handleSendMessageLocal}
-                  initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
-                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                  exit={{ scale: 0.8, opacity: 0, rotate: 90 }}
-                  transition={{
-                    duration: 0.2,
-                    ease: [0.4, 0, 0.2, 1],
-                  }}
-                  className={classNames(
-                    'absolute inset-0 p-3 rounded-full transition-colors duration-200 shadow-lg flex items-center justify-center',
-                    canSendMessage
-                      ? 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed',
-                  )}
-                  whileHover={canSendMessage ? { scale: 1.1 } : {}}
-                  whileTap={canSendMessage ? { scale: 0.95 } : {}}>
-                  <PaperAirplaneIcon className='h-5 w-5' />
-                </motion.button>
+                  title='Add emoji'>
+                  <FaceSmileIcon className='h-5 w-5' />
+                </button>
+
+                {/* Polling/Other shortcuts could go here */}
               </div>
-            )}
-          </AnimatePresence>
+
+              <div className='flex items-center gap-2'>
+                {/* Voice Recorder Trigger (Floating/Hover styles like Slack) */}
+                <AnimatePresence mode='wait'>
+                  {shouldShowMicButton && (
+                    <motion.div
+                      key='mic-container'
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}>
+                      <motion.button
+                        type='button'
+                        drag
+                        dragConstraints={{
+                          top: -LOCK_THRESHOLD - 60,
+                          left: -CANCEL_THRESHOLD - 60,
+                          right: 40,
+                          bottom: 40,
+                        }}
+                        dragElastic={0.15}
+                        onDragStart={handleMicDragStart}
+                        onDragEnd={handleMicDragEnd}
+                        style={{ x, y }}
+                        className={classNames(
+                          'p-2 rounded-md transition-colors duration-200 touch-none',
+                          uiState === 'locked'
+                            ? 'bg-green-500 text-white'
+                            : 'text-gray-500 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/10',
+                        )}
+                        title='Hold to record'>
+                        <MicrophoneIcon className='h-5 w-5' />
+                      </motion.button>
+                    </motion.div>
+                  )}
+
+                  {shouldShowSendButton && (
+                    <motion.button
+                      key='send-button'
+                      title='Send message'
+                      type='button'
+                      disabled={!canSendMessage}
+                      onClick={handleSendMessageLocal}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className={classNames(
+                        'p-2 rounded-md transition-all duration-200 shadow-sm flex items-center justify-center',
+                        canSendMessage
+                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                          : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed',
+                      )}>
+                      <PaperAirplaneIcon className='h-4 w-4' />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </Fragment>
