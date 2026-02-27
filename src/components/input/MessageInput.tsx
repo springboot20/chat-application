@@ -415,7 +415,12 @@ const MessageInput = ({
           <div className='flex items-center flex-wrap gap-4 bg-white dark:bg-black p-4 justify-start'>
             {attachmentFiles.files.map((file, i) => (
               <div key={`${file.name}-${i}`} className='size-24 rounded-lg overflow-hidden'>
-                <DocumentPreview index={i} onRemove={handleRemoveFile} file={file} />
+                <DocumentPreview
+                  index={i}
+                  onRemove={handleRemoveFile}
+                  file={file}
+                  variant='square'
+                />
               </div>
             ))}
           </div>

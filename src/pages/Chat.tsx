@@ -407,8 +407,6 @@ export const Chat = () => {
     }
   };
 
-  console.log(currentChat);
-
   return (
     <Disclosure as={Fragment}>
       {({ open, close }) => (

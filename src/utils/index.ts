@@ -16,6 +16,14 @@ export const classNames = (...className: (string | boolean | undefined)[]) => {
   return className.filter(Boolean).join(' ');
 };
 
+export const formatFileSize = (bytes?: number) => {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
 export const timeAgo = (timestamp: string | Date) => {
   const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
   if (seconds < 60) return 'just now';
@@ -212,6 +220,7 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
 
   if (lastMessage.contentType === 'polling' && lastMessage.polling) {
     displayMessage = `Poll: ${lastMessage.polling.questionTitle}`;
+    attachmentFileType = 'poll';
   }
 
   if (chat.isGroupChat) {
@@ -230,7 +239,8 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
 
     return {
       title: participant?.username,
-      lastMessage: isSelf ? `You: ${displayMessage}` : displayMessage,
+      // lastMessage: isSelf ? `You: ${displayMessage}` : displayMessage,
+      lastMessage: displayMessage,
       description: participant?.email,
       status: lastMessage.status,
       isSender: isSelf,

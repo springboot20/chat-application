@@ -12,6 +12,7 @@ import {
   VideoCameraIcon,
   MicrophoneIcon,
   DocumentIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 import { useDeleteOneOneChatMessageMutation } from '../../features/chats/chat.slice';
 import { toast } from 'react-toastify';
@@ -240,12 +241,15 @@ export const ChatItem: React.FC<ChatItemProps> = ({
               </small>
             </div>
 
-            <div className='flex items-center gap-1 overflow-hidden h-5'>
+            <div className='flex items-center overflow-hidden h-5'>
               {/* Message Status */}
               {(chatMeta as any).isSender &&
                 !chat.lastMessage?.isDeleted &&
                 (chatMeta as any).status && (
                   <div className='flex items-center mr-1'>
+                    {(chatMeta as any).status === 'queued' && (
+                      <ClockIcon className='w-3 h-3 text-[#667781] dark:text-[#8696a0]' />
+                    )}
                     {(chatMeta as any).status === 'sent' && (
                       <CheckIcon className='w-3.5 h-3.5 text-gray-400' />
                     )}
@@ -303,6 +307,22 @@ export const ChatItem: React.FC<ChatItemProps> = ({
                   {((chatMeta as any).attachmentType === 'document' ||
                     (chatMeta as any).attachmentType === 'file') && (
                     <DocumentIcon className='h-3.5 w-3.5' />
+                  )}
+                  {(chatMeta as any).attachmentType === 'poll' && (
+                    <svg
+                      data-slot='icon'
+                      fill='none'
+                      strokeWidth='1.5'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                      xmlns='http://www.w3.org/2000/svg'
+                      className='size-5 dark:stroke-white'
+                      aria-hidden='true'>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        d='M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12'></path>
+                    </svg>
                   )}
                 </div>
               )}

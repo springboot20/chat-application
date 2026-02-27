@@ -135,12 +135,12 @@ const SideNavigation: React.FC<SideNavigationProps> = ({ activeTab, setActiveTab
             onLogout={onLogout}
           />
 
-          <div className='flex items-center'>
+          <div className='flex items-center justify-center'>
             {/* Mobile menu button*/}
             <button
               type='button'
               onClick={() => setOpenSettings(!openSettings)}
-              className='inline-flex items-center justify-center p-3 rounded-xl transition-all hover:rounded-full text-gray-600 bg-gray-50 border dark:text-white dark:bg-transparent hover:bg-[#615EF0]/70 hover:text-white focus:ring-2 focus:ring-inset focus:ring-white'>
+              className='inline-flex items-center justify-center p-2 transition-all rounded-full text-gray-600 bg-gray-50 border dark:text-white dark:bg-gray-600/50 dark:border-gray-600/30 hover:bg-[#615EF0]/70 hover:text-white'>
               <span className='sr-only'>Settings</span>
               <CogIcon className='block h-5 w-5 stroke-2' aria-hidden='true' />
             </button>

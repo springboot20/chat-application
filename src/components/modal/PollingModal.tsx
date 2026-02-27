@@ -31,8 +31,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useCreatePollingVoteMessageMutation } from '../../features/chats/chat.slice';
 import { classNames } from '../../utils';
-import { useAppSelector } from '../../redux/redux.hooks';
+import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks';
 import { RootState } from '../../app/store';
+import { useNetwork } from '../../hooks/useNetwork';
+import { onMessageReceived, replaceOptimisticMessage } from '../../features/chats/chat.reducer';
+import { ChatMessageInterface } from '../../types/chat';
+import { messageQueue } from '../../utils/messageQueue';
+import { toast } from 'react-toastify';
 
 interface PollingFormState {
   questionTitle: string;
@@ -135,7 +140,11 @@ export const PollingMessageModal: React.FC<{
   close: () => void;
 }> = ({ open, close }) => {
   const { currentChat } = useAppSelector((state: RootState) => state.chat);
+  const user = useAppSelector((state: RootState) => state.auth.user);
   const [createPollingVoteMessage, { isLoading }] = useCreatePollingVoteMessageMutation();
+  const { isOnline: hasInternet } = useNetwork();
+
+  const dispatch = useAppDispatch();
 
   // Sensors for DND
   const sensors = useSensors(
@@ -166,7 +175,54 @@ export const PollingMessageModal: React.FC<{
                 initialValues={initialFormState}
                 validationSchema={pollingSchema}
                 onSubmit={async (values) => {
+                  const tempId = `temp-${Date.now()}`;
+
+                  const tempMessage = {
+                    _id: tempId,
+                    content: '',
+                    sender: user!,
+                    chat: currentChat._id,
+                    contentType: 'polling',
+                    attachments: [],
+                    polling: {
+                      questionTitle: values.questionTitle,
+                      options: values.options.map((opt) => ({
+                        optionValue: opt.optionValue,
+                        responses: [],
+                      })),
+                      allowMultipleAnswer: values.allowMultipleAnswer,
+                    },
+                    status: 'queued',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                  };
+
+                  dispatch(
+                    onMessageReceived({ data: tempMessage as unknown as ChatMessageInterface }),
+                  );
                   try {
+                    if (!hasInternet) {
+                      messageQueue.add({
+                        chatId: currentChat._id,
+                        content: '',
+                        attachments: [],
+                        mentions: [],
+                        contentType: 'polling',
+                        polling: {
+                          questionTitle: values.questionTitle,
+                          options: values.options.map((opt) => ({
+                            optionValue: opt.optionValue,
+                            responses: [],
+                          })),
+                          allowMultipleAnswer: values.allowMultipleAnswer,
+                        },
+                      });
+
+                      toast.info('Offline. Message queued.');
+
+                      return;
+                    }
+
                     const response = await createPollingVoteMessage({
                       chatId: currentChat?._id,
                       questionTitle: values.questionTitle,
@@ -177,6 +233,13 @@ export const PollingMessageModal: React.FC<{
                     }).unwrap();
 
                     if (response.data) {
+                      dispatch(
+                        replaceOptimisticMessage({
+                          chatId: currentChat._id,
+                          tempId: tempId,
+                          realMessage: response.data,
+                        }),
+                      );
                       close(); // Close modal on success
                     }
                   } catch (error) {

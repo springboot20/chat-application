@@ -4,6 +4,7 @@ import { classNames } from '../../utils';
 import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks';
 import { useToggleVoteToPollingVoteMessageMutation } from '../../features/chats/chat.slice';
 import { updatePollVote } from '../../features/chats/chat.reducer';
+import { useNetwork } from '../../hooks/useNetwork';
 
 const MiniAvatar: React.FC<{
   voter: { _id: string; username: string; avatar?: { url?: string } };
@@ -114,11 +115,14 @@ const PollOption: React.FC<{
   onSelect,
 }) => {
   const [tooltip, setTooltip] = useState(false);
+  const { isOnline } = useNetwork();
 
   return (
     <div
       className='relative flex items-center gap-x-2 cursor-pointer group select-none touch-manipulation'
-      onClick={() => !isPending && onSelect(option._id)}>
+      onClick={() => {
+        if (!isPending && isOnline) onSelect(option._id);
+      }}>
       <div className='space-y-1.5 w-full'>
         <div className='flex items-center gap-2'>
           {/* Radio / checkbox indicator */}
@@ -218,6 +222,8 @@ export const PollingVoteMessage: React.FC<PollingVoteMessageProps> = ({
   message,
   isOwnedMessage,
 }) => {
+  console.log({ message });
+
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { currentChat } = useAppSelector((state) => state.chat);

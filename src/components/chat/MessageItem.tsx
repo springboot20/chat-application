@@ -71,7 +71,7 @@ const MessageStatusTick = ({
       </svg>
     ),
   };
-  return <span className='ml-1 self-end'>{icons[status]}</span>;
+  return icons[status];
 };
 
 interface MessageItemProps {
@@ -156,26 +156,18 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     [message.sender?._id, user?._id],
   );
 
-  // Dynamic transforms based on ownership
-  const replyIconOpacity = useTransform(
-    x,
-    isOwnedMessage ? [0, -swipeThreshold + 10] : [0, swipeThreshold - 10],
-    [0, 1],
-  );
-  const replyIconScale = useTransform(
-    x,
-    isOwnedMessage ? [0, -swipeThreshold] : [0, swipeThreshold],
-    [0.5, 1.2],
-  );
+  // Dynamic transforms (Standardized to right swipe)
+  const replyIconOpacity = useTransform(x, [0, swipeThreshold - 10], [0, 1]);
+  const replyIconScale = useTransform(x, [0, swipeThreshold], [0.5, 1.2]);
 
   // Smoothly fade out the indicator when not dragging and x is 0
   const indicatorVisible = useTransform(x, (val) => (isDragging || Math.abs(val) > 0 ? 1 : 0));
 
   const handleDragEnd = useCallback(() => {
     const currentX = x.get();
-    const thresholdMet = isOwnedMessage ? currentX <= -swipeThreshold : currentX >= swipeThreshold;
+    const thresholdMet = currentX >= swipeThreshold;
 
-    if (thresholdMet) {
+    if (thresholdMet && !message.isDeleted) {
       handleSetOpenReply(message._id);
     }
 
@@ -590,24 +582,19 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     }
   }, [highlightedMessageId, message._id, onSetHighlightedMessage]);
 
-  useEffect(() => {
-    if (messageToReply === message._id) {
-      // Trigger a brief swipe animation to give visual feedback
-      const targetX = isOwnedMessage ? -swipeThreshold : swipeThreshold;
-      animate(x, targetX, {
-        type: 'spring',
-        stiffness: 300,
-        damping: 30,
-        onComplete: () => {
-          animate(x, 0, {
-            type: 'spring',
-            stiffness: 300,
-            damping: 30,
-          });
-        },
-      });
-    }
-  }, [message._id, messageToReply, swipeThreshold, x, isOwnedMessage]);
+  if (messageToReply === message._id && !message.isDeleted) {
+    // Trigger a brief swipe animation to give visual feedback (always swipe right)
+    animate(x, swipeThreshold, {
+      type: 'spring',
+      stiffness: 300,
+      damping: 30,
+      onComplete: () => {
+        setTimeout(() => {
+          animate(x, 0, { type: 'spring', stiffness: 300, damping: 30 });
+        }, 200);
+      },
+    });
+  }
 
   const handleOpenProfile = (targetUser: Partial<User>) => {
     setSelectedUser(targetUser);
@@ -803,6 +790,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     onClick={() => handleImageChange(index)}
                     showOverlay={true}
                     isOwnedMessage={Boolean(isOwnedMessage)}
+                    status={message.status}
                   />
                   {isLast && (
                     <div className='absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xl font-bold z-30 pointer-events-none'>
@@ -823,6 +811,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 index={mediaAttachments.length + index}
                 showOverlay={true}
                 isOwnedMessage={Boolean(isOwnedMessage)}
+                status={message.status}
               />
             ))}
           </div>
@@ -859,10 +848,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         {/* Reply Icon Indicator (Revealed from behind) */}
         <motion.div
           style={{ opacity: indicatorVisible }}
-          className={classNames(
-            'absolute inset-y-0 flex items-center pointer-events-none',
-            isOwnedMessage ? 'right-0 pr-4' : 'left-0 pl-4',
-          )}>
+          className='absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none'>
           <motion.div
             style={{
               opacity: replyIconOpacity,
@@ -875,12 +861,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
         {/* Draggable Message Content */}
         <motion.div
-          drag='x'
-          dragConstraints={
-            isOwnedMessage
-              ? { left: -swipeThreshold - 20, right: 0 }
-              : { left: 0, right: swipeThreshold + 20 }
-          }
+          drag={!message.isDeleted ? 'x' : false}
+          dragConstraints={{ left: 0, right: swipeThreshold + 20 }}
           dragElastic={0.2}
           onDragStart={() => setIsDragging(true)}
           onDragEnd={handleDragEnd}

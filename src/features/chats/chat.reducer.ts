@@ -83,7 +83,7 @@ const ChatSlice = createSlice({
     ) => {
       const { messageId, chatId, options } = action.payload;
       if (!state.chatMessages[chatId]) return;
-      
+
       const msgIndex = state.chatMessages[chatId].findIndex((m) => m._id === messageId);
       if (msgIndex !== -1) {
         state.chatMessages[chatId][msgIndex].polling.options = options;
@@ -97,6 +97,8 @@ const ChatSlice = createSlice({
     onMessageReceived: (state, action: PayloadAction<{ data: ChatMessageInterface }>) => {
       const message = action.payload.data;
       const chatId = message.chat;
+
+      console.log({ message });
 
       if (!state.chatMessages[chatId]) {
         state.chatMessages[chatId] = [];

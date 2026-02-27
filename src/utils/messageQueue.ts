@@ -1,3 +1,5 @@
+import { LocalStorage } from '.';
+
 // utils/messageQueue.ts
 interface QueuedMessage {
   id: string;
@@ -5,6 +7,8 @@ interface QueuedMessage {
   content: string;
   attachments?: File[];
   mentions?: any[];
+  polling?: Record<string, any>;
+  contentType?: string;
   timestamp: number;
   replyId?: string;
 }
@@ -19,7 +23,7 @@ class MessageQueue {
 
   private loadFromStorage() {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
+      const stored = LocalStorage.get(this.STORAGE_KEY);
       if (stored) {
         this.queue = JSON.parse(stored);
         console.log(`📦 Loaded ${this.queue.length} queued messages from storage`);
@@ -31,7 +35,7 @@ class MessageQueue {
 
   private saveToStorage() {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.queue));
+      LocalStorage.set(this.STORAGE_KEY, this.queue);
     } catch (error) {
       console.error('Failed to save queued messages:', error);
     }
