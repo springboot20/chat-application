@@ -898,6 +898,9 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                   onReactionClick={(emoji, event) =>
                     handleSelectReactionEmoji(message._id, emoji, event)
                   }
+                  onEmojiClick={(emoji, event) =>
+                    handleSelectReactionEmoji(message._id, emoji, event)
+                  }
                   reactionsDefaultOpen={true}
                   theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
                   searchDisabled={false}
