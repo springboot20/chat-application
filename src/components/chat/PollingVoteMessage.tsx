@@ -117,87 +117,104 @@ const PollOption: React.FC<{
   const [tooltip, setTooltip] = useState(false);
   const { isOnline } = useNetwork();
 
+  const htmlForText = `${option._id}-${option.optionValue}`;
+
   return (
-    <div
-      className='relative flex items-center gap-x-2 cursor-pointer group select-none touch-manipulation'
-      onClick={() => {
-        if (!isPending && isOnline) onSelect(option._id);
-      }}>
+    <div className='relative flex items-center gap-x-2 cursor-pointer group select-none touch-manipulation'>
       <div className='space-y-1.5 w-full'>
-        <div className='flex items-center gap-2'>
-          {/* Radio / checkbox indicator */}
-          <div
-            className={classNames(
-              'flex-shrink-0 size-[18px] rounded-full border-2 flex items-center justify-center transition-all duration-200',
-              isSelected
-                ? 'bg-emerald-500 border-emerald-500'
-                : 'border-gray-300 dark:border-gray-600 group-hover:border-emerald-400',
-              isPending && 'opacity-60',
-            )}>
-            {isSelected && (
-              <svg width='9' height='7' viewBox='0 0 9 7' fill='none' className='flex-shrink-0'>
-                <path
-                  d='M1 3.5L3.2 5.5L8 1'
-                  stroke='white'
-                  strokeWidth='1.8'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                />
-              </svg>
-            )}
-            {allowMultiple && !isSelected && (
-              <div className='size-2 rounded-sm bg-gray-200 dark:bg-gray-600' />
-            )}
-          </div>
-
-          {/* Option label */}
-          <span
-            className={classNames(
-              'text-sm flex-1 leading-tight',
-              isSelected ? 'font-semibold' : 'font-normal',
-            )}>
-            {option.optionValue}
-          </span>
-
-          {/* Leading badge */}
-          {isLeading && hasVoted && option.responses.length > 0 && (
-            <span className='text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 rounded-full px-1.5 py-0.5'>
-              Leading
-            </span>
-          )}
-
-          {/* Stacked avatars + percentage — revealed after voting */}
-          {hasVoted && (
+        <div className='flex items-center justify-between gap-2'>
+          <div className='flex items-center gap-2'>
+            {/* Radio / checkbox indicator */}
             <div
-              className='relative flex items-center gap-1.5 flex-shrink-0'
-              onMouseEnter={() => setTooltip(true)}
-              onMouseLeave={() => setTooltip(false)}>
-              <div className='flex items-center'>
-                {option.responses.slice(0, 3).map((voter) => (
-                  <MiniAvatar key={voter._id} voter={voter} />
-                ))}
-                {option.responses.length > 3 && (
-                  <div className='size-[22px] rounded-full bg-gray-200 dark:bg-[#3a4a52] border-2 border-white dark:border-[#1f2c34] -ml-1.5 flex items-center justify-center text-[9px] text-gray-500 dark:text-gray-400 font-bold'>
-                    +{option.responses.length - 3}
-                  </div>
+              className={classNames(
+                'relative size-[18px]',
+                isSelected ? 'accent-emerald-500' : '',
+              )}>
+              <input
+                id={htmlForText}
+                type={allowMultiple ? 'checkbox' : 'radio'}
+                checked={isSelected}
+                onChange={() => {
+                  if (!isPending && isOnline) onSelect(option._id);
+                }}
+                className={classNames(
+                  'h-full w-full cursor-pointer appearance-none rounded-full checked:bg-green-500 transition-all duration-200 pointer-events-none shrink-0',
+                  isPending && 'opacity-60',
+                  !isSelected && 'border border-gray-500',
                 )}
-              </div>
+              />
+
+              {isSelected && (
+                <svg
+                  width='9'
+                  height='7'
+                  viewBox='0 0 9 7'
+                  fill='none'
+                  className='flex-shrink-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+                  <path
+                    d='M1 3.5L3.2 5.5L8 1'
+                    stroke='white'
+                    strokeWidth='1.8'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                  />
+                </svg>
+              )}
+            </div>
+
+            <label htmlFor={htmlForText} className='cursor-pointer'>
+              {/* Option label */}
               <span
                 className={classNames(
-                  'text-xs font-bold min-w-[30px] text-right',
-                  isSelected
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-gray-400 dark:text-gray-500',
+                  'text-sm flex-1 leading-tight',
+                  isSelected ? 'font-semibold' : 'font-normal',
                 )}>
-                {percentage}%
+                {option.optionValue}
               </span>
-              <VoterTooltip
-                voters={option.responses}
-                visible={tooltip}
-                isOwnedMessage={isOwnedMessage}
-              />
-            </div>
-          )}
+            </label>
+          </div>
+
+          <div className='shrink-0 flex items-center gap-x-2'>
+            {/* Leading badge */}
+            {isLeading && hasVoted && option.responses.length > 0 && (
+              <span className='text-[9px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 rounded-full px-1.5 py-0.5'>
+                Leading
+              </span>
+            )}
+
+            {/* Stacked avatars + percentage — revealed after voting */}
+            {hasVoted && (
+              <div
+                className='relative flex items-center gap-1.5 flex-shrink-0'
+                onMouseEnter={() => setTooltip(true)}
+                onMouseLeave={() => setTooltip(false)}>
+                <div className='flex items-center'>
+                  {option.responses.slice(0, 3).map((voter) => (
+                    <MiniAvatar key={voter._id} voter={voter} />
+                  ))}
+                  {option.responses.length > 3 && (
+                    <div className='size-[22px] rounded-full bg-gray-200 dark:bg-[#3a4a52] border-2 border-white dark:border-[#1f2c34] -ml-1.5 flex items-center justify-center text-[9px] text-gray-500 dark:text-gray-400 font-bold'>
+                      +{option.responses.length - 3}
+                    </div>
+                  )}
+                </div>
+                <span
+                  className={classNames(
+                    'text-xs font-bold min-w-[30px] text-right',
+                    isSelected
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-gray-400 dark:text-gray-500',
+                  )}>
+                  {percentage}%
+                </span>
+                <VoterTooltip
+                  voters={option.responses}
+                  visible={tooltip}
+                  isOwnedMessage={isOwnedMessage}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Progress bar — revealed after voting */}
@@ -222,8 +239,6 @@ export const PollingVoteMessage: React.FC<PollingVoteMessageProps> = ({
   message,
   isOwnedMessage,
 }) => {
-  console.log({ message });
-
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { currentChat } = useAppSelector((state) => state.chat);
