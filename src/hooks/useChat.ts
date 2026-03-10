@@ -102,12 +102,17 @@ export const useChat = () => {
     [dispatch],
   );
 
+  const currentChatMessages = useMemo(
+    () => (currentChat?._id ? (chatMessages?.[currentChat._id] ?? []) : []),
+    [chatMessages, currentChat?._id],
+  );
+
   return {
     isLoadingChats,
     chats,
     chatsWithMeta, // Use this in your sidebar for the best experience
     currentChat,
-    chatMessages,
+    chatMessages: currentChatMessages,
     unreadMessages,
     clearChatUnreadCount,
     onNewChat,

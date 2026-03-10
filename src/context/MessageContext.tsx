@@ -21,7 +21,6 @@ import {
 import {
   useDeleteChatMessageMutation,
   useReplyToMessageMutation,
-  useSendMessageMutation,
 } from '../features/chats/chat.slice.ts';
 import { User } from '../types/auth.ts';
 import { AudioManager } from '../utils/index.ts';
@@ -29,9 +28,11 @@ import { toast } from 'react-toastify';
 import { useSocketContext } from '../hooks/useSocket.ts';
 import { ChatListItemInterface, ChatMessageInterface } from '../types/chat.ts';
 import { useNetwork } from '../hooks/useNetwork.ts';
-import { messageQueue } from '../utils/messageQueue.ts';
+import { fileToBase64, messageQueue } from '../utils/messageQueue.ts';
+import { useMessageQueue } from '../hooks/useMessageQueue.ts';
 import { useTyping } from '../hooks/useTyping.ts';
 import { getFuzzyMatches } from '../utils/fuzzySearch.ts';
+import { FileProgressMap, useSendMessage } from '../hooks/useSendMessage.ts';
 
 type FileType = {
   files: File[] | null;
@@ -49,6 +50,10 @@ type MessageContextValue = {
   showScrollButton: boolean;
   filteredMentionUsers: User[];
   selectedUser: User;
+
+  fileProgress: FileProgressMap;
+  overallProgress: number;
+  isLoading: boolean;
 
   imageInputRef: React.MutableRefObject<HTMLInputElement | null>;
   setMessage: React.Dispatch<React.SetStateAction<string>>;
@@ -116,7 +121,10 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   const messageItemRef = useRef<Record<string, HTMLDivElement | null>>({});
   const [selectedUser, setSelectedUser] = useState<User>({} as User);
 
-  const [sendMessage] = useSendMessageMutation();
+  // const [sendMessage] = useSendMessageMutation();
+
+  const { sendMessage, fileProgress, overallProgress, isLoading } = useSendMessage();
+
   const [deleteChatMessage] = useDeleteChatMessageMutation();
   const [replyToChatMessage] = useReplyToMessageMutation();
 
@@ -135,6 +143,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   const isAtBottomRef = useRef(true);
 
   const { isOnline } = useNetwork();
+  useMessageQueue();
 
   // Initialize audio manager
   useEffect(() => {
@@ -480,8 +489,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       },
     };
 
-    await replyToChatMessage(payload)
-      .unwrap()
+    await sendMessage(payload)
       .then((response) => {
         // Update the Redux store
         console.log(response);
@@ -556,8 +564,9 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     const files = attachmentFiles.files;
     const tempId = `temp-${Date.now()}`;
 
-    setMessage('');
-    setAttachmentFiles({} as any);
+    const convertedFiles = await Promise.all(
+      (files || [])?.map(async (file) => await fileToBase64(file)),
+    );
 
     // Add optimistic UI update with "queued" status
     const tempMessage = {
@@ -565,11 +574,13 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       content: processedMessage.content,
       sender: currentUser!,
       chat: currentChat._id,
-      attachments: files,
+      attachments: convertedFiles,
       status: 'queued', // Custom status
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    console.log({ tempMessage });
 
     try {
       dispatch(onMessageReceived({ data: tempMessage as unknown as ChatMessageInterface }));
@@ -585,6 +596,11 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
         toast.info('You are offline. Message will be sent when you reconnect.', {
           autoClose: 3000,
         });
+
+        setTimeout(() => {
+          setMessage('');
+          setAttachmentFiles({} as any);
+        }, 2000);
         return;
       }
 
@@ -595,7 +611,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
           attachments: files,
           mentions: processedMessage.mentions,
         },
-      }).unwrap();
+      });
 
       playMessageSound();
       scrollToBottom();
@@ -607,6 +623,9 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
           realMessage: response.data, // The actual message from server
         }),
       );
+
+      setMessage('');
+      setAttachmentFiles({} as any);
     } catch (error) {
       console.error('Failed to send:', error);
       toast.error('Failed to send message');
@@ -642,6 +661,10 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       handleSelectUser,
       onReactionUpdate,
       onUpdateChatLastMessage,
+
+      fileProgress,
+      overallProgress,
+      isLoading,
 
       // React Picker
       handleDeleteChatMessage,
@@ -684,6 +707,10 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       handleSelectUser,
       onReactionUpdate,
       onUpdateChatLastMessage,
+
+      fileProgress,
+      overallProgress,
+      isLoading,
 
       // React Picker
       handleDeleteChatMessage,

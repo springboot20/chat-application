@@ -146,6 +146,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { isOnline: hasInternet } = useNetwork();
 
+  const { fileProgress } = useMessage();
+
   const x = useMotionValue(0);
   const [isDragging, setIsDragging] = useState(false);
   const swipeThreshold = 60;
@@ -790,6 +792,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     onClick={() => handleImageChange(index)}
                     showOverlay={true}
                     isOwnedMessage={Boolean(isOwnedMessage)}
+                    uploadProgress={fileProgress.get(index)}
                     status={message.status}
                   />
                   {isLast && (
@@ -811,6 +814,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 index={mediaAttachments.length + index}
                 showOverlay={true}
                 isOwnedMessage={Boolean(isOwnedMessage)}
+                uploadProgress={fileProgress.get(mediaAttachments.length + index)}
                 status={message.status}
               />
             ))}

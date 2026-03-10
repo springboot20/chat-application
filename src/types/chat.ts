@@ -10,6 +10,21 @@ export interface Attachment {
   fileSize?: number;
   duration?: number; // for voice messages
   waveform?: number[]; // waveform data
+
+  isLocal?: boolean;
+}
+
+export interface UploadingAttachment {
+  /** Temporary local ID while uploading */
+  tempId: string;
+  file: File;
+  /** 0–100, updated by your upload XHR/axios onUploadProgress callback */
+  progress: number;
+  /** AbortController so the user can cancel */
+  abortController: AbortController;
+  /** Preview URL created with URL.createObjectURL */
+  previewUrl?: string;
+  error?: string;
 }
 
 export interface PollingVoteInterface {
@@ -68,4 +83,9 @@ export interface ChatListItemInterface {
   participants: User[];
   updatedAt: string;
   _id: string;
+}
+
+export function getAttachmentSrc(attachment: Attachment): string {
+  if (attachment.isLocal && attachment.localPath) return attachment.localPath;
+  return attachment.url;
 }

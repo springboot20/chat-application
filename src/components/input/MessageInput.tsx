@@ -14,14 +14,12 @@ import {
   Bars3BottomLeftIcon,
 } from '@heroicons/react/24/outline';
 import { getDynamicUserColor } from '../../utils';
-import { DocumentPreview } from '../file/DocumentPreview';
 import { Disclosure } from '@headlessui/react';
-import { ChatListItemInterface, ChatMessageInterface } from '../../types/chat';
+import { Attachment, ChatListItemInterface, ChatMessageInterface } from '../../types/chat';
 import { FileSelection } from '../file/FileSelection';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
 import { toast } from 'react-toastify';
 import { VoiceRecorder } from '../voice/VoiceRecorder';
-import { useSendMessageMutation } from '../../features/chats/chat.slice';
 import { useNetwork } from '../../hooks/useNetwork';
 import { messageQueue } from '../../utils/messageQueue';
 import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks';
@@ -30,6 +28,8 @@ import { useRecordingLock } from '../../hooks/useRecordingLock';
 import { motion, AnimatePresence, animate } from 'framer-motion';
 import { useMessage } from '../../hooks/useMessage';
 import { PollingMessageModal } from '../modal/PollingModal';
+import { useSendMessage } from '../../hooks/useSendMessage';
+import { FileUploadPreview } from '../file/FIleUploadPreview';
 
 interface MessageInputProps {
   reduxStateMessages: ChatMessageInterface[];
@@ -97,7 +97,7 @@ const MessageInput = ({
   const { isOnline } = useNetwork();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const [sendMessage] = useSendMessageMutation();
+  const { sendMessage, fileProgress, overallProgress } = useSendMessage();
 
   // ✅ CRITICAL FIX: Track if we're in a drag gesture to prevent premature UI hiding
   const [isDraggingMic, setIsDraggingMic] = useState(false);
@@ -178,7 +178,7 @@ const MessageInput = ({
           mentions: [],
           audioDuration: audioDuration.toString(),
         },
-      }).unwrap();
+      });
 
       dispatch(
         replaceOptimisticMessage({
@@ -329,6 +329,8 @@ const MessageInput = ({
                     theme === 'dark',
                   );
 
+                  const attachmentFile = replyMessage?.attachments?.[0] as Attachment;
+
                   return (
                     <div className='flex flex-col'>
                       <div className='flex items-center justify-between'>
@@ -347,27 +349,25 @@ const MessageInput = ({
                       <div className='flex items-center gap-1.5 mt-0.5 text-gray-500 dark:text-gray-400'>
                         {replyMessage?.attachments && replyMessage.attachments.length > 0 ? (
                           <>
-                            {replyMessage.attachments[0].fileType === 'image' && (
+                            {attachmentFile.fileType === 'image' && (
                               <PhotoIcon className='h-3.5 w-3.5' />
                             )}
-                            {replyMessage.attachments[0].fileType === 'video' && (
+                            {attachmentFile.fileType === 'video' && (
                               <VideoCameraIcon className='h-3.5 w-3.5' />
                             )}
-                            {replyMessage.attachments[0].fileType === 'voice' && (
+                            {attachmentFile.fileType === 'voice' && (
                               <MicrophoneIcon className='h-3.5 w-3.5' />
                             )}
-                            {(replyMessage.attachments[0].fileType === 'document' ||
-                              !replyMessage.attachments[0].fileType) && (
-                              <DocumentIcon className='h-3.5 w-3.5' />
-                            )}
+                            {(attachmentFile.fileType === 'document' ||
+                              !attachmentFile.fileType) && <DocumentIcon className='h-3.5 w-3.5' />}
                             <span className='text-xs truncate'>
-                              {replyMessage.attachments[0].fileType === 'image'
+                              {attachmentFile.fileType === 'image'
                                 ? 'Photo'
-                                : replyMessage.attachments[0].fileType === 'video'
+                                : attachmentFile.fileType === 'video'
                                   ? 'Video'
-                                  : replyMessage.attachments[0].fileType === 'voice'
+                                  : attachmentFile.fileType === 'voice'
                                     ? 'Voice message'
-                                    : replyMessage.attachments[0].fileName || 'Document'}
+                                    : attachmentFile.fileName || 'Document'}
                             </span>
                           </>
                         ) : replyMessage?.contentType === 'polling' ? (
@@ -391,7 +391,7 @@ const MessageInput = ({
                 const replyMessage = reduxStateMessages.find(
                   (msg) => msg._id.toString() === messageToReply.toString(),
                 );
-                const firstAttachment = replyMessage?.attachments?.[0];
+                const firstAttachment = replyMessage?.attachments?.[0] as Attachment;
 
                 if (firstAttachment?.url && firstAttachment.fileType === 'image') {
                   return (
@@ -412,18 +412,12 @@ const MessageInput = ({
 
         {/* File Attachments */}
         {attachmentFiles?.files && attachmentFiles.files.length > 0 && (
-          <div className='flex items-center flex-wrap gap-4 bg-white dark:bg-black p-4 justify-start'>
-            {attachmentFiles.files.map((file, i) => (
-              <div key={`${file.name}-${i}`} className='size-24 rounded-lg overflow-hidden'>
-                <DocumentPreview
-                  index={i}
-                  onRemove={handleRemoveFile}
-                  file={file}
-                  variant='square'
-                />
-              </div>
-            ))}
-          </div>
+          <FileUploadPreview
+            attachmentFiles={attachmentFiles.files}
+            handleRemoveFile={handleRemoveFile}
+            fileProgress={fileProgress}
+            overallProgress={overallProgress}
+          />
         )}
 
         {/* Input Section */}

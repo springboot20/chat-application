@@ -2,18 +2,20 @@
 import { useCallback, useEffect } from 'react';
 import { messageQueue } from '../utils/messageQueue';
 import { useNetwork } from './useNetwork';
-import { useSendMessageMutation } from '../features/chats/chat.slice';
 import { toast } from 'react-toastify';
+import { useChat } from './useChat';
+import { useSendMessage } from './useSendMessage';
 
 export const useMessageQueue = () => {
   const { isOnline } = useNetwork();
-  const [sendMessage] = useSendMessageMutation();
+  const { sendMessage } = useSendMessage();
+  const { currentChat } = useChat();
 
-  // Process queued messages when coming back online
+  // Process queued messages when coming back isOnline
   const processQueue = useCallback(async () => {
     if (!isOnline) return;
 
-    const queuedMessages = messageQueue.getAll();
+    const queuedMessages = await messageQueue.getAllForChatWithFiles(currentChat?._id!);
 
     if (queuedMessages.length === 0) return;
 
@@ -27,8 +29,9 @@ export const useMessageQueue = () => {
             content: queuedMsg.content,
             attachments: queuedMsg.attachments,
             mentions: queuedMsg.mentions,
+            ...(queuedMsg.replyId ? { replyId: queuedMsg.replyId } : {}),
           },
-        }).unwrap();
+        });
 
         // Remove from queue on success
         messageQueue.remove(queuedMsg.id);
@@ -39,11 +42,11 @@ export const useMessageQueue = () => {
       }
     }
 
-    const remaining = messageQueue.getAll().length;
-    if (remaining === 0) {
+    const remaining = await messageQueue.getAll();
+    if (remaining.length === 0) {
       toast.success('All queued messages sent!');
     } else {
-      toast.warning(`${remaining} message(s) failed to send. Will retry.`);
+      toast.warning(`${remaining.length} message(s) failed to send. Will retry.`);
     }
   }, [isOnline, sendMessage]);
 
