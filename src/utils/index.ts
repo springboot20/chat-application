@@ -1,6 +1,6 @@
 import { ApiRequestHandlerProps } from '../types/api';
 import { toast } from 'react-toastify';
-import { ChatListItemInterface } from '../types/chat';
+import { Attachment, ChatListItemInterface } from '../types/chat';
 import { User } from '../types/auth';
 import moment from 'moment';
 
@@ -15,6 +15,16 @@ export function getInitials({ username }: { username?: string }) {
 export const classNames = (...className: (string | boolean | undefined)[]) => {
   return className.filter(Boolean).join(' ');
 };
+
+export function getExtColor(ext: string): string {
+  if (ext === 'PDF') return '#e53e3e';
+  if (['DOC', 'DOCX'].includes(ext)) return '#3182ce';
+  if (['XLS', 'XLSX'].includes(ext)) return '#38a169';
+  if (['PPT', 'PPTX'].includes(ext)) return '#dd6b20';
+  if (['ZIP', 'RAR', '7Z'].includes(ext)) return '#805ad5';
+  if (['MP4', 'MOV', 'AVI', 'MKV'].includes(ext)) return '#d53f8c';
+  return '#4299e1';
+}
 
 export const formatFileSize = (bytes?: number) => {
   if (!bytes) return '0 B';
@@ -146,6 +156,111 @@ export class AudioManager {
   }
 }
 
+export const DBStorageKeys = {
+  Queued: 'queued_messages',
+  Chats: 'chats',
+  ChatMessages: 'chatmessages',
+  UnreadMessages: 'unreadMessages',
+  Users: 'users',
+};
+
+export class IndexDBStorageService {
+  private DBName: string = 'Q-message';
+  public DB: IDBDatabase | undefined;
+  private readonly DB_VERSION = 1;
+
+  async initializeDB(): Promise<boolean> {
+    if (this.DB) return true;
+    return new Promise((resolve) => {
+      const request = indexedDB.open(this.DBName, this.DB_VERSION);
+
+      request.addEventListener('upgradeneeded', () => {
+        this.DB = request?.result;
+
+        Object.values(DBStorageKeys).forEach((key) => {
+          if (!this.DB?.objectStoreNames.contains(key)) {
+            this.DB?.createObjectStore(key, { keyPath: 'id' });
+          }
+        });
+      });
+
+      request.addEventListener('success', () => {
+        this.DB = request?.result;
+        resolve(true);
+      });
+
+      request.addEventListener('error', () => {
+        resolve(false);
+      });
+    });
+  }
+
+  private async ensureDB(): Promise<void> {
+    if (!this.DB) {
+      const success = await this.initializeDB();
+      if (!success) throw new Error('Failed to initialize IndexedDB');
+    }
+  }
+
+  private async getStore(storeName: string, mode: IDBTransactionMode): Promise<IDBObjectStore> {
+    await this.ensureDB();
+    if (!this.DB) throw new Error('IndexedDB not initialized');
+    return this.DB.transaction(storeName, mode).objectStore(storeName);
+  }
+
+  async set<T>(storeName: string, data: T): Promise<void> {
+    const store = await this.getStore(storeName, 'readwrite');
+    // Ensure data is serializable and free of circular references/proxies
+    const sanitizedData = removeCircularReferences(data);
+
+    console.log({ sanitizedData });
+
+    return new Promise((resolve, reject) => {
+      const request = store.put(sanitizedData);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async get<T>(storeName: string, id: string): Promise<T | undefined> {
+    const store = await this.getStore(storeName, 'readonly');
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result as T);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAll<T>(storeName: string): Promise<T[]> {
+    const store = await this.getStore(storeName, 'readonly');
+    return new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result as T[]);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async remove(storeName: string, id: string): Promise<void> {
+    const store = await this.getStore(storeName, 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async clear(storeName: string): Promise<void> {
+    const store = await this.getStore(storeName, 'readwrite');
+    return new Promise((resolve, reject) => {
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+}
+
+export const indexDBStorage = new IndexDBStorageService();
+
 export class LocalStorage {
   static get(key: string) {
     if (!isBrowser) return;
@@ -199,7 +314,7 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
   let attachmentFileType: string | undefined = undefined;
 
   if (lastMessage.attachments && lastMessage.attachments.length > 0) {
-    attachmentFileType = lastMessage.attachments[0].fileType || 'file';
+    attachmentFileType = (lastMessage.attachments[0] as Attachment).fileType || 'file';
 
     if (lastMessage.attachments.length === 1 && !messageContent) {
       const type = attachmentFileType;

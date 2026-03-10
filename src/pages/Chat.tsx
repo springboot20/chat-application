@@ -377,10 +377,9 @@ export const Chat = () => {
     if (!currentChat?._id || !reduxStateMessages) {
       return [];
     }
-    const messages = reduxStateMessages[String(currentChat._id)];
     // Create a shallow copy to avoid proxy issues
-    return messages
-      ? messages.map((m: ChatMessageInterface) => {
+    return Array.isArray(reduxStateMessages)
+      ? reduxStateMessages.map((m: ChatMessageInterface) => {
           return { ...m };
         })
       : [];
@@ -466,7 +465,7 @@ export const Chat = () => {
                                 if (socket) {
                                   socket.emit(LEAVE_CHAT_EVENT, currentChat._id);
                                 }
-                                dispatch(setCurrentChat({ chat: null }));
+                                dispatch(setCurrentChat({ chat: undefined }));
                               }}>
                               <ArrowLeftIcon className='h-5 w-5 dark:text-white' />
                             </button>
