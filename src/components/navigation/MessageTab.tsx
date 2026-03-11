@@ -2,6 +2,7 @@ import { Disclosure } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { SearchInput } from '../panels/SearchInput.tsx';
 import { ChatItem } from '../chat/ChatItem.tsx';
@@ -9,7 +10,7 @@ import { Loading } from '../Loading.tsx';
 import { classNames, getMessageObjectMetaData } from '../../utils/index.ts';
 import { ChatListItemInterface } from '../../types/chat.ts';
 import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks.ts';
-import { onChatDelete, setCurrentChat } from '../../features/chats/chat.reducer.ts';
+import { onChatDelete } from '../../features/chats/chat.reducer.ts';
 import { useDebounce } from '../../hooks/useDebounce.ts';
 import { useTyping } from '../../hooks/useTyping.ts';
 import { useChat } from '../../hooks/useChat.ts';
@@ -25,6 +26,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ close 
   const { user } = useAppSelector((state) => state.auth);
   const { setMessage, getAllMessages } = useMessage();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const [itemDeleted, setItemDeleted] = useState<boolean>(false);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
@@ -54,8 +56,8 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ close 
     (chat: ChatListItemInterface) => {
       if (currentChat && currentChat?._id === chat?._id) return;
 
-      // 1. Set current chat in Redux
-      dispatch(setCurrentChat({ chat }));
+      // 1. Navigate to the chat - ChatLayout will handle Redux sync
+      navigate(`/chat/${chat._id}`);
 
       // 2. Clear input and fetch history
       setMessage('');
@@ -64,7 +66,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({ close 
       // 3. Close the sidebar on mobile
       close();
     },
-    [close, currentChat, dispatch, setMessage, getAllMessages],
+    [close, currentChat, navigate, setMessage, getAllMessages],
   );
 
   const handleChatDelete = useCallback(

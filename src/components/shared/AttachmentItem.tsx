@@ -4,6 +4,7 @@ import {
   PlayIcon,
   ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
+import { DownloadTracker } from '../../utils';
 
 type AttachmentItemProps = {
   file: {
@@ -24,7 +25,14 @@ export const AttachmentItem = ({ file }: AttachmentItemProps) => {
     return 'document';
   };
 
-  const handleDownload = async () => {
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening image/video preview if clicking download icon
+
+    if (DownloadTracker.isDownloaded(file.url)) {
+      window.open(file.url, '_blank');
+      return;
+    }
+
     try {
       const response = await fetch(file.url);
       const blob = await response.blob();
@@ -36,6 +44,8 @@ export const AttachmentItem = ({ file }: AttachmentItemProps) => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+
+      DownloadTracker.markAsDownloaded(file.url);
     } catch (error) {
       console.error('Download failed:', error);
     }

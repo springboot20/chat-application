@@ -54,7 +54,7 @@ import { useMarkMessagesAsSeen } from '../hooks/useMarkMessagesAsSeen.ts';
 import { MobileBottomNav } from '../components/navigation/MobileNavigation.tsx';
 import { CreateOrViewStatusWindowPanel } from '../components/status/CreateOrViewStatusWindowPanel.tsx';
 import { ApiService } from '../app/services/api.service.ts';
-import { ChatMessageInterface } from '../types/chat.ts';
+import { ChatListItemInterface, ChatMessageInterface } from '../types/chat.ts';
 import { GroupChatInfo } from '../components/modal/GroupChatInfo.tsx';
 
 export const Chat = () => {
@@ -360,9 +360,8 @@ export const Chat = () => {
     const chatName = isGroupChat ? currentChat.name : otherParticipant?.username || 'Unknown User';
 
     const avatarUrl = isGroupChat
-      ? //@ts-ignore
-        currentChat?.avatar?.url
-      : otherParticipant?.avatar?.url;
+      ? currentChat?.avatar?.url ?? ''
+      : otherParticipant?.avatar?.url ?? '';
 
     return {
       totalParticipant,
@@ -465,7 +464,7 @@ export const Chat = () => {
                                 if (socket) {
                                   socket.emit(LEAVE_CHAT_EVENT, currentChat._id);
                                 }
-                                dispatch(setCurrentChat({ chat: undefined }));
+                                dispatch(setCurrentChat({ chat: undefined as unknown as ChatListItemInterface }));
                               }}>
                               <ArrowLeftIcon className='h-5 w-5 dark:text-white' />
                             </button>

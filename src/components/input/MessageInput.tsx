@@ -10,9 +10,10 @@ import {
   XMarkIcon,
   PhotoIcon,
   VideoCameraIcon,
-  DocumentIcon,
   Bars3BottomLeftIcon,
 } from '@heroicons/react/24/outline';
+import { DocumentIcon } from '@heroicons/react/24/solid';
+import { VideoThumbnail } from '../shared/VideoThumbnail';
 import { getDynamicUserColor } from '../../utils';
 import { Disclosure } from '@headlessui/react';
 import { Attachment, ChatListItemInterface, ChatMessageInterface } from '../../types/chat';
@@ -393,14 +394,25 @@ const MessageInput = ({
                 );
                 const firstAttachment = replyMessage?.attachments?.[0] as Attachment;
 
-                if (firstAttachment?.url && firstAttachment.fileType === 'image') {
+                if (
+                  firstAttachment?.url &&
+                  (firstAttachment.fileType === 'image' || firstAttachment.fileType === 'video')
+                ) {
                   return (
-                    <div className='w-16 h-16 shrink-0'>
-                      <img
-                        src={firstAttachment.url}
-                        alt='Reply preview'
-                        className='w-full h-full object-cover'
-                      />
+                    <div className='w-16 h-16 shrink-0 rounded overflow-hidden'>
+                      {firstAttachment.fileType === 'image' ? (
+                        <img
+                          src={firstAttachment.url}
+                          alt='Reply preview'
+                          className='w-full h-full object-cover'
+                        />
+                      ) : (
+                        <VideoThumbnail
+                          url={firstAttachment.url}
+                          className='w-full h-full'
+                          showPlayIcon={true}
+                        />
+                      )}
                     </div>
                   );
                 }

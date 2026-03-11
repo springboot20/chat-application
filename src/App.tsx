@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
-import { Chat } from './pages/Chat';
 import { Login } from './pages/login/Login';
 import { Register } from './pages/signup/Register';
 import { Forgot } from './pages/forgot-password/Forgot';
@@ -10,6 +9,9 @@ import { OtpForm } from './pages/otp-code-form/OtpForm';
 import { useDispatch } from 'react-redux';
 import { indexDBStorage, DBStorageKeys } from './utils';
 import { hydrateChatState } from './features/chats/chat.reducer';
+import { ChatLayout } from './layouts/ChatLayout';
+import { ChatRoom } from './pages/Chat/ChatRoom';
+import { ChatIndex } from './pages/Chat/ChatIndex';
 
 function App() {
   const dispatch = useDispatch();
@@ -46,7 +48,10 @@ function App() {
 
       {/* --- PRIVATE GROUP --- */}
       <Route element={<PrivateRoute />}>
-        <Route path='/chat' element={<Chat />} />
+        <Route path='/chat' element={<ChatLayout />}>
+          <Route index element={<ChatIndex />} />
+          <Route path=':chatId' element={<ChatRoom />} />
+        </Route>
       </Route>
 
       {/* --- PUBLIC GROUP --- */}

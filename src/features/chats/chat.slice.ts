@@ -220,38 +220,103 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     }),
 
     sendMessage: builder.mutation<Response, SendMessageInterface>({
-      query: ({ chatId, data }) => {
-        console.log(data);
-
+      async queryFn({ chatId, data }, _queryApi) {
+        // Build form data with attachments
         const formData = new FormData();
-
         Object.keys(data).forEach((key) => {
           if (key === 'attachments' && Array.isArray(data[key])) {
-            // Handle attachments array by appending each file individually
             for (let i = 0; i < data[key].length; i++) {
-              console.log(data[key][i]);
               formData.append('attachments', data[key][i]);
             }
           } else if (typeof data[key] === 'object' && !(data[key] instanceof File)) {
-            // Handle other objects by stringifying them
             formData.append(key, JSON.stringify(data[key]));
           } else if (key === 'mentions' && Array.isArray(data[key])) {
-            // Handle mentions array by appending each mentioned user individually
             for (let i = 0; i < data[key].length; i++) {
-              console.log(data[key][i]);
               formData.append('mentions', data[key][i]);
             }
           } else {
-            // Handle primitive values and File objects
             formData.append(key, data[key]);
           }
         });
 
-        return {
-          url: `/chat-app/messages/${chatId}`,
-          body: formData,
-          method: 'POST',
-        };
+        // Prepare progress tracking via uploads slice
+        const uploadId = `message-${Date.now()}`;
+        // dispatch start upload
+        _queryApi.dispatch(
+          // using same actions from upload.slice
+          // @ts-ignore
+          {
+            type: 'uploads/startUpload',
+            payload: { id: uploadId, file: { name: 'message', size: 0 }, chatId },
+          },
+        );
+
+        // perform XHR manually since fetch doesn't provide progress
+        try {
+          const baseUrl =
+            import.meta.env.MODE === 'production'
+              ? import.meta.env.VITE_CHAT_APP_BACKEND_URL
+              : import.meta.env.VITE_CHAT_APP_BACKEND_LOCAL_URL;
+
+          const token = localStorage.getItem('accessToken');
+          const xhr = new XMLHttpRequest();
+
+          return await new Promise<{ data: Response } | { error: { status: string; data: any } }>(
+            (resolve) => {
+              xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                  const prog = Math.round((event.loaded / event.total) * 100);
+                  _queryApi.dispatch(
+                    // @ts-ignore
+                    { type: 'uploads/updateProgress', payload: { id: uploadId, progress: prog } },
+                  );
+                }
+              });
+
+              xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                  try {
+                    const resJson = JSON.parse(xhr.responseText);
+                    _queryApi.dispatch(
+                      // @ts-ignore
+                      {
+                        type: 'uploads/completeUpload',
+                        payload: { id: uploadId, attachment: resJson.data },
+                      },
+                    );
+                    resolve({ data: resJson as Response });
+                  } catch (err) {
+                    _queryApi.dispatch(
+                      // @ts-ignore
+                      { type: 'uploads/failUpload', payload: { id: uploadId } },
+                    );
+                    resolve({ error: { status: 'PARSE_ERROR', data: (err as Error).message } });
+                  }
+                } else {
+                  _queryApi.dispatch(
+                    // @ts-ignore
+                    { type: 'uploads/failUpload', payload: { id: uploadId } },
+                  );
+                  resolve({ error: { status: 'SERVER_ERROR', data: `Status ${xhr.status}` } });
+                }
+              });
+
+              xhr.addEventListener('error', () => {
+                _queryApi.dispatch(
+                  // @ts-ignore
+                  { type: 'uploads/failUpload', payload: { id: uploadId } },
+                );
+                resolve({ error: { status: 'NETWORK_ERROR', data: 'Network error' } });
+              });
+
+              xhr.open('POST', `${baseUrl}/chat-app/messages/${chatId}`);
+              if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+              xhr.send(formData);
+            },
+          );
+        } catch (err: any) {
+          return { error: { status: 'UNKNOWN_ERROR', data: err.message } };
+        }
       },
     }),
 
@@ -320,5 +385,5 @@ export const {
   useReplyToMessageMutation,
   useMarkMessagesAsSeenMutation,
   useCreatePollingVoteMessageMutation,
-  useToggleVoteToPollingVoteMessageMutation
+  useToggleVoteToPollingVoteMessageMutation,
 } = ChatApiSlice;

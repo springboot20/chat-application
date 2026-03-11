@@ -792,7 +792,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     onClick={() => handleImageChange(index)}
                     showOverlay={true}
                     isOwnedMessage={Boolean(isOwnedMessage)}
-                    uploadProgress={fileProgress.get(index)}
+                    uploadProgress={fileProgress?.get(index)}
                     status={message.status}
                   />
                   {isLast && (
@@ -814,7 +814,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 index={mediaAttachments.length + index}
                 showOverlay={true}
                 isOwnedMessage={Boolean(isOwnedMessage)}
-                uploadProgress={fileProgress.get(mediaAttachments.length + index)}
+                uploadProgress={fileProgress?.get(mediaAttachments.length + index)}
                 status={message.status}
               />
             ))}

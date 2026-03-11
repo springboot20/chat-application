@@ -290,6 +290,23 @@ export class LocalStorage {
   }
 }
 
+export class DownloadTracker {
+  private static KEY = 'downloaded_files';
+
+  static isDownloaded(fileUrl: string): boolean {
+    if (!isBrowser) return false;
+    const downloaded = LocalStorage.get(this.KEY) || {};
+    return !!downloaded[fileUrl];
+  }
+
+  static markAsDownloaded(fileUrl: string): void {
+    if (!isBrowser) return;
+    const downloaded = LocalStorage.get(this.KEY) || {};
+    downloaded[fileUrl] = true;
+    LocalStorage.set(this.KEY, downloaded);
+  }
+}
+
 export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User) => {
   if (!chat || !chat.lastMessage) {
     const participant = chat.participants?.find((p) => p?._id !== user?._id);

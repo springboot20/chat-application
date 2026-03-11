@@ -311,11 +311,6 @@ export const ViewStatusWindowPanelSlot = () => {
   const currentStatus = statuses[activeStatusIndex];
   const isOwnStatus = selectedStatusToView?.user?._id === user?._id;
 
-  // Log this to verify
-  console.log('Owner ID:', selectedStatusToView?.user?._id);
-  console.log('Logged in User ID:', user?._id);
-  console.log('Logged in User ID:', user);
-
   const onVideoLoad = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     setVideoDuration(e.currentTarget.duration * 1000); // Convert to ms
   };

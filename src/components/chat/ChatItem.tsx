@@ -81,7 +81,8 @@ export const ChatItem: React.FC<ChatItemProps> = ({
     return chatMeta.lastMessage;
   }, [chatMeta, chat.lastMessage]);
 
-  const chatImage = chat.participants.filter((u) => u._id !== user!._id)[0]?.avatar;
+
+  const chatImage = chat.participants.filter((u) => u && user && u?._id !== user?._id)[0]?.avatar;
 
   return (
     <>

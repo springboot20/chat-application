@@ -1,11 +1,9 @@
-import { createContext, ReactNode } from 'react';
+import { createContext, ReactNode, useRef, useState, useCallback, useEffect, useMemo } from 'react';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useAppDispatch } from './../redux/redux.hooks';
-import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { useAppDispatch, useAppSelector } from '../redux/redux.hooks.ts';
 import { JOIN_CHAT_EVENT } from '../enums/index.ts';
 import { RootState } from '../app/store.ts';
-import { useAppSelector } from '../redux/redux.hooks.ts';
 import { type EmojiClickData } from 'emoji-picker-react';
 import messageSound from '../assets/audio/message-notification.mp3';
 import reactionSound from '../assets/audio/send-message-notification.mp3';
@@ -18,10 +16,7 @@ import {
   updateMessageReactions,
   replaceOptimisticMessage,
 } from '../features/chats/chat.reducer.ts';
-import {
-  useDeleteChatMessageMutation,
-  useReplyToMessageMutation,
-} from '../features/chats/chat.slice.ts';
+import { useDeleteChatMessageMutation } from '../features/chats/chat.slice.ts';
 import { User } from '../types/auth.ts';
 import { AudioManager } from '../utils/index.ts';
 import { toast } from 'react-toastify';
@@ -33,6 +28,7 @@ import { useMessageQueue } from '../hooks/useMessageQueue.ts';
 import { useTyping } from '../hooks/useTyping.ts';
 import { getFuzzyMatches } from '../utils/fuzzySearch.ts';
 import { FileProgressMap, useSendMessage } from '../hooks/useSendMessage.ts';
+import { captureVideoThumbnail } from '../utils/mediaUtils.ts';
 
 type FileType = {
   files: File[] | null;
@@ -50,6 +46,7 @@ type MessageContextValue = {
   showScrollButton: boolean;
   filteredMentionUsers: User[];
   selectedUser: User;
+  videoThumbnails: { [fileName: string]: string };
 
   fileProgress: FileProgressMap;
   overallProgress: number;
@@ -100,7 +97,7 @@ type MessageContextValue = {
   };
 };
 
-export const MessageContext = createContext<MessageContextValue | null>(null);
+export const MessageContext = createContext<MessageContextValue>({} as MessageContextValue);
 
 export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +110,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     files: null,
     type: 'document-file',
   });
+  const [videoThumbnails, setVideoThumbnails] = useState<{ [fileName: string]: string }>({});
   const [showMentionUserMenu, setShowMentionUserMenu] = useState<boolean>(false);
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [showReply, setShowReply] = useState<boolean>(false);
@@ -126,7 +124,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   const { sendMessage, fileProgress, overallProgress, isLoading } = useSendMessage();
 
   const [deleteChatMessage] = useDeleteChatMessageMutation();
-  const [replyToChatMessage] = useReplyToMessageMutation();
 
   const [messageToReply, setMessageToReply] = useState('');
   const messageAudioManagerRef = useRef<AudioManager | null>(null);
@@ -140,9 +137,20 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
-  const isAtBottomRef = useRef(true);
-
   const { isOnline } = useNetwork();
+
+  // Use refs for stable callback dependencies
+  const currentChatRef = useRef(currentChat);
+  const currentUserRef = useRef(currentUser);
+
+  useEffect(() => {
+    currentChatRef.current = currentChat;
+  }, [currentChat]);
+
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
   useMessageQueue();
 
   // Initialize audio manager
@@ -183,7 +191,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   const handleSelectUser = useCallback(
-    (selectedUser: User) => {
+    (userToSelect: User) => {
       const input = messageInputRef.current;
       if (!input) return;
 
@@ -198,13 +206,13 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       const lastWord = wordsBefore[wordsBefore.length - 1];
 
       if (lastWord.startsWith('@')) {
-        wordsBefore[wordsBefore.length - 1] = `@${selectedUser.username} `;
+        wordsBefore[wordsBefore.length - 1] = `@${userToSelect.username} `;
         const newTextBefore = wordsBefore.join(' ');
         const newMessage = newTextBefore + textAfterCursor;
 
         setMessage(newMessage);
         setShowMentionUserMenu(false);
-        setSelectedUser(selectedUser);
+        setSelectedUser(userToSelect);
         setMentionQuery(''); // Reset query
 
         // Senior Tip: Refocus and place cursor AFTER the new mention
@@ -215,7 +223,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
         }, 0);
       }
     },
-    [message],
+    [message, setMessage],
   );
 
   const handleShowMentionUserMenu = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -247,9 +255,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       const distanceToBottom = scrollHeight - scrollTop - clientHeight;
       const nearBottom = distanceToBottom < threshold;
 
-      // Update the ref for logic checks
-      isAtBottomRef.current = nearBottom;
-
       // Update the state for the UI button
       setShowScrollButton(!nearBottom);
     }
@@ -275,6 +280,18 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       if (files && files.length) {
         const fileArray = Array.from(files);
+
+        // Generate thumbnails for video files
+        fileArray.forEach(async (file) => {
+          if (file.type.startsWith('video/')) {
+            try {
+              const thumbnail = await captureVideoThumbnail(file);
+              setVideoThumbnails((prev) => ({ ...prev, [file.name]: thumbnail }));
+            } catch (err) {
+              console.error('Thumbnail generation failed:', err);
+            }
+          }
+        });
 
         setAttachmentFiles((prev) => {
           // If the previous files are null, initialize with an empty array
@@ -357,17 +374,18 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       return;
     }
 
-    if (!currentChat?._id) {
+    const chatId = currentChatRef.current?._id;
+    if (!chatId) {
       console.log('No chat selected, cannot get reduxStateMessages');
       return;
     }
 
     // Join the chat room
-    socket?.emit(JOIN_CHAT_EVENT, currentChat?._id);
+    socket?.emit(JOIN_CHAT_EVENT, chatId);
 
     // Filter unread reduxStateMessages
-    dispatch(setUnreadMessages({ chatId: currentChat!._id! }));
-  }, [currentChat, dispatch, socket]);
+    dispatch(setUnreadMessages({ chatId }));
+  }, [dispatch, socket]);
 
   const onUpdateChatLastMessage = (updatedChat: ChatListItemInterface) => {
     // Update the last message of the chat
@@ -382,7 +400,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
         top: bottomRef.current.scrollHeight,
         behavior: 'smooth',
       });
-      isAtBottomRef.current = true;
+      // isAtBottomRef.current = true;
     }
   }, []);
 
@@ -396,7 +414,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     // ✅ SMART SCROLL:
     // Only scroll to bottom if the user is already near the bottom
     // OR if the user themselves sent the message.
-    if (isCurrentChat && (isAtBottomRef.current || isFromCurrentUser)) {
+    if (isCurrentChat && isFromCurrentUser) {
       // Wrap in setTimeout to ensure the DOM has updated with the new message height
       setTimeout(() => {
         scrollToBottom();
@@ -414,15 +432,18 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const handleDeleteChatMessage = useCallback(
     async (messageId: string) => {
+      const chatId = currentChatRef.current?._id;
+      if (!chatId) return;
+
       await deleteChatMessage({
-        chatId: currentChat?._id || '',
+        chatId,
         messageId,
       })
         .unwrap()
         .then((response) => {
           dispatch(
             updateChatLastMessage({
-              chatToUpdateId: currentChat?._id as string,
+              chatToUpdateId: chatId,
               message: response.data,
             }),
           );
@@ -432,7 +453,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
           console.error(error);
         });
     },
-    [deleteChatMessage, currentChat?._id, dispatch, playMessageSound],
+    [deleteChatMessage, dispatch, playMessageSound],
   );
 
   const processMentionsContent = (message: string, availableUsers: User[]) => {
@@ -475,12 +496,13 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const handleReplyToChatMessage = useCallback(async () => {
-    if (!currentChat?._id || !socket) return;
+    const chat = currentChatRef.current;
+    if (!chat?._id || !socket) return;
 
-    const processedMessage = processMentionsContent(message, currentChat?.participants);
+    const processedMessage = processMentionsContent(message, chat.participants);
 
     const payload = {
-      chatId: currentChat?._id as string,
+      chatId: chat._id,
       messageId: messageToReply,
       data: {
         content: processedMessage.content,
@@ -509,14 +531,13 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
         toast('Failed to send message', { type: 'error' });
       });
   }, [
-    currentChat?._id,
     socket,
     message,
     messageToReply,
     attachmentFiles.files,
-    replyToChatMessage,
     scrollToBottom,
     playMessageSound,
+    sendMessage,
   ]);
 
   const onReactionUpdate = useCallback(
@@ -531,7 +552,17 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const handleRemoveFile = (indexToRemove: number) => {
     if (attachmentFiles?.files) {
+      const fileToRemove = attachmentFiles.files[indexToRemove];
       const updatedFiles = attachmentFiles.files.filter((_, index) => index !== indexToRemove);
+
+      if (fileToRemove && videoThumbnails[fileToRemove.name]) {
+        setVideoThumbnails((prev) => {
+          const next = { ...prev };
+          delete next[fileToRemove.name];
+          return next;
+        });
+      }
+
       setAttachmentFiles({
         ...attachmentFiles,
         files: updatedFiles.length > 0 ? updatedFiles : null,
@@ -549,7 +580,9 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     setMessageToReply('');
   }, []);
 
-  const sendChatMessage = async () => {
+  const sendChatMessage = useCallback(async () => {
+    const currentChat = currentChatRef.current;
+    const currentUser = currentUserRef.current;
     if (!currentChat?._id || !socket) return;
 
     emitStopTyping();
@@ -562,7 +595,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     // Clear input fields immediately for better UX
     const files = attachmentFiles.files;
-    const tempId = `temp-${Date.now()}`;
+    const tempId = 'temp-' + Date.now();
 
     const convertedFiles = await Promise.all(
       (files || [])?.map(async (file) => await fileToBase64(file)),
@@ -630,7 +663,17 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.error('Failed to send:', error);
       toast.error('Failed to send message');
     }
-  };
+  }, [
+    socket,
+    message,
+    attachmentFiles.files,
+    scrollToBottom,
+    playMessageSound,
+    sendMessage,
+    emitStopTyping,
+    dispatch,
+    isOnline,
+  ]);
 
   const value = useMemo(
     () => ({
@@ -661,6 +704,8 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       handleSelectUser,
       onReactionUpdate,
       onUpdateChatLastMessage,
+
+      videoThumbnails,
 
       fileProgress,
       overallProgress,
@@ -724,6 +769,8 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       sendChatMessage,
       filteredMentionUsers,
       selectedUser,
+
+      videoThumbnails,
     ],
   );
 

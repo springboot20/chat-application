@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { ClockIcon } from '@heroicons/react/24/solid';
 import { timeAgo } from '../../../utils';
 import { useAppSelector } from '../../../redux/redux.hooks';
+import { StatusPreview } from '../StatusPreview';
 
 const hasUnviewedStatus = (statusGroup: StatusGroup, currentUserId: string) => {
   return statusGroup?.items?.some(
@@ -32,7 +33,7 @@ interface StatusListItemData {
 }
 
 export const StatusListComponent: React.FC<StatusListProps> = ({ onViewStatus }) => {
-const { user } = useAppSelector((state) => state.auth); 
+  const { user } = useAppSelector((state) => state.auth);
   const currentUserId = user?._id || '';
 
   const { data: feedData, isLoading: isFeedLoading } = useGetStatusFeedQuery(undefined, {
@@ -180,10 +181,12 @@ const OthersStatusRow = ({ statusGroup, currentUserId, onViewStatus }: OthersSta
           </div>
         </div>
 
-        {/* Status preview (optional) */}
-        {/* {latestStatus && (
-          <StatusPreview status={latestStatus} />
-        )} */}
+        {/* Status preview */}
+        {latestStatus && (
+          <div className='flex-shrink-0'>
+            <StatusPreview status={latestStatus} />
+          </div>
+        )}
       </div>
     </motion.div>
   );

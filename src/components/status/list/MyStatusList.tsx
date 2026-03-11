@@ -11,6 +11,7 @@ import { timeAgo } from '../../../utils';
 import { Fragment } from 'react';
 import { useStatusStories } from '../../../hooks/useStatusStories';
 import { useAppSelector } from '../../../redux/redux.hooks';
+import { StatusPreview } from '../StatusPreview';
 
 interface MyStatusRowProps {
   myStatus: StatusGroup | null;
@@ -102,8 +103,10 @@ export const MyStatusListComponent: React.FC<StatusListProps> = ({
                     </div>
                   </div>
 
-                  {/* Tap to view indicator */}
-                  <div className='text-xs text-gray-400'>Tap to view</div>
+                  {/* Status preview */}
+                  <div className='flex-shrink-0'>
+                    <StatusPreview status={myStatus.items[myStatus.items.length - 1]} />
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -180,7 +183,12 @@ export const MyStatusRow = ({ myStatus, onViewStatus }: MyStatusRowProps) => {
           )}
         </div>
 
-        {/* Action indicator */}
+        {/* Status preview */}
+        {hasStatus && (
+          <div className='flex-shrink-0'>
+            <StatusPreview status={myStatus.items[myStatus.items.length - 1]} />
+          </div>
+        )}
         {!hasStatus && <CameraIcon className='text-gray-400' height={20} width={20} />}
       </div>
     </motion.div>
@@ -233,28 +241,7 @@ export const MyStatusListModal: React.FC<MyStatusListModalProps> = ({ myStatus, 
               className='rounded-3xl overflow-hidden border dark:border-gray-600/30 w-full h-[72px] p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex items-center gap-x-2'>
               {/* Preview */}
               <div className='shrink-0'>
-                {status.type === 'text' && status.textContent ? (
-                  <div
-                    className='w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-medium'
-                    style={{ backgroundColor: status.textContent.backgroundColor }}></div>
-                ) : status.type === 'image' && status.mediaContent?.url ? (
-                  <div className='w-12 h-12 rounded-lg overflow-hidden'>
-                    <img
-                      src={status.mediaContent.url}
-                      alt='Status preview'
-                      className='w-full h-full object-cover'
-                    />
-                  </div>
-                ) : status.type === 'video' && status.mediaContent?.url ? (
-                  <div className='w-12 h-12 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center'>
-                    <svg
-                      className='w-6 h-6 text-gray-500 dark:text-gray-400'
-                      fill='currentColor'
-                      viewBox='0 0 20 20'>
-                      <path d='M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z' />
-                    </svg>
-                  </div>
-                ) : null}
+                <StatusPreview status={status} size='md' />
               </div>
 
               {/* Info */}

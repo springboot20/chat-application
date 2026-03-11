@@ -18,6 +18,7 @@ import { classNames } from '../../../utils';
 import CameraViewfinder from '../CameraViewFinder';
 import CaptionInputComponent from '../CaptionInputComponent';
 import { StatusPrivacyDisplay, StatusPrivacySettings } from '../StatusPrivacySettings';
+import { VideoThumbnail as SharedVideoThumbnail } from '../../shared/VideoThumbnail';
 
 const MAX_DURATION = 30;
 
@@ -218,33 +219,12 @@ export default function VideoMediaContent() {
 }
 
 function VideoThumbnail({ file, isActive, onSelect, onRemove }: any) {
-  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const video = document.createElement('video');
-    const fileUrl = URL.createObjectURL(file);
-
-    video.src = fileUrl;
-    video.load();
-    video.currentTime = 1; // Seek to 1 second to get a good preview frame
-    video.muted = true;
-
-    const handleCapture = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      setThumbnail(canvas.toDataURL('image/jpeg'));
-      URL.revokeObjectURL(fileUrl); // Clean up memory
-    };
-
-    video.addEventListener('loadeddata', handleCapture);
-    return () => {
-      video.removeEventListener('loadeddata', handleCapture);
-      URL.revokeObjectURL(fileUrl);
-    };
+    const url = URL.createObjectURL(file);
+    setFileUrl(url);
+    return () => URL.revokeObjectURL(url);
   }, [file]);
 
   return (
@@ -255,16 +235,11 @@ function VideoThumbnail({ file, isActive, onSelect, onRemove }: any) {
         isActive ? 'ring-blue-500 ring-offset-2' : 'ring-transparent opacity-70',
       )}
       onClick={onSelect}>
-      {thumbnail ? (
-        <img src={thumbnail} className='h-full w-full object-cover' alt='Video thumb' />
+      {fileUrl ? (
+        <SharedVideoThumbnail url={fileUrl} className='h-full w-full' showPlayIcon={true} />
       ) : (
         <div className='h-full w-full bg-gray-800 animate-pulse' />
       )}
-
-      {/* Video Indicator Icon */}
-      <div className='absolute inset-0 flex items-center justify-center bg-black/20'>
-        <PlayIcon className='size-5 text-white/80' />
-      </div>
 
       <button
         type='button'
@@ -272,7 +247,7 @@ function VideoThumbnail({ file, isActive, onSelect, onRemove }: any) {
           e.stopPropagation();
           onRemove();
         }}
-        className='absolute top-0.5 right-0.5 p-0.5 bg-black/50 text-white rounded-md hover:bg-red-500'>
+        className='absolute top-0.5 right-0.5 p-0.5 bg-black/50 text-white rounded-md hover:bg-red-500 z-10'>
         <TrashIcon className='size-3' />
       </button>
     </motion.div>

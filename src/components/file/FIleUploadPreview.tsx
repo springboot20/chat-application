@@ -1,6 +1,7 @@
 import { DocumentPreview } from './DocumentPreview';
 import { FileProgressMap } from '../../hooks/useSendMessage';
 import { LinearProgress } from '../Loader';
+import { useMessage } from '../../hooks/useMessage';
 
 interface FileUploadPreviewProps {
   attachmentFiles: File[];
@@ -19,8 +20,7 @@ export const FileUploadPreview = ({
   onCancelUpload,
   overallProgress,
 }: FileUploadPreviewProps) => {
-
-  
+  const { videoThumbnails } = useMessage();
 
   return (
     <div className=''>
@@ -36,6 +36,7 @@ export const FileUploadPreview = ({
               // Each file gets its own 0–100 progress value
               uploadProgress={fileProgress?.get(i)}
               onCancelUpload={onCancelUpload}
+              thumbnailUrl={videoThumbnails[file.name]}
             />
           </div>
         ))}

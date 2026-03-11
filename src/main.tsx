@@ -11,22 +11,25 @@ import store from './app/store.ts';
 import { checkAndClearStorage } from './utils/versionCheck.ts';
 import { StatusProvider } from './context/StatusContext.tsx';
 import { MessageProvider } from './context/MessageContext.tsx';
+import { HelmetProvider } from 'react-helmet-async';
 
 checkAndClearStorage();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <BrowserRouter>
-    <Provider store={store}>
-      <SocketProvider>
-        <MessageProvider>
-          <StatusProvider>
-            <ThemeProvider>
-              <ToastContainer />
-              <App />
-            </ThemeProvider>
-          </StatusProvider>
-        </MessageProvider>
-      </SocketProvider>
-    </Provider>
-  </BrowserRouter>,
+  <HelmetProvider>
+    <BrowserRouter>
+      <Provider store={store}>
+        <SocketProvider>
+          <MessageProvider>
+            <StatusProvider>
+              <ThemeProvider>
+                <ToastContainer />
+                <App />
+              </ThemeProvider>
+            </StatusProvider>
+          </MessageProvider>
+        </SocketProvider>
+      </Provider>
+    </BrowserRouter>
+  </HelmetProvider>,
 );

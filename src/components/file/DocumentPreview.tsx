@@ -6,7 +6,7 @@ import {
   XCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { classNames, formatFileSize, getExtColor } from '../../utils';
+import { classNames, formatFileSize, getExtColor, DownloadTracker } from '../../utils';
 import { Attachment, getAttachmentSrc } from '../../types/chat'; // ← added getAttachmentSrc
 import { VoiceMessagePlayer } from '../voice/VoiceMessagePlayer';
 import { getAudioBlobDuration } from '../../utils/audio';
@@ -25,6 +25,7 @@ interface DocumentPreviewProps {
   variant?: 'square' | 'wide';
   uploadProgress?: number;
   onCancelUpload?: (index: number) => void;
+  thumbnailUrl?: string;
 }
 
 type TransferState = 'idle' | 'uploading' | 'downloading' | 'done' | 'error';
@@ -43,6 +44,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
     variant = 'wide',
     uploadProgress,
     onCancelUpload,
+    thumbnailUrl,
   }) => {
     const [fileImageUrl, setFileImageUrl] = useState<string>('');
     const [fileAudioUrl, setFileAudioUrl] = useState<string>('');
@@ -72,8 +74,15 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
 
     const isImageFromFile = file?.type?.startsWith('image/');
     const isAudioFromFile = file?.type?.startsWith('audio/');
+    const isVideoFromFile = file?.type?.startsWith('video/');
+
+    const isVideoFromAttachment =
+      attachment?.fileType === 'video' ||
+      (!isLocalAttachment && !!attachmentSrc?.match(/\.(mp4|mov|avi|mkv|webm)$/i));
+
     const isAudio = isAudioFromAttachment || isAudioFromFile;
     const isDocument = isDocFromAttachment || isPdfFromAttachment;
+    const isVideo = isVideoFromAttachment || isVideoFromFile;
 
     const isQueued = status === 'queued';
     const isUploading =
@@ -94,8 +103,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
     const extColor = getExtColor(fileExtension);
 
     // ── Unified image src ─────────────────────────────────────────────────────
-    // Priority: attachment base64/url → File object URL (input staging only)
-    const imageSrc = attachmentSrc || fileImageUrl;
+    // Priority: attachment base64/url → thumbnail → File object URL (input staging only)
+    const imageSrc = attachmentSrc || fileImageUrl || thumbnailUrl;
 
     // ── Unified audio src + duration ──────────────────────────────────────────
     // Priority: attachment base64/url → File object URL
@@ -130,6 +139,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
         e.stopPropagation();
         // CHANGE 4: local attachments can't be downloaded — not on server yet
         if (!attachmentSrc || isLocalAttachment) return;
+
+        if (DownloadTracker.isDownloaded(attachmentSrc)) {
+          window.open(attachmentSrc, '_blank');
+          return;
+        }
 
         if (transferState === 'downloading') {
           abortRef.current?.abort();
@@ -178,6 +192,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
           link.click();
           document.body.removeChild(link);
           setTimeout(() => URL.revokeObjectURL(url), 100);
+          DownloadTracker.markAsDownloaded(attachmentSrc);
           setTransferState('done');
           setTimeout(() => {
             setTransferState('idle');
@@ -233,10 +248,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
         );
       }
 
-      // ── Image ──────────────────────────────────────────────────────────────
+      // ── Image / Video (Thumbnail) ──────────────────────────────────────────
       // Covers: server URL, base64 data URL (offline queued), raw File object URL
       // imageSrc = attachmentSrc (base64 or https) || fileImageUrl (object URL)
-      if ((isImageFromAttachment || isImageFromFile) && imageSrc) {
+      if ((isImageFromAttachment || isImageFromFile || isVideo) && imageSrc) {
         return (
           <div className='relative w-full h-full'>
             <img
@@ -248,6 +263,19 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
                 e.currentTarget.style.display = 'none';
               }}
             />
+            {isVideo && (
+              <div className='absolute inset-0 flex items-center justify-center bg-black/20'>
+                <div className='p-1.5 rounded-full bg-black/40 text-white'>
+                  <svg
+                    className='h-6 w-6'
+                    fill='currentColor'
+                    viewBox='0 0 24 24'
+                    xmlns='http://www.w3.org/2000/svg'>
+                    <path d='M8 5v14l11-7z' />
+                  </svg>
+                </div>
+              </div>
+            )}
             {isUploading && (
               <div
                 className={classNames(
