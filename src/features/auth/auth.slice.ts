@@ -64,11 +64,12 @@ export const AuthApiSlice = ApiService.injectEndpoints({
         try {
           const { data } = await queryFulfilled;
 
-          // Update the getCurrentUser cache data with the new avatar
           dispatch(
             AuthApiSlice.util.updateQueryData('getCurrentUser', undefined, (draft) => {
+              // Backend returns: new ApiResponse(200, 'user fetched', { user })
+              // So RTK cache shape is: { data: { user: { ... } }, statusCode, message, success }
               if (draft?.data?.user) {
-                draft.data.user.avatar = data.data;
+                draft.data.user.avatar = data.data.avatar;
               }
             }),
           );
@@ -76,7 +77,6 @@ export const AuthApiSlice = ApiService.injectEndpoints({
           console.error('Error updating avatar cache:', error);
         }
       },
-
       invalidatesTags: ['Auth'],
     }),
 
@@ -96,8 +96,10 @@ export const AuthApiSlice = ApiService.injectEndpoints({
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
+
           dispatch(
             AuthApiSlice.util.updateQueryData('getCurrentUser', undefined, (draft) => {
+              // Same shape — user is nested at draft.data.user
               if (draft?.data?.user) {
                 Object.assign(draft.data.user, data.data);
               }
