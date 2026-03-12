@@ -15,7 +15,9 @@ export const useMessageQueue = () => {
   const processQueue = useCallback(async () => {
     if (!isOnline) return;
 
-    const queuedMessages = await messageQueue.getAllForChatWithFiles(currentChat?._id!);
+    const queuedMessages = await messageQueue.getAllForChatWithFiles(currentChat?._id);
+
+    console.log({ queuedMessages });
 
     if (queuedMessages.length === 0) return;
 
@@ -48,7 +50,7 @@ export const useMessageQueue = () => {
     } else {
       toast.warning(`${remaining.length} message(s) failed to send. Will retry.`);
     }
-  }, [isOnline, sendMessage]);
+  }, [currentChat?._id, isOnline, sendMessage]);
 
   // Auto-process queue when coming online
   useEffect(() => {

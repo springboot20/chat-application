@@ -4,6 +4,7 @@ import { classNames, formatMessageTime, getDynamicUserColor } from '../../utils'
 import { DocumentPreview } from '../file/DocumentPreview';
 import { ArrowLeftIcon, ArrowRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Attachment, ChatMessageInterface } from '../../types/chat';
+import { useMessage } from '../../hooks/useMessage';
 
 type MessageFiles = Attachment[];
 
@@ -30,6 +31,8 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   currentMessageImageIndex,
   onAfterLeave,
 }) => {
+  const { fileProgress } = useMessage();
+
   return (
     <Transition.Root show={open} as={Fragment} afterLeave={onAfterLeave}>
       <Dialog as='div' className='relative z-50' onClose={handleCloseModal}>
@@ -120,6 +123,9 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                     attachment={messageFiles[currentMessageImageIndex]}
                     index={currentMessageImageIndex}
                     isModal={false}
+                    showOverlay={fileProgress?.get(currentMessageImageIndex) ? true : false}
+                    uploadProgress={fileProgress?.get(currentMessageImageIndex)}
+                    status={message.status}
                   />
                 </div>
               </div>
@@ -141,7 +147,14 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                         : 'border-transparent opacity-50 hover:opacity-80 scale-100',
                     )}
                     aria-label={`View attachment ${index + 1}`}>
-                    <DocumentPreview attachment={file} index={index} isModal={false} />
+                    <DocumentPreview
+                      attachment={file}
+                      index={index}
+                      isModal={false}
+                      showOverlay={fileProgress?.get(index) ? true : false}
+                      uploadProgress={fileProgress?.get(index)}
+                      status={message.status}
+                    />
                     {index === currentMessageImageIndex && (
                       <div className='absolute inset-0 bg-white/10 pointer-events-none' />
                     )}

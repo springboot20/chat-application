@@ -140,12 +140,12 @@ export const ChatRoom: React.FC = () => {
     }
 
     // Join the chat room
-    socket.emit(JOIN_CHAT_EVENT, { chatId: currentChat._id });
+    socket.emit(JOIN_CHAT_EVENT, { chatId: currentChat?._id });
 
     return () => {
       socket.emit(LEAVE_CHAT_EVENT, { chatId: currentChat._id });
     };
-  }, [currentChat?._id, socket, user?._id, checkUsersOnlineStatus]);
+  }, [currentChat?._id, socket, user?._id, checkUsersOnlineStatus, currentChat?.participants]);
 
   useEffect(() => {
     if (currentChat?._id) {

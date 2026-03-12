@@ -202,7 +202,7 @@ export const PollingMessageModal: React.FC<{
                   );
                   try {
                     if (!hasInternet) {
-                      messageQueue.add({
+                      await messageQueue.add({
                         chatId: currentChat._id,
                         content: '',
                         attachments: [],

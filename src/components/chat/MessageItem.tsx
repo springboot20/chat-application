@@ -179,7 +179,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
       damping: 30,
     });
     setIsDragging(false);
-  }, [message._id, handleSetOpenReply, x, isOwnedMessage, swipeThreshold]);
+  }, [x, message.isDeleted, message._id, handleSetOpenReply]);
 
   const calculateMenuPosition = useCallback(
     (clickX: number, clickY: number) => {

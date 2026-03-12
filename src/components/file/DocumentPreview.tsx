@@ -184,16 +184,21 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
           const blob = new Blob(chunks as any);
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
+
           link.href = url;
           link.download = fileName;
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
+
           document.body.appendChild(link);
           link.click();
+
           document.body.removeChild(link);
           setTimeout(() => URL.revokeObjectURL(url), 100);
           DownloadTracker.markAsDownloaded(attachmentSrc);
+
           setTransferState('done');
+
           setTimeout(() => {
             setTransferState('idle');
             setDownloadProgress(0);
@@ -279,7 +284,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
             {isUploading && (
               <div
                 className={classNames(
-                  'absolute z-50 inset-0 bg-black/40 flex flex-col items-center justify-center gap-2 rounded-lg',
+                  'absolute z-20 inset-0 bg-black/40 flex flex-col items-center justify-center gap-2 ',
                   onClick ? 'cursor-pointer' : '',
                 )}
                 onClick={onClick}>
@@ -344,7 +349,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
         return (
           <div
             className={classNames(
-              'flex items-center gap-3 p-2.5 rounded-lg w-full min-w-[240px]',
+              'flex items-center gap-3 p-2.5  rounded-lg w-full min-w-[240px]',
               isOwnedMessage ? 'bg-[#d9fdd3] dark:bg-[#005c4b]' : 'bg-white dark:bg-[#202c33]',
               'border dark:border-white/5 border-black/5 shadow-sm',
             )}>
@@ -508,7 +513,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
         )}
 
         {showOverlay && !(isAudio || isDocument) && (
-          <div className='absolute z-10 inset-0 flex justify-center items-center w-full gap-2 h-full bg-black/60 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150'>
+          <div
+            onClick={onClick}
+            className='absolute z-10 inset-0 flex justify-center items-center w-full gap-2 h-full bg-black/60 group-hover:opacity-100 opacity-0 transition-opacity ease-in-out duration-150'>
             <button
               type='button'
               onClick={onClick}

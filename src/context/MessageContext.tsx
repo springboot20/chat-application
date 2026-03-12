@@ -312,7 +312,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const [openEmoji, setOpenEmoji] = useState<boolean>(false);
 
-  const handleOpenAndCloseEmoji = () => setOpenEmoji(!openEmoji);
+  const handleOpenAndCloseEmoji = useCallback(() => setOpenEmoji(!openEmoji), [openEmoji]);
 
   const insertEmoji = useCallback(
     (emojiData: EmojiClickData) => {
@@ -362,10 +362,10 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     setOpenEmoji(false);
   }, []);
 
-  const handleOnMessageChange = (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleOnMessageChange = useCallback((evt: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = evt.target.value;
     setMessage(value);
-  };
+  }, []);
 
   const getAllMessages = useCallback(async () => {
     // Early return checks
@@ -387,12 +387,18 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     dispatch(setUnreadMessages({ chatId }));
   }, [dispatch, socket]);
 
-  const onUpdateChatLastMessage = (updatedChat: ChatListItemInterface) => {
-    // Update the last message of the chat
-    dispatch(
-      updateChatLastMessage({ chatToUpdateId: updatedChat._id, message: updatedChat.lastMessage }),
-    );
-  };
+  const onUpdateChatLastMessage = useCallback(
+    (updatedChat: ChatListItemInterface) => {
+      // Update the last message of the chat
+      dispatch(
+        updateChatLastMessage({
+          chatToUpdateId: updatedChat._id,
+          message: updatedChat.lastMessage,
+        }),
+      );
+    },
+    [dispatch],
+  );
 
   const scrollToBottom = useCallback(() => {
     if (bottomRef.current) {
@@ -404,31 +410,37 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, []);
 
-  const onMessageReceive = (data: any) => {
-    dispatch(onMessageReceived({ data }));
-    dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
+  const onMessageReceive = useCallback(
+    (data: any) => {
+      dispatch(onMessageReceived({ data }));
+      dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
 
-    const isCurrentChat = data.chat === currentChat?._id;
-    const isFromCurrentUser = data.sender._id === currentUser?._id;
+      const isCurrentChat = data.chat === currentChat?._id;
+      const isFromCurrentUser = data.sender._id === currentUser?._id;
 
-    // ✅ SMART SCROLL:
-    // Only scroll to bottom if the user is already near the bottom
-    // OR if the user themselves sent the message.
-    if (isCurrentChat && isFromCurrentUser) {
-      // Wrap in setTimeout to ensure the DOM has updated with the new message height
-      setTimeout(() => {
-        scrollToBottom();
-      }, 0);
-    }
+      // ✅ SMART SCROLL:
+      // Only scroll to bottom if the user is already near the bottom
+      // OR if the user themselves sent the message.
+      if (isCurrentChat && isFromCurrentUser) {
+        // Wrap in setTimeout to ensure the DOM has updated with the new message height
+        setTimeout(() => {
+          scrollToBottom();
+        }, 0);
+      }
 
-    if (isCurrentChat && !isFromCurrentUser) {
-      playMessageSound();
-    }
-  };
+      if (isCurrentChat && !isFromCurrentUser) {
+        playMessageSound();
+      }
+    },
+    [currentChat?._id, currentUser?._id, dispatch, playMessageSound, scrollToBottom],
+  );
 
-  const onChatMessageDeleted = (data: any) => {
-    dispatch(onChatMessageDelete({ messageId: data._id, message: data }));
-  };
+  const onChatMessageDeleted = useCallback(
+    (data: any) => {
+      dispatch(onChatMessageDelete({ messageId: data._id, message: data }));
+    },
+    [dispatch],
+  );
 
   const handleDeleteChatMessage = useCallback(
     async (messageId: string) => {
@@ -456,7 +468,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     [deleteChatMessage, dispatch, playMessageSound],
   );
 
-  const processMentionsContent = (message: string, availableUsers: User[]) => {
+  const processMentionsContent = useCallback((message: string, availableUsers: User[]) => {
     // regex updated to handle @ in usernames
     // it looks for @ followed by characters until it hits a space or end of string
     // then it verifies if that "word" matches a known username
@@ -493,7 +505,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       content: message,
       mentions: mentions,
     };
-  };
+  }, []);
 
   const handleReplyToChatMessage = useCallback(async () => {
     const chat = currentChatRef.current;
@@ -532,12 +544,13 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       });
   }, [
     socket,
+    processMentionsContent,
     message,
     messageToReply,
     attachmentFiles.files,
+    sendMessage,
     scrollToBottom,
     playMessageSound,
-    sendMessage,
   ]);
 
   const onReactionUpdate = useCallback(
@@ -550,25 +563,28 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     [dispatch],
   );
 
-  const handleRemoveFile = (indexToRemove: number) => {
-    if (attachmentFiles?.files) {
-      const fileToRemove = attachmentFiles.files[indexToRemove];
-      const updatedFiles = attachmentFiles.files.filter((_, index) => index !== indexToRemove);
+  const handleRemoveFile = useCallback(
+    (indexToRemove: number) => {
+      if (attachmentFiles?.files) {
+        const fileToRemove = attachmentFiles.files[indexToRemove];
+        const updatedFiles = attachmentFiles.files.filter((_, index) => index !== indexToRemove);
 
-      if (fileToRemove && videoThumbnails[fileToRemove.name]) {
-        setVideoThumbnails((prev) => {
-          const next = { ...prev };
-          delete next[fileToRemove.name];
-          return next;
+        if (fileToRemove && videoThumbnails[fileToRemove.name]) {
+          setVideoThumbnails((prev) => {
+            const next = { ...prev };
+            delete next[fileToRemove.name];
+            return next;
+          });
+        }
+
+        setAttachmentFiles({
+          ...attachmentFiles,
+          files: updatedFiles.length > 0 ? updatedFiles : null,
         });
       }
-
-      setAttachmentFiles({
-        ...attachmentFiles,
-        files: updatedFiles.length > 0 ? updatedFiles : null,
-      });
-    }
-  };
+    },
+    [attachmentFiles, videoThumbnails],
+  );
 
   const handleSetOpenReply = useCallback((messageId: string) => {
     setMessageToReply(messageId);
@@ -619,7 +635,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       dispatch(onMessageReceived({ data: tempMessage as unknown as ChatMessageInterface }));
 
       if (!isOnline) {
-        messageQueue.add({
+        await messageQueue.add({
           chatId: currentChat._id,
           content: processedMessage.content,
           attachments: files || undefined,
@@ -665,14 +681,16 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [
     socket,
+    emitStopTyping,
+    typingTimeoutRef,
+    processMentionsContent,
     message,
     attachmentFiles.files,
-    scrollToBottom,
-    playMessageSound,
-    sendMessage,
-    emitStopTyping,
     dispatch,
     isOnline,
+    sendMessage,
+    playMessageSound,
+    scrollToBottom,
   ]);
 
   const value = useMemo(

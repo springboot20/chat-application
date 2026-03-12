@@ -111,8 +111,8 @@ const MessageInput = ({
   const showVoiceRecorder = isActivelyRecording || hasReviewableAudio;
   const showTextInput = !isActivelyRecording && !hasReviewableAudio && !isDraggingMic;
 
-  const hasTextContent = message.trim().length > 0;
-  const hasFiles = attachmentFiles.files && attachmentFiles.files.length > 0;
+  const hasTextContent = message?.trim()?.length > 0;
+  const hasFiles = attachmentFiles?.files && attachmentFiles?.files?.length > 0;
 
   // ✅ FIXED: Keep mic button visible during drag gesture
   const shouldShowMicButton =
@@ -161,7 +161,7 @@ const MessageInput = ({
       resetLock();
 
       if (!isOnline) {
-        messageQueue.add({
+        await messageQueue.add({
           chatId: currentChat._id,
           content: '',
           attachments: [voiceFile],
@@ -281,8 +281,8 @@ const MessageInput = ({
 
       <div
         className={classNames(
-          'fixed bottom-0 left-0 lg:left-[30rem] right-0 bg-white dark:bg-black z-10 border-t dark:border-white/10 transition-all duration-200',
-          (attachmentFiles.files && attachmentFiles?.files?.length) || showReply
+          'fixed bottom-0 left-0 lg:left-[30rem] right-0 bg-white dark:bg-black z-30 border-t dark:border-white/10 transition-all duration-200',
+          (attachmentFiles?.files && attachmentFiles?.files?.length) || showReply
             ? 'h-auto'
             : 'min-h-16',
         )}>

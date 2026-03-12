@@ -56,11 +56,28 @@ export const fileToBase64 = (file: File): Promise<Attachment> =>
   });
 
 export const base64ToFile = ({ localPath, fileName, fileType }: Attachment): File => {
-  const [, data] = localPath?.split(',') || [];
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new File([bytes], String(fileName), { type: fileType });
+  console.log(localPath)
+  if (!localPath) throw new Error('Source path is empty');
+
+  // 1. Remove the Data URL prefix (if it exists)
+  // This splits at the comma and takes everything after it.
+  const base64String = localPath?.includes(',') ? localPath.split(',')[1] : localPath;
+
+  // 2. Clean the string
+  // atob fails if there are newlines or spaces (common in database storage)
+  const cleanBase64 = base64String?.trim()?.replace(/\s/g, '');
+
+  try {
+    const binary = atob(cleanBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new File([bytes], String(fileName), { type: fileType });
+  } catch (e) {
+    console.error('Decoding failed for file:', fileName);
+    throw e;
+  }
 };
 
 const STORE = DBStorageKeys.Queued;
