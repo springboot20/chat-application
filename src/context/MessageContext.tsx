@@ -412,6 +412,8 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const onMessageReceive = useCallback(
     (data: any) => {
+      console.log('Received message:', data);
+      console.log('Received message attachments:', data.attachments);
       dispatch(onMessageReceived({ data }));
       dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
 
@@ -661,6 +663,9 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
           mentions: processedMessage.mentions,
         },
       });
+
+      console.log('Server response:', response);
+      console.log('Server response attachments:', response.data?.attachments);
 
       playMessageSound();
       scrollToBottom();
