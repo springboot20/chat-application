@@ -104,11 +104,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
 
     // ── Unified image src ─────────────────────────────────────────────────────
     // Priority: attachment base64/url → thumbnail → File object URL (input staging only)
-    const imageSrc = attachmentSrc || fileImageUrl || thumbnailUrl;
+    const imageSrc = fileImageUrl || attachmentSrc || thumbnailUrl;
 
     // ── Unified audio src + duration ──────────────────────────────────────────
     // Priority: attachment base64/url → File object URL
-    const audioSrc = attachmentSrc || fileAudioUrl;
+    const audioSrc = fileAudioUrl || attachmentSrc;
     const resolvedAudioDuration = attachment?.duration || audioDuration;
 
     // ── Object URLs — only needed when a raw File is passed with no attachment ─
