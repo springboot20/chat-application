@@ -241,18 +241,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
     );
 
     const renderContent = () => {
-      // Debug logging
-      if (attachment && isImageFromAttachment) {
-        console.log('Rendering attachment:', {
-          attachment,
-          attachmentSrc,
-          imageSrc,
-          isLocal: attachment.isLocal,
-          url: attachment.url,
-          localPath: attachment.localPath,
-        });
-      }
-
       // ── Voice ─────────────────────────────────────────────────────────────
       // Covers: server URL, base64 data URL (offline queued), raw File object URL
       if ((isAudioFromAttachment || isAudioFromFile) && audioSrc) {
@@ -283,7 +271,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
                 errorDiv.className =
                   'absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500 text-xs p-2 text-center';
                 errorDiv.textContent = 'Failed to load image';
-                e.currentTarget.parentElement?.appendChild(errorDiv)
+                e.currentTarget.parentElement?.appendChild(errorDiv);
               }}
             />
             {isVideo && (
