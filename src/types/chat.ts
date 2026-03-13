@@ -87,17 +87,5 @@ export interface ChatListItemInterface {
 
 export function getAttachmentSrc(attachment: Attachment): string {
   if (attachment.isLocal && attachment.localPath) return attachment.localPath;
-
-  // If URL is already absolute, return as is
-  if (attachment.url.startsWith('http://') || attachment.url.startsWith('https://')) {
-    return attachment.url;
-  }
-
-  // For relative URLs, prefix with backend URL
-  const baseUrl =
-    import.meta.env.MODE === 'production'
-      ? import.meta.env.VITE_CHAT_APP_BACKEND_URL
-      : import.meta.env.VITE_CHAT_APP_BACKEND_LOCAL_URL;
-
-  return `${baseUrl.replace('/api/v1', '')}${attachment.url}`;
+  return attachment.url;
 }

@@ -277,7 +277,14 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = React.memo(
               alt={`Attachment ${fileName}`}
               onError={(e) => {
                 console.error('Image failed to load:', imageSrc, attachment);
+                console.error('Image failed to load:', imageSrc, attachment);
                 e.currentTarget.style.display = 'none';
+                // Add error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className =
+                  'absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500 text-xs p-2 text-center';
+                errorDiv.textContent = 'Failed to load image';
+                e.currentTarget.parentElement?.appendChild(errorDiv);
                 // Add error message
                 const errorDiv = document.createElement('div');
                 errorDiv.className =
