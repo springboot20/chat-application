@@ -70,9 +70,19 @@ export const Register = () => {
     }
 
     try {
-      const response = await register(formData).unwrap();
-      toast(response?.data?.message, { type: 'success' });
-      await Promise.resolve(setTimeout(() => navigate('/login'), 1200));
+      const { message, data } = await register(formData).unwrap();
+
+      const { url } = data;
+
+      toast(message, { type: 'success' });
+
+      navigate('/auth/email-sent', {
+        state: {
+          url,
+          email: value.email,
+        },
+        replace: true,
+      });
     } catch (error: any) {
       toast(error?.data?.message, { type: 'error' });
     }
@@ -99,9 +109,7 @@ export const Register = () => {
     e.preventDefault();
     setIsDropping(true);
   };
-
-  console.log(value);
-
+  
   return (
     <div className='flex flex-col justify-center items-center min-h-screen p-3'>
       <div className='mx-auto w-full max-w-md'>

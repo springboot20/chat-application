@@ -18,7 +18,7 @@ import {
   EnvelopeIcon,
 } from '@heroicons/react/24/outline';
 import { Dialog } from '@headlessui/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppSelector } from '../../redux/redux.hooks';
 import { UserProfileModal } from '../../components/modal/UserProfileModal';
 import { classNames } from '../../utils';
@@ -87,6 +87,16 @@ export const Settings: React.FC<{ open: boolean; onClose: () => void; onLogout?:
   const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
   const [updateAccount, { isLoading: isUpdatingAccount }] = useUpdateAccountMutation();
   const [resendVerification, { isLoading: isResending }] = useResendEmailVerificationMutation();
+
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const togglePasswordVisibility = (field: string) => {
     setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
@@ -404,8 +414,10 @@ export const Settings: React.FC<{ open: boolean; onClose: () => void; onLogout?:
                                     {!currentUser?.isEmailVerified && (
                                       <button
                                         onClick={async () => {
+                                          if (cooldown > 0) return;
                                           try {
                                             const res = await resendVerification().unwrap();
+                                            setCooldown(60);
                                             toast.success(
                                               res.message || 'Verification email sent!',
                                             );
@@ -415,9 +427,9 @@ export const Settings: React.FC<{ open: boolean; onClose: () => void; onLogout?:
                                             );
                                           }
                                         }}
-                                        disabled={isResending}
+                                        disabled={isResending || cooldown > 0}
                                         className='text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors disabled:opacity-50'>
-                                        {isResending ? 'Sending...' : 'Resend'}
+                                        {isResending ? 'Sending...' : cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend'}
                                       </button>
                                     )}
                                   </div>

@@ -114,7 +114,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ open, onClose }) => 
                         type='button'
                         onClick={() => setActiveTab(tab.id)}
                         className={classNames(
-                          'flex items-center gap-4 px-6 py-4 w-full transition-all group',
+                          'flex items-center justify-center lg:justify-start gap-4 px-6 py-4 w-full transition-all group',
                           'min-w-[140px] md:min-w-0',
                           isActive
                             ? 'bg-violet-50 dark:bg-gray-800 border-b-2 md:border-b-0 md:border-l-4 border-violet-600'
@@ -134,7 +134,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ open, onClose }) => 
                             )}
                           />
                         </div>
-                        <div className='text-left flex-1'>
+                        <div className='text-left flex-1  hidden lg:block'>
                           <p
                             className={classNames(
                               'text-sm font-semibold',
@@ -144,7 +144,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ open, onClose }) => 
                             )}>
                             {tab.label}
                           </p>
-                          <p className='text-xs text-gray-500 dark:text-gray-400 hidden md:block'>
+                          <p className='text-xs text-gray-500 dark:text-gray-400'>
                             {tab.description}
                           </p>
                         </div>
@@ -173,6 +173,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({ open, onClose }) => 
 };
 
 const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setSearchQuery] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -345,6 +346,7 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
 };
 
 const NewGroupList = ({ onClose }: { onClose: () => void }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -682,15 +684,15 @@ const DiscoverUsersList = () => {
                     key={cat.value}
                     onClick={() => setSelectedCategory(cat.value)}
                     className={classNames(
-                      'flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all',
+                      'flex flex-col items-center justify-center p-4 rounded-xl border-[1px] transition-all',
                       selectedCategory === cat.value
-                        ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 ring-2 ring-violet-500'
+                        ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 ring-1 ring-violet-500'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
                     )}>
                     <span className='text-3xl mb-2'>{cat.icon}</span>
                     <span
                       className={classNames(
-                        'text-sm font-medium',
+                        'text-sm font-medium font-nunito',
                         selectedCategory === cat.value
                           ? 'text-gray-900 dark:text-white'
                           : 'text-gray-600 dark:text-gray-400',

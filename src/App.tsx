@@ -12,6 +12,8 @@ import { hydrateChatState } from './features/chats/chat.reducer';
 import { ChatLayout } from './layouts/ChatLayout';
 import { ChatRoom } from './pages/Chat/ChatRoom';
 import { ChatIndex } from './pages/Chat/ChatIndex';
+import { EmailSentMessage } from './pages/email/EmailSent';
+import { EmailVerification } from './pages/email/EmailVerification';
 
 function App() {
   const dispatch = useDispatch();
@@ -55,11 +57,13 @@ function App() {
       </Route>
 
       {/* --- PUBLIC GROUP --- */}
-      <Route element={<PublicRoute />}>
-        <Route path='/login' element={<Login />} />
-        <Route path='/register' element={<Register />} />
-        <Route path='/forgot' element={<Forgot />} />
-        <Route path='/verify-otp' element={<OtpForm initialExpiresIn={60} />} />
+      <Route path='/auth' element={<PublicRoute />}>
+        <Route path='/auth/login' element={<Login />} />
+        <Route path='/auth/register' element={<Register />} />
+        <Route path='/auth/forgot' element={<Forgot />} />
+        <Route path='/auth/email-sent' element={<EmailSentMessage />} />
+        <Route path='/auth/verify-email' element={<EmailVerification />} />
+        <Route path='/auth/verify-otp' element={<OtpForm initialExpiresIn={60} />} />
       </Route>
 
       {/* 404 Catch-all */}

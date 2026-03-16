@@ -32,8 +32,8 @@ export const Navigation: React.FC<NavigationProps> = ({
           <div
             className={classNames(
               'flex-shrink-0 border-r dark:border-gray-600/30 lg:w-[30rem]',
-              currentChat ? 'hidden lg:block' : 'w-full lg:w-[30rem]', // Hide list on mobile when chatting
-              'lg:block lg:w-[30rem]',
+              currentChat ? 'hidden lg:block' : '', // Hide list on mobile when chatting
+              'lg:block',
             )}>
             <MessageTabComponent open={open} close={close} />
           </div>

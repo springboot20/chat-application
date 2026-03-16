@@ -54,12 +54,29 @@ export const AuthApiSlice = ApiService.injectEndpoints({
       providesTags: ['Auth'],
     }),
 
+    verifyEmail: builder.mutation<Response, { token: string; userId: string }>({
+      query: ({ token, userId }) => {
+        const params = new URLSearchParams({
+          token,
+          userId,
+        });
+
+        const queryString = params.toString();
+
+        return {
+          url: `/chat-app/auth/users/verify-email?${queryString}`,
+          method: 'POST',
+        };
+      },
+    }),
+
     uploadAvatar: builder.mutation<Response, FormData>({
       query: (data) => ({
         url: '/chat-app/auth/users/upload-avatar',
         body: data,
         method: 'POST',
       }),
+
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
@@ -83,6 +100,22 @@ export const AuthApiSlice = ApiService.injectEndpoints({
     resendEmailVerification: builder.mutation<Response, void>({
       query: () => ({
         url: '/chat-app/auth/users/resend-email-verification',
+        method: 'POST',
+      }),
+    }),
+
+    forgotPassword: builder.mutation<Response, { email: string }>({
+      query: ({ email }) => ({
+        url: '/chat-app/auth/users/forgot-password',
+        body: { email },
+        method: 'POST',
+      }),
+    }),
+
+    resendVerificationForNewUser: builder.mutation<Response, { email: string }>({
+      query: ({ email }) => ({
+        url: '/chat-app/auth/users/send-email',
+        body: { email },
         method: 'POST',
       }),
     }),
@@ -130,4 +163,7 @@ export const {
   useChangePasswordMutation,
   useResendEmailVerificationMutation,
   useUpdateAccountMutation,
+  useForgotPasswordMutation,
+  useVerifyEmailMutation,
+  useResendVerificationForNewUserMutation
 } = AuthApiSlice;

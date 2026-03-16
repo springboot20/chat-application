@@ -5,7 +5,7 @@ export const ChatIndex: React.FC = () => {
   return (
     <div
       className={classNames(
-        'w-full h-full flex flex-col justify-center items-center dark:text-white bg-white dark:bg-black p-10 text-center',
+        'h-full flex flex-col justify-center items-center dark:text-white bg-white dark:bg-black p-10 text-center',
       )}>
       <div className='max-w-md space-y-4'>
         <h2 className='text-3xl font-bold text-gray-800 dark:text-white'>Welcome to Chat-App</h2>

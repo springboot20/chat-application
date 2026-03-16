@@ -31,8 +31,18 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
   const token = state.auth?.tokens?.accessToken;
   const url = typeof args === 'string' ? args : args.url;
 
+  const includedUrl = [
+    '/login',
+    '/register',
+    '/refresh',
+    '/verify-email',
+    '/send-email',
+    '/forgot-password',
+    '/reset-password',
+  ];
+
   // List of public endpoints that don't need a token
-  const isPublicAction = url.includes('/login') || url.includes('/register');
+  const isPublicAction = includedUrl.some((i) => url.includes(i));
 
   if (!token && !isPublicAction) {
     return { error: { status: 401, data: 'No token available' } };

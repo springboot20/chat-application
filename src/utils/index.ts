@@ -337,9 +337,11 @@ export const getMessageObjectMetaData = (chat: ChatListItemInterface, user: User
       const type = attachmentFileType;
       attachmentText = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Attachment';
     } else {
-      attachmentText = `${lastMessage.attachments.length} Attachment${
-        lastMessage.attachments.length > 1 ? 's' : ''
-      }`;
+      const attachmentTextTag = lastMessage.attachments
+        .map(({ fileType }) => fileType)
+        .find((p) => p === attachmentFileType);
+
+      attachmentText = `${lastMessage.attachments.length} ${attachmentTextTag === 'image' ? 'photo' : ''}${lastMessage.attachments.length > 1 ? 's' : ''}`;
     }
   }
 

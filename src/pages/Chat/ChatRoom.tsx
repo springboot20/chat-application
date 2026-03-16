@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, Fragment } from 'react';
 import { ArrowLeftIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import { classNames } from '../../utils';
 import { useNavigate } from 'react-router-dom';
@@ -164,7 +164,7 @@ export const ChatRoom: React.FC = () => {
   const chatInfo = processChat();
 
   return (
-    <div className='flex flex-col h-full overflow-hidden'>
+    <Fragment>
       <GroupChatInfo
         open={openGroupInfo}
         currentChat={currentChat}
@@ -288,6 +288,6 @@ export const ChatRoom: React.FC = () => {
           currentChat={currentChat}
         />
       </div>
-    </div>
+    </Fragment>
   );
 };

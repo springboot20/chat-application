@@ -7,5 +7,5 @@ export const PrivateRoute = () => {
   const location = useLocation();
 
   // state={{ from: location }} allows you to redirect them back after they log in
-  return isAuthenticated ? <Outlet /> : <Navigate to='/login' state={{ from: location }} replace />;
+  return isAuthenticated ? <Outlet /> : <Navigate to='/auth/login' state={{ from: location }} replace />;
 };

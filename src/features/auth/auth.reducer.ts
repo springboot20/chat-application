@@ -83,13 +83,6 @@ const AuthSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    /**
-     * Register builder casing
-     */
-    builder.addMatcher(AuthApiSlice.endpoints.register.matchFulfilled, (state) => {
-      updateAuthState(state, { tokens: null!, user: null, isAuthenticated: false });
-    });
-
     builder.addMatcher(
       AuthApiSlice.endpoints.getCurrentUser.matchFulfilled,
       (state, { payload }) => {

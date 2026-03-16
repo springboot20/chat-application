@@ -107,7 +107,7 @@ export const Login = () => {
               </div>
               <span className='text-sm font-medium text-gray-700 dark:text-white'>Remember me</span>
             </div>
-            <Link to={'/forgot'} className='text-sm text-indigo-600 font-medium'>
+            <Link to='/auth/forgot' className='text-sm text-indigo-600 font-medium'>
               forgot password?
             </Link>
           </div>
@@ -131,7 +131,7 @@ export const Login = () => {
       <div className='mx-auto mt-3'>
         <p className='text-center text-sm font-normal dark:text-white'>
           Don't have an account?{' '}
-          <Link to='/register' className='text-[#4632A8]'>
+          <Link to='/auth/register' className='text-[#4632A8]'>
             SignUp
           </Link>
         </p>

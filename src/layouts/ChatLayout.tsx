@@ -183,7 +183,7 @@ export const ChatLayout: React.FC = () => {
     } catch (error) {
       toast.error('Local session cleared.');
     } finally {
-      navigate('/login');
+      navigate('/auth/login');
     }
   };
 
