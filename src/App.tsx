@@ -24,7 +24,6 @@ function App() {
         const unreadEntry = await indexDBStorage.get(DBStorageKeys.UnreadMessages, 'all_unread');
         const usersEntry = await indexDBStorage.get(DBStorageKeys.Users, 'all_users');
 
-        console.log({ chatsEntry, messagesEntry, unreadEntry, usersEntry });
         dispatch(
           hydrateChatState({
             chats: (chatsEntry as any)?.data || [],

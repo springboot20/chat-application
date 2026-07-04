@@ -56,7 +56,6 @@ export const fileToBase64 = (file: File): Promise<Attachment> =>
   });
 
 export const base64ToFile = ({ localPath, fileName, fileType }: Attachment): File => {
-  console.log(localPath)
   if (!localPath) throw new Error('Source path is empty');
 
   // 1. Remove the Data URL prefix (if it exists)
@@ -101,7 +100,6 @@ class MessageQueue {
   private async loadFromDB() {
     try {
       this.queue = await this.idb.getAll<QueuedMessage>(STORE);
-      console.log(`📦 Loaded ${this.queue.length} queued messages from IndexedDB`);
     } catch (err) {
       console.error('Failed to load queued messages:', err);
       this.queue = [];
@@ -138,7 +136,6 @@ class MessageQueue {
     await this.idb.set<QueuedMessage>(STORE, queued);
     this.queue.push(queued);
 
-    console.log(`📥 Message queued (offline): ${queued.id}`);
     return queued.id;
   }
 
@@ -174,14 +171,12 @@ class MessageQueue {
     await this.ensureReady();
     await this.idb.remove(STORE, id);
     this.queue = this.queue.filter((m) => m.id !== id);
-    console.log(`✅ Message removed from queue: ${id}`);
   }
 
   async clear(): Promise<void> {
     await this.ensureReady();
     await this.idb.clear(STORE);
     this.queue = [];
-    console.log('🗑️ Message queue cleared');
   }
 
   async clearForChat(chatId: string): Promise<void> {
@@ -191,8 +186,6 @@ class MessageQueue {
     await Promise.all(toRemove.map((m) => this.idb.remove(STORE, m.id)));
 
     this.queue = this.queue.filter((m) => m.chatId !== chatId);
-
-    console.log(`🗑️ Queue cleared for chat: ${chatId}`);
   }
 
   get length() {
