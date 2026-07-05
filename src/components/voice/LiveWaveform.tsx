@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
 interface LiveWaveformProps {
   audioLevel: number;
@@ -11,66 +11,115 @@ export const LiveWaveform: React.FC<LiveWaveformProps> = ({
   isRecording,
   isPaused,
 }) => {
-  console.log({ isRecording });
-  console.log({ isPaused });
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
-  // Increase number of bars for a denser look
-  const barsRef = useRef<number[]>(new Array(60).fill(0));
 
-  const SMOOTHING = 0.6; // Less smoothing for more reactive look
-  const MIN_HEIGHT = 0.05;
+  // Amplitude history — one "envelope" sample per scroll step
+  const ampRef = useRef<number[]>([]);
+  const phaseRef = useRef(0);
+
+  const SMOOTHING = 0.65;
+  const MIN_HEIGHT = 0.04;
+
+  // How many envelope samples we keep (coarse — controls scroll speed/history length)
+  const SAMPLE_COUNT = 120;
+  // How many oscillations of the sine carrier per envelope sample (visual density)
+  const CYCLES_PER_SAMPLE = 1.3;
+  const MAX_HEIGHT_RATIO = 0.85;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const { clientWidth, clientHeight } = container;
+
+      canvas.width = clientWidth * dpr;
+      canvas.height = clientHeight * dpr;
+      canvas.style.width = `${clientWidth}px`;
+      canvas.style.height = `${clientHeight}px`;
+
+      const ctx = canvas.getContext("2d");
+      ctx?.scale(dpr, dpr);
+
+      if (ampRef.current.length === 0) {
+        ampRef.current = new Array(SAMPLE_COUNT).fill(MIN_HEIGHT);
+      }
+    };
+
+    resize();
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const draw = () => {
-      if (!canvas || !ctx) return;
+      const dpr = window.devicePixelRatio || 1;
+      const width = canvas.width / dpr;
+      const height = canvas.height / dpr;
 
-      const { width, height } = canvas;
       ctx.clearRect(0, 0, width, height);
 
-      if (isRecording && !isPaused) {
-        // Shift bars to create "scrolling" effect from right to left
-        barsRef.current.shift();
+      if (isRecording && !isPaused && ampRef.current.length) {
+        ampRef.current.shift();
 
-        const latestVal = Math.max(audioLevel, MIN_HEIGHT);
-        const prev = barsRef.current[barsRef.current.length - 1] || 0;
+        const jitter = MIN_HEIGHT + Math.random() * 0.15;
+        const latestVal = Math.max(audioLevel, jitter);
+        const prev = ampRef.current[ampRef.current.length - 1] ?? MIN_HEIGHT;
         const smoothed = prev * SMOOTHING + latestVal * (1 - SMOOTHING);
 
-        barsRef.current.push(smoothed);
+        ampRef.current.push(smoothed);
+
+        // advance carrier phase only while actively recording, so it "flows"
+        phaseRef.current += 0.35;
       }
 
-      const barWidth = width / barsRef.current.length;
       const centerY = height / 2;
-      const spacing = 1.5; // Tighter spacing for WhatsApp look
+      const samples = ampRef.current;
+      const n = samples.length;
 
-      // Draw bars
-      barsRef.current.forEach((level, index) => {
-        // Calculate height based on level.
-        // WhatsApp bars are quite tall and thin
-        const barHeight = level * height * 0.8;
-        const x = index * barWidth;
-        const y = centerY - barHeight / 2;
-
-        // Use WhatsApp-like colors (light gray background, blue/indigo for active)
-        ctx.fillStyle = isPaused ? '#9CA3AF' : '#00a884'; // Teal green for active recording
+      if (n > 1) {
         ctx.beginPath();
-        // Use roundRect for pill-shaped bars
-        ctx.roundRect(
-          x + spacing,
-          y,
-          barWidth - spacing * 2,
-          barHeight,
-          999, // capsule style
-        );
-        ctx.fill();
-      });
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = isPaused ? "#8696A0" : "#00a884";
+
+        // finer resolution than the amplitude samples, for a smooth curve
+        const pointsPerSample = 6;
+        const totalPoints = (n - 1) * pointsPerSample;
+
+        for (let i = 0; i <= totalPoints; i++) {
+          const t = i / pointsPerSample; // fractional index into samples[]
+          const idx = Math.floor(t);
+          const frac = t - idx;
+
+          const a0 = samples[idx];
+          const a1 = samples[Math.min(idx + 1, n - 1)];
+          const envelope = a0 + (a1 - a0) * frac; // interpolated amplitude
+
+          const x = (i / totalPoints) * width;
+          const angle =
+            (i / pointsPerSample) * Math.PI * 2 * CYCLES_PER_SAMPLE +
+            phaseRef.current;
+          const y =
+            centerY - Math.sin(angle) * envelope * height * MAX_HEIGHT_RATIO;
+
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+
+        ctx.stroke();
+      }
 
       animationRef.current = requestAnimationFrame(draw);
     };
@@ -78,11 +127,13 @@ export const LiveWaveform: React.FC<LiveWaveformProps> = ({
     draw();
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [audioLevel, isRecording, isPaused]);
 
-  return <canvas ref={canvasRef} width={400} height={40} className='w-full h-full' />;
+  return (
+    <div ref={containerRef} className="w-full h-full">
+      <canvas ref={canvasRef} />
+    </div>
+  );
 };
