@@ -17,11 +17,7 @@ export const useMessageQueue = () => {
 
     const queuedMessages = await messageQueue.getAllForChatWithFiles(currentChat?._id);
 
-    console.log({ queuedMessages });
-
     if (queuedMessages.length === 0) return;
-
-    console.log(`📤 Processing ${queuedMessages.length} queued messages...`);
 
     for (const queuedMsg of queuedMessages) {
       try {
@@ -37,7 +33,6 @@ export const useMessageQueue = () => {
 
         // Remove from queue on success
         messageQueue.remove(queuedMsg.id);
-        console.log(`✅ Queued message sent: ${queuedMsg.id}`);
       } catch (error) {
         console.error(`❌ Failed to send queued message: ${queuedMsg.id}`, error);
         // Keep in queue to retry later
