@@ -5,10 +5,8 @@ import { User } from '../types/auth';
 import moment from 'moment';
 
 export function getInitials({ username }: { username?: string }) {
-  console.log(username);
   const parts = username?.split(/[^A-Za-z0-9]+/).filter(Boolean);
 
-  console.log(parts);
   return parts ? (parts[0]?.[0] || '') + (parts[1]?.[0] || '') : 'UN';
 }
 
@@ -212,8 +210,6 @@ export class IndexDBStorageService {
     const store = await this.getStore(storeName, 'readwrite');
     // Ensure data is serializable and free of circular references/proxies
     const sanitizedData = removeCircularReferences(data);
-
-    console.log({ sanitizedData });
 
     return new Promise((resolve, reject) => {
       const request = store.put(sanitizedData);
