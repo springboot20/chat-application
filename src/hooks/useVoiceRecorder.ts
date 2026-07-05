@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import { getAudioBlobDuration } from '../utils/audio';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { toast } from "react-toastify";
+import { getAudioBlobDuration } from "../utils/audio";
 
 interface UseVoiceRecorderReturn {
   isRecordingCancelled: boolean;
@@ -17,8 +17,9 @@ interface UseVoiceRecorderReturn {
   resumeRecording: () => void;
   cancelRecording: () => void;
   resetRecording: () => void;
-  stopRecording: () => void;
+  stopRecording: () => Promise<Blob | null>;
   setDrag: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
+  durationRef: React.MutableRefObject<number>;
 }
 
 export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
@@ -42,6 +43,10 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
+  const pendingCancelRef = useRef(false);
+  const stopResolverRef = useRef<((blob: Blob | null) => void) | null>(null);
+  const durationRef = useRef(0);
+
   // ✅ Analyze audio level for live waveform
   const analyzeAudio = useCallback(() => {
     if (!analyserRef.current || isPaused) return;
@@ -49,7 +54,8 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
     analyserRef.current.getByteFrequencyData(dataArray);
 
-    const average = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
+    const average =
+      dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
     const normalizedLevel = Math.min(average / 128, 1);
     setAudioLevel(normalizedLevel);
 
@@ -64,8 +70,19 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       setRecordingTime(0);
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       });
+
+      // ✅ If cancelled while permission/setup was pending, tear down immediately
+      if (pendingCancelRef.current) {
+        pendingCancelRef.current = false;
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
 
       streamRef.current = stream;
 
@@ -83,7 +100,9 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       analyzeAudio();
 
       // MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "audio/webm;codecs=opus",
+      });
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -92,7 +111,9 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       };
 
       mediaRecorder.onpause = async () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
+        const blob = new Blob(chunksRef.current, {
+          type: "audio/webm;codecs=opus",
+        });
 
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
@@ -102,24 +123,33 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       };
 
       mediaRecorder.onstop = async () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
+        const blob = new Blob(chunksRef.current, {
+          type: "audio/webm;codecs=opus",
+        });
 
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
 
         const duration = await getAudioBlobDuration(blob);
+        durationRef.current = duration;
         setAudioDuration(duration);
 
         // Cleanup
         streamRef.current?.getTracks().forEach((t) => t.stop());
 
-        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        if (
+          audioContextRef.current &&
+          audioContextRef.current.state !== "closed"
+        ) {
           try {
             await audioContextRef.current.close();
           } catch (e) {
-            console.warn('AudioContext already closed or closing', e);
+            console.warn("AudioContext already closed or closing", e);
           }
         }
+
+        stopResolverRef.current?.(blob); // ✅ signal "blob is actually ready"
+        stopResolverRef.current = null;
       };
 
       mediaRecorder.start(100);
@@ -130,31 +160,40 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
 
-      console.log('🎙️ Recording started');
+      console.log("🎙️ Recording started");
     } catch (err) {
       console.error(err);
-      toast.error('Failed to access microphone. Please check permissions.');
+      toast.error("Failed to access microphone. Please check permissions.");
     }
   }, [analyzeAudio]);
 
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setIsPaused(false);
-      setRecordingTime(0);
+  const stopRecording = useCallback((): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
+        stopResolverRef.current = resolve;
+        mediaRecorderRef.current.stop();
 
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+        setIsRecording(false);
+        setIsPaused(false);
+        setRecordingTime(0);
+
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+      } else {
+        // Nothing actually started yet — flag it so the pending stream gets killed
+        pendingCancelRef.current = true;
+        resolve(audioBlob);
       }
-
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-
-      console.log('⏹️ Recording stopped');
-    }
-  }, [isRecording]);
+    });
+  }, [audioBlob]);
 
   const pauseRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording && !isPaused) {
@@ -172,7 +211,7 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
 
       setAudioLevel(0);
 
-      console.log('⏸️ Recording paused');
+      console.log("⏸️ Recording paused");
     }
   }, [isRecording, isPaused]);
 
@@ -189,7 +228,7 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
       // Resume audio analysis
       analyzeAudio();
 
-      console.log('▶️ Recording resumed');
+      console.log("▶️ Recording resumed");
     }
   }, [isRecording, isPaused, analyzeAudio]);
 
@@ -206,20 +245,26 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
   }, [audioUrl]);
 
   const cancelRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
       mediaRecorderRef.current.stop();
+    } else {
+      pendingCancelRef.current = true; // If recording hasn't started yet, flag it to cancel when it does
     }
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
 
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
       audioContextRef.current.close().catch(() => {});
     }
 
     if (timerRef.current) clearInterval(timerRef.current);
-    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    if (animationFrameRef.current)
+      cancelAnimationFrame(animationFrameRef.current);
 
     setIsRecording(false);
     setIsRecordingCancelled(true);
@@ -230,7 +275,7 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
     setAudioLevel(0);
     chunksRef.current = [];
     setDrag({ x: 0, y: 0 });
-    console.log('❌ Recording cancelled');
+    console.log("❌ Recording cancelled");
   }, []);
 
   // Cleanup on unmount
@@ -247,9 +292,12 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
           cancelAnimationFrame(animationFrameRef.current);
         }
 
-        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        if (
+          audioContextRef.current &&
+          audioContextRef.current.state !== "closed"
+        ) {
           audioContextRef.current.close().catch((err) => {
-            console.warn('Error closing AudioContext on unmount:', err);
+            console.warn("Error closing AudioContext on unmount:", err);
           });
         }
       } catch (error) {
@@ -275,5 +323,6 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
     cancelRecording,
     resetRecording,
     stopRecording,
+    durationRef
   };
 };
