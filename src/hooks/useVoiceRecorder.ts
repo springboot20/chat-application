@@ -38,7 +38,7 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   // In browser environments setTimeout returns a number, avoid NodeJS namespace
-  const timerRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
