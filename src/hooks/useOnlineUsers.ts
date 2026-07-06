@@ -1,11 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useSocketContext } from './useSocket';
+import { useEffect, useState, useCallback } from "react";
+import { useSocketContext } from "./useSocket";
 import {
   USER_ONLINE_EVENT,
   USER_OFFLINE_EVENT,
   CHECK_ONLINE_STATUS_EVENT,
   ONLINE_STATUS_RESPONSE_EVENT,
-} from '../enums';
+} from "../enums";
 
 export const useOnlineUsers = () => {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
@@ -15,14 +15,17 @@ export const useOnlineUsers = () => {
     if (!socket) return;
 
     // Listen for users coming online
-    const handleUserOnline = ({ userId }: { userId: string; username: string }) => {
-      console.log(`🟢 User came online: ${userId}`);
+    const handleUserOnline = ({
+      userId,
+    }: {
+      userId: string;
+      username: string;
+    }) => {
       setOnlineUsers((prev) => new Set(prev).add(userId));
     };
 
     // Listen for users going offline
     const handleUserOffline = ({ userId }: { userId: string }) => {
-      console.log(`🔴 User went offline: ${userId}`);
       setOnlineUsers((prev) => {
         const updated = new Set(prev);
         updated.delete(userId);
@@ -32,7 +35,6 @@ export const useOnlineUsers = () => {
 
     // Listen for online status response
     const handleOnlineStatusResponse = (statuses: Record<string, boolean>) => {
-      console.log('📊 Online status response:', statuses);
       setOnlineUsers((prev) => {
         const updated = new Set(prev);
         Object.entries(statuses).forEach(([userId, isOnline]) => {
@@ -62,7 +64,7 @@ export const useOnlineUsers = () => {
     (userId: string): boolean => {
       return onlineUsers.has(userId);
     },
-    [onlineUsers]
+    [onlineUsers],
   );
 
   // Request online status for specific users
@@ -71,16 +73,19 @@ export const useOnlineUsers = () => {
       if (!socket) return;
       socket.emit(CHECK_ONLINE_STATUS_EVENT, { userIds });
     },
-    [socket]
+    [socket],
   );
 
   return {
     onlineUsers: Array.from(onlineUsers),
     isUserOnline,
     checkUsersOnlineStatus,
-    handleUserOnline: useCallback((data: { userId: string; username: string }) => {
-      setOnlineUsers((prev) => new Set(prev).add(data.userId));
-    }, []),
+    handleUserOnline: useCallback(
+      (data: { userId: string; username: string }) => {
+        setOnlineUsers((prev) => new Set(prev).add(data.userId));
+      },
+      [],
+    ),
     handleUserOffline: useCallback((data: { userId: string }) => {
       setOnlineUsers((prev) => {
         const updated = new Set(prev);
