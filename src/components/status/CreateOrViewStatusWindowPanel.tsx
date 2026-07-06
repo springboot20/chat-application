@@ -356,7 +356,8 @@ export const ViewStatusWindowPanelSlot = () => {
   const [deleteStatus] = useDeleteStatusMutation();
 
   const statuses = selectedStatusToView?.items || [];
-  const currentStatus = statuses[activeStatusIndex];
+  const currentStatus =
+    statuses[activeStatusIndex] ?? statuses[statuses.length - 1];
   const isOwnStatus = selectedStatusToView?.user?._id === user?._id;
 
   const onVideoLoad = (e: React.SyntheticEvent<HTMLVideoElement>) => {
@@ -370,10 +371,9 @@ export const ViewStatusWindowPanelSlot = () => {
 
   useEffect(() => {
     if (currentStatus && !isOwnStatus) {
-      // Mark current status as viewed
       markAsViewed(currentStatus._id);
     }
-  }, [currentStatus, currentStatus._id, isOwnStatus, markAsViewed]);
+  }, [currentStatus, currentStatus?._id, isOwnStatus, markAsViewed]);
 
   const handleNext = useCallback(() => {
     if (activeStatusIndex < statuses.length - 1) {
