@@ -1,31 +1,41 @@
-import { createContext, useState, useCallback, useMemo, ReactNode, useRef } from 'react';
-import { useAppDispatch, useAppSelector } from '../redux/redux.hooks';
-import { setSelectedStatusToView, setStatusWindow } from '../features/status/status.slice';
-import sanitizeHtml from 'sanitize-html';
+import {
+  createContext,
+  useState,
+  useCallback,
+  useMemo,
+  ReactNode,
+  useRef,
+} from "react";
+import { useAppDispatch, useAppSelector } from "../redux/redux.hooks";
+import {
+  setSelectedStatusToView,
+  setStatusWindow,
+} from "../features/status/status.slice";
+import sanitizeHtml from "sanitize-html";
 import {
   StatusGroup,
   useAddNewMediaStatusMutation,
   useAddNewTextStatusMutation,
-} from '../features/status/status.api.slice';
+} from "../features/status/status.api.slice";
 
-type StatusWindow = 'create-status' | 'view-status' | null;
+type StatusWindow = "create-status" | "view-status" | null;
 
-const MEDIA_TYPES = ['text', 'image', 'video'] as const;
+const MEDIA_TYPES = ["text", "image", "video"] as const;
 const MAX_CHARS = 500;
 
 export type MediaContentType = (typeof MEDIA_TYPES)[number];
 
 const BACKGROUND_COLORS = [
-  '#6366f1',
-  '#ec4899',
-  '#f59e0b',
-  '#10b981',
-  '#8b5cf6',
-  '#ef4444',
-  '#3b82f6',
-  '#14b8a6',
-  '#f97316',
-  '#a855f7',
+  "#6366f1",
+  "#ec4899",
+  "#f59e0b",
+  "#10b981",
+  "#8b5cf6",
+  "#ef4444",
+  "#3b82f6",
+  "#14b8a6",
+  "#f97316",
+  "#a855f7",
 ];
 
 const randomlySelectColor = () =>
@@ -87,32 +97,37 @@ type CaptionsType = {
   video?: Array<CaptionEntry>;
 };
 
-export type PrivacyType = 'all_contacts' | 'selected' | 'except';
+export type PrivacyType = "all_contacts" | "selected" | "except";
 
 export const StatusContext = createContext<StatusContextValue | null>(null);
 
 export const StatusProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useAppDispatch();
   const { statusWindow } = useAppSelector((state) => state.statusStories);
-  const [textContent, setTextContent] = useState('');
+  const [textContent, setTextContent] = useState("");
   const editorRef = useRef<HTMLDivElement | null>(null);
 
-  const [mediaContentType, setMediaContentType] = useState<MediaContentType | null>(null);
+  const [mediaContentType, setMediaContentType] =
+    useState<MediaContentType | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedVideoFiles, setSelectedVideoFiles] = useState<File[]>([]);
 
-  const [addNewMediaStatus, { isLoading: isAddingNewMediaStatus }] = useAddNewMediaStatusMutation();
-  const [addNewTextStatus, { isLoading: isAddingNewTextStatus }] = useAddNewTextStatusMutation();
+  const [addNewMediaStatus, { isLoading: isAddingNewMediaStatus }] =
+    useAddNewMediaStatusMutation();
+  const [addNewTextStatus, { isLoading: isAddingNewTextStatus }] =
+    useAddNewTextStatusMutation();
 
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [activeVideoFileIndex, setActiveVideoFileIndex] = useState(0);
 
-  const { selectedStatusToView } = useAppSelector((state) => state.statusStories);
+  const { selectedStatusToView } = useAppSelector(
+    (state) => state.statusStories,
+  );
   const [activeStatusIndex, setActiveStatusIndex] = useState(0);
   const [progress, setProgress] = useState(0);
 
   // Privacy state
-  const [privacy, setPrivacy] = useState<PrivacyType>('all_contacts'); // Default to "My Contacts"
+  const [privacy, setPrivacy] = useState<PrivacyType>("all_contacts"); // Default to "My Contacts"
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
 
   const [captions, setCaptions] = useState<CaptionsType>({
@@ -120,38 +135,43 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     video: [],
   });
 
-  const [selectedTextBackground, setSelectedTextBackground] = useState(randomlySelectColor());
+  const [selectedTextBackground, setSelectedTextBackground] = useState(
+    randomlySelectColor(),
+  );
 
-  const onContentChange = useCallback((event: React.FormEvent<HTMLDivElement> | string) => {
-    const sanitizeConf = {
-      allowedTags: ['b', 'i', 'a', 'p'],
-      allowedAttributes: { a: ['href'] },
-    };
+  const onContentChange = useCallback(
+    (event: React.FormEvent<HTMLDivElement> | string) => {
+      const sanitizeConf = {
+        allowedTags: ["b", "i", "a", "p"],
+        allowedAttributes: { a: ["href"] },
+      };
 
-    let rawContent = '';
+      let rawContent = "";
 
-    if (typeof event === 'string') {
-      rawContent = event;
-    } else if (event?.currentTarget) {
-      // ContentEditable sends the text via textContent or innerHTML
-      rawContent = event.currentTarget.textContent || '';
-    }
+      if (typeof event === "string") {
+        rawContent = event;
+      } else if (event?.currentTarget) {
+        // ContentEditable sends the text via textContent or innerHTML
+        rawContent = event.currentTarget.textContent || "";
+      }
 
-    const sanitizedHTMLContent = sanitizeHtml(rawContent, sanitizeConf);
+      const sanitizedHTMLContent = sanitizeHtml(rawContent, sanitizeConf);
 
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = sanitizedHTMLContent;
-    const textContent = tempDiv.textContent || '';
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = sanitizedHTMLContent;
+      const textContent = tempDiv.textContent || "";
 
-    if (textContent.length > MAX_CHARS) {
-      // Truncate to MAX_CHARS
-      const truncated = textContent.slice(0, MAX_CHARS);
-      setTextContent(sanitizeHtml(truncated, sanitizeConf));
-      return;
-    }
+      if (textContent.length > MAX_CHARS) {
+        // Truncate to MAX_CHARS
+        const truncated = textContent.slice(0, MAX_CHARS);
+        setTextContent(sanitizeHtml(truncated, sanitizeConf));
+        return;
+      }
 
-    setTextContent(sanitizedHTMLContent);
-  }, []);
+      setTextContent(sanitizedHTMLContent);
+    },
+    [],
+  );
 
   const handleSelectedTextBackground = useCallback(
     (background: string) => setSelectedTextBackground(background),
@@ -159,7 +179,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const resetCreationState = useCallback(() => {
-    setTextContent('');
+    setTextContent("");
     setMediaContentType(null);
     setSelectedFiles([]);
     setActiveFileIndex(0);
@@ -185,7 +205,9 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
       setProgress(0);
       // Use the provided startIndex instead of always resetting to 0
       setActiveStatusIndex(startIndex);
-      dispatch(setStatusWindow({ statusWindow: statusGroup ? 'view-status' : null }));
+      dispatch(
+        setStatusWindow({ statusWindow: statusGroup ? "view-status" : null }),
+      );
     },
     [dispatch],
   );
@@ -197,17 +219,20 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handlePostStatus = useCallback(async () => {
-    if (mediaContentType === 'text') {
+    if (mediaContentType === "text") {
       const payload = {
         type: mediaContentType,
         text: textContent,
         backgroundColor: selectedTextBackground,
         privacyType: privacy,
         selectedContacts:
-          privacy === 'selected' || privacy === 'except' ? selectedContacts : undefined,
+          privacy === "selected" || privacy === "except"
+            ? selectedContacts
+            : undefined,
       };
 
       await addNewTextStatus(payload).unwrap();
+      handleStatusWindowChange(null);
       return;
     }
     const formData = new FormData();
@@ -216,13 +241,14 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
 
     // 1. Prepare Metadata based on your Mongoose Schema structure
     const metadata = overallFiles.map((file) => {
-      const type = file.type.startsWith('video/') ? 'video' : 'image';
+      const type = file.type.startsWith("video/") ? "video" : "image";
 
       // Find the caption for this specific file in your state
-      const fileCaption = captions[type]?.find((c: any) => c.id === file.name)?.text || '';
+      const fileCaption =
+        captions[type]?.find((c: any) => c.id === file.name)?.text || "";
 
       return {
-        type: file.type.startsWith('video/') ? 'video' : 'image',
+        type: file.type.startsWith("video/") ? "video" : "image",
         caption: fileCaption,
         fileName: file.name, // Used by the backend to link the file to this object
       };
@@ -230,15 +256,15 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
 
     // 2. Append files to FormData
     overallFiles.forEach((file) => {
-      formData.append('statusMedias', file);
+      formData.append("statusMedias", file);
     });
 
-    if (privacy === 'selected' || privacy === 'except') {
-      formData.append('selectedContacts', JSON.stringify(selectedContacts));
+    if (privacy === "selected" || privacy === "except") {
+      formData.append("selectedContacts", JSON.stringify(selectedContacts));
     }
 
     // 3. Append the metadata as a string
-    formData.append('metadata', JSON.stringify(metadata));
+    formData.append("metadata", JSON.stringify(metadata));
 
     try {
       await addNewMediaStatus(formData).unwrap();
@@ -248,17 +274,20 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
         Promise.resolve(setTimeout(() => handleStatusWindowChange(null), 3000)),
       ]);
     } catch (error) {
-      console.error('Upload failed', error);
+      console.error("Upload failed", error);
     }
   }, [
-    addNewMediaStatus,
-    addNewTextStatus,
-    captions,
     mediaContentType,
     selectedFiles,
-    selectedTextBackground,
     selectedVideoFiles,
+    privacy,
     textContent,
+    selectedTextBackground,
+    selectedContacts,
+    addNewTextStatus,
+    captions,
+    addNewMediaStatus,
+    resetCreationState,
     handleStatusWindowChange,
   ]);
 
@@ -341,5 +370,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     ],
   );
 
-  return <StatusContext.Provider value={value}>{children}</StatusContext.Provider>;
+  return (
+    <StatusContext.Provider value={value}>{children}</StatusContext.Provider>
+  );
 };

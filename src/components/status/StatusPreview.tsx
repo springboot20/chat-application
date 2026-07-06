@@ -19,7 +19,7 @@ export const StatusPreview: React.FC<StatusPreviewProps> = ({ status, size = 'md
   if (status.type === 'text') {
     return (
       <div
-        className={`${currentSize} rounded-lg flex items-center justify-center p-1 overflow-hidden shadow-sm border border-black/5 dark:border-white/5`}
+        className={`${currentSize} rounded-full flex items-center justify-center p-1 overflow-hidden shadow-sm border border-black/5 dark:border-white/5`}
         style={{ backgroundColor: status.textContent?.backgroundColor || '#ccc' }}>
         <p className='text-[8px] text-white line-clamp-3 text-center leading-tight font-medium'>
           {status.textContent?.text}
@@ -31,7 +31,7 @@ export const StatusPreview: React.FC<StatusPreviewProps> = ({ status, size = 'md
   if (status.type === 'image') {
     return (
       <div
-        className={`${currentSize} rounded-lg overflow-hidden border border-gray-100 dark:border-white/5 shadow-sm`}>
+        className={`${currentSize} rounded-full overflow-hidden border border-gray-100 dark:border-white/5 shadow-sm`}>
         <img
           src={status.mediaContent?.url}
           alt='Status preview'
@@ -45,7 +45,7 @@ export const StatusPreview: React.FC<StatusPreviewProps> = ({ status, size = 'md
     return (
       <VideoThumbnail
         url={status.mediaContent?.url || ''}
-        className={`${currentSize} rounded-lg overflow-hidden border border-gray-100 dark:border-white/5 shadow-sm`}
+        className={`${currentSize} rounded-full overflow-hidden border border-gray-100 dark:border-white/5 shadow-sm`}
         showPlayIcon={true}
       />
     );

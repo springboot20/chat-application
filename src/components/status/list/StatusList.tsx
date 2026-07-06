@@ -2,21 +2,23 @@ import {
   getTimeRemaining,
   StatusGroup,
   useGetStatusFeedQuery,
-} from '../../../features/status/status.api.slice';
-import { List, type RowComponentProps } from 'react-window';
-import { motion } from 'framer-motion';
-import { UserAvatar } from '../StatusAvatar';
-import { useMemo } from 'react';
-import { ClockIcon } from '@heroicons/react/24/solid';
-import { timeAgo } from '../../../utils';
-import { useAppSelector } from '../../../redux/redux.hooks';
-import { StatusPreview } from '../StatusPreview';
+} from "../../../features/status/status.api.slice";
+import { List, type RowComponentProps } from "react-window";
+import { motion } from "framer-motion";
+import { UserAvatar } from "../StatusAvatar";
+import { useMemo } from "react";
+import { ClockIcon } from "@heroicons/react/24/solid";
+import { timeAgo } from "../../../utils";
+import { useAppSelector } from "../../../redux/redux.hooks";
+import { StatusPreview } from "../StatusPreview";
 
 const hasUnviewedStatus = (statusGroup: StatusGroup, currentUserId: string) => {
   return statusGroup?.items?.some(
     (status) =>
       !status.viewedBy?.some((viewer) =>
-        typeof viewer === 'string' ? viewer === currentUserId : viewer?._id === currentUserId,
+        typeof viewer === "string"
+          ? viewer === currentUserId
+          : viewer?._id === currentUserId,
       ),
   );
 };
@@ -32,15 +34,20 @@ interface StatusListItemData {
   onViewStatus?: (statusGroup: StatusGroup | null) => void;
 }
 
-export const StatusListComponent: React.FC<StatusListProps> = ({ onViewStatus }) => {
+export const StatusListComponent: React.FC<StatusListProps> = ({
+  onViewStatus,
+}) => {
   const { user } = useAppSelector((state) => state.auth);
-  const currentUserId = user?._id || '';
+  const currentUserId = user?._id || "";
 
-  const { data: feedData, isLoading: isFeedLoading } = useGetStatusFeedQuery(undefined, {
-    pollingInterval: 30000, // Poll every 30 seconds
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
-  });
+  const { data: feedData, isLoading: isFeedLoading } = useGetStatusFeedQuery(
+    undefined,
+    {
+      pollingInterval: 30000, // Poll every 30 seconds
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
+    },
+  );
 
   const feeds = useMemo(() => feedData?.data || [], [feedData?.data]);
 
@@ -59,23 +66,25 @@ export const StatusListComponent: React.FC<StatusListProps> = ({ onViewStatus })
 
   if (isFeedLoading) {
     return (
-      <div className='flex items-center justify-center p-8'>
-        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600' />
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
       </div>
     );
   }
 
   if (otherUsersFeeds.length === 0) {
     return (
-      <div className='text-center p-8 text-gray-500 dark:text-gray-400'>
+      <div className="text-center p-8 text-gray-500 dark:text-gray-400">
         <p>No status updates from your contacts</p>
       </div>
     );
   }
 
   return (
-    <div className='flex flex-col h-full'>
-      <h3 className='font-semibold text-gray-900 dark:text-gray-100 mb-2'>Status Updates</h3>
+    <div className="flex flex-col h-full">
+      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        Status Updates
+      </h3>
 
       <List
         rowCount={rowCount}
@@ -98,7 +107,7 @@ const StatusListItemComponent = ({
   if (!feed) return null;
 
   return (
-    <div style={style} className='!h-auto'>
+    <div style={style} className="!h-auto overflow-x-hidden">
       <OthersStatusRow
         statusGroup={feed}
         currentUserId={currentUserId}
@@ -114,7 +123,11 @@ interface OthersStatusRowProps {
   onViewStatus?: (statusGroup: StatusGroup | null) => void;
 }
 
-const OthersStatusRow = ({ statusGroup, currentUserId, onViewStatus }: OthersStatusRowProps) => {
+const OthersStatusRow = ({
+  statusGroup,
+  currentUserId,
+  onViewStatus,
+}: OthersStatusRowProps) => {
   const feedPostedBy = statusGroup?.user;
   const hasUnviewed = hasUnviewedStatus(statusGroup, currentUserId);
   const latestStatus = statusGroup?.items?.[statusGroup?.items?.length - 1];
@@ -127,53 +140,56 @@ const OthersStatusRow = ({ statusGroup, currentUserId, onViewStatus }: OthersSta
 
   return (
     <motion.div
-      role='button'
+      role="button"
       onClick={handleClick}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
-      className='rounded-2xl overflow-hidden border dark:border-gray-600/30 w-full h-[72px] p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'>
-      <div className='w-full h-full flex items-center gap-x-3'>
+      className="rounded-2xl overflow-hidden border dark:border-gray-600/30 w-full h-[72px] p-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+    >
+      <div className="w-full h-full flex items-center gap-x-3">
         {/* Avatar with gradient ring for unviewed */}
-        <div className='relative'>
+        <div className="relative">
           <div
             className={`rounded-full relative size-16 ${
               hasUnviewed
-                ? 'p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500'
-                : 'border-2 border-gray-300 dark:border-gray-600'
-            }`}>
-            <div className='w-full h-full rounded-full overflow-hidden bg-white dark:bg-gray-900'>
-              <UserAvatar imageUrl={feedPostedBy?.avatar?.url || ''} />
+                ? "p-0.5 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500"
+                : "border-2 border-gray-300 dark:border-gray-600"
+            }`}
+          >
+            <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-gray-900">
+              <UserAvatar imageUrl={feedPostedBy?.avatar?.url || ""} />
             </div>
           </div>
 
           {/* Unviewed indicator badge */}
           {hasUnviewed && (
-            <div className='absolute -top-1 -right-1 w-4 h-4 bg-indigo-600 rounded-full border-2 border-white dark:border-gray-900' />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-indigo-600 rounded-full border-2 border-white dark:border-gray-900" />
           )}
         </div>
 
         {/* Info */}
-        <div className='flex-1 min-w-0'>
-          <div className='flex items-center gap-2'>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
             <h3
               className={`font-medium truncate ${
                 hasUnviewed
-                  ? 'text-gray-900 dark:text-gray-100'
-                  : 'text-gray-700 dark:text-gray-300'
-              }`}>
-              {feedPostedBy?.username || 'Unknown User'}
+                  ? "text-gray-900 dark:text-gray-100"
+                  : "text-gray-700 dark:text-gray-300"
+              }`}
+            >
+              {feedPostedBy?.username || "Unknown User"}
             </h3>
-            <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400'>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400">
               {statusGroup?.items?.length}
             </span>
           </div>
 
-          <div className='flex items-center gap-3 mt-0.5'>
-            <p className='text-sm text-gray-500 dark:text-gray-400'>
+          <div className="flex items-center gap-3 mt-0.5">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {timeAgo(statusGroup?.lastUpdated)}
             </p>
             {latestStatus?.expiresAt && (
-              <div className='flex items-center gap-1 text-xs text-gray-400'>
+              <div className="flex items-center gap-1 text-xs text-gray-400">
                 <ClockIcon width={12} height={12} />
                 <span>{getTimeRemaining(latestStatus.expiresAt)}</span>
               </div>
@@ -183,7 +199,7 @@ const OthersStatusRow = ({ statusGroup, currentUserId, onViewStatus }: OthersSta
 
         {/* Status preview */}
         {latestStatus && (
-          <div className='flex-shrink-0'>
+          <div className="flex-shrink-0">
             <StatusPreview status={latestStatus} />
           </div>
         )}
