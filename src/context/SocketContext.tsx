@@ -1,7 +1,11 @@
-import React, { createContext, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useAppSelector } from '../redux/redux.hooks';
-import { CONNECTED_EVENT, DISCONNECT_EVENT, SOCKET_ERROR_EVENT } from '../enums';
+import React, { createContext, useEffect, useRef, useState } from "react";
+import { io, Socket } from "socket.io-client";
+import { useAppSelector } from "../redux/redux.hooks";
+import {
+  CONNECTED_EVENT,
+  DISCONNECT_EVENT,
+  SOCKET_ERROR_EVENT,
+} from "../enums";
 
 export const SocketContext = createContext({
   socket: null as Socket | null,
@@ -11,20 +15,24 @@ export const SocketContext = createContext({
 const createSocket = (accessToken: string) => {
   const env = import.meta.env;
   const url =
-    env.MODE === 'production' ? env.VITE_CHAT_APP_SOCKET_URL : env.VITE_CHAT_APP_SOCKET_LOCAL_URL;
+    env.MODE === "production"
+      ? env.VITE_CHAT_APP_SOCKET_URL
+      : env.VITE_CHAT_APP_SOCKET_LOCAL_URL;
 
   return io(url, {
     auth: {
       tokens: { accessToken },
     },
-    transports: ['websocket'], // 🔑 VERY IMPORTANT
+    transports: ["websocket"], // 🔑 VERY IMPORTANT
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
   });
 };
 
-export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
 
@@ -37,34 +45,37 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // ✅ Prevent duplicate socket creation
     if (socketRef.current) return;
 
-    console.log('🚀 Creating socket connection');
+    console.log("🚀 Creating socket connection");
 
     const socket = createSocket(tokens.accessToken);
     socketRef.current = socket;
 
     socket.on(CONNECTED_EVENT, () => {
-      console.log('🟢 Socket connected');
+      console.log("🟢 Socket connected");
       setConnected(true);
     });
 
     socket.on(DISCONNECT_EVENT, (reason) => {
-      console.log('🔴 Socket disconnected:', reason);
+      console.log("🔴 Socket disconnected:", reason);
       setConnected(false);
     });
 
     socket.on(SOCKET_ERROR_EVENT, (error) => {
-      console.error('❌ Socket error:', error);
+      console.error("❌ Socket error:", error);
     });
 
     return () => {
-      // ❌ DO NOT DISCONNECT HERE
+      socket.disconnect();
+      if (socketRef.current === socket) {
+        socketRef.current = null;
+      }
     };
   }, [isAuthenticated, tokens?.accessToken]);
 
   // 🔐 Explicit logout cleanup
   useEffect(() => {
     if (!isAuthenticated && socketRef.current) {
-      console.log('🧹 Disconnecting socket on logout');
+      console.log("🧹 Disconnecting socket on logout");
       socketRef.current.disconnect();
       socketRef.current = null;
       setConnected(false);
@@ -76,7 +87,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       value={{
         socket: socketRef.current,
         connected,
-      }}>
+      }}
+    >
       {children}
     </SocketContext.Provider>
   );

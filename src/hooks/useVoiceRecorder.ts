@@ -37,7 +37,8 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // In browser environments setTimeout returns a number, avoid NodeJS namespace
+  const timerRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -47,9 +48,15 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
   const stopResolverRef = useRef<((blob: Blob | null) => void) | null>(null);
   const durationRef = useRef(0);
 
+  const isPausedRef = useRef(false);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
   // ✅ Analyze audio level for live waveform
   const analyzeAudio = useCallback(() => {
-    if (!analyserRef.current || isPaused) return;
+    if (!analyserRef.current || isPausedRef.current) return;
 
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
     analyserRef.current.getByteFrequencyData(dataArray);
@@ -60,7 +67,7 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
     setAudioLevel(normalizedLevel);
 
     animationFrameRef.current = requestAnimationFrame(analyzeAudio);
-  }, [isPaused]);
+  }, []);
 
   const startRecording = useCallback(async () => {
     try {
@@ -218,6 +225,7 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
   const resumeRecording = useCallback(() => {
     if (mediaRecorderRef.current && !isRecording && isPaused) {
       mediaRecorderRef.current.resume();
+      isPausedRef.current = false; // ✅ set synchronously, don't wait on effect/render
       setIsPaused(false);
       setIsRecording(true);
 
@@ -225,10 +233,7 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
 
-      // Resume audio analysis
       analyzeAudio();
-
-      console.log("▶️ Recording resumed");
     }
   }, [isRecording, isPaused, analyzeAudio]);
 
@@ -323,6 +328,6 @@ export const useVoiceRecorder = (): UseVoiceRecorderReturn => {
     cancelRecording,
     resetRecording,
     stopRecording,
-    durationRef
+    durationRef,
   };
 };

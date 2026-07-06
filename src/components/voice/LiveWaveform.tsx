@@ -14,17 +14,29 @@ export const LiveWaveform: React.FC<LiveWaveformProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
-
-  // Amplitude history — one "envelope" sample per scroll step
   const ampRef = useRef<number[]>([]);
   const phaseRef = useRef(0);
 
-  const SMOOTHING = 0.65;
-  const MIN_HEIGHT = 0.04;
+  // ✅ Live values via refs — the draw loop reads these without needing to restart
+  const audioLevelRef = useRef(audioLevel);
+  const isRecordingRef = useRef(isRecording);
+  const isPausedRef = useRef(isPaused);
 
-  // How many envelope samples we keep (coarse — controls scroll speed/history length)
+  useEffect(() => {
+    audioLevelRef.current = audioLevel;
+  }, [audioLevel]);
+
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  const SMOOTHING = 0.85;
+  const MIN_HEIGHT = 0.14;
   const SAMPLE_COUNT = 120;
-  // How many oscillations of the sine carrier per envelope sample (visual density)
   const CYCLES_PER_SAMPLE = 1.3;
   const MAX_HEIGHT_RATIO = 0.85;
 
@@ -51,12 +63,12 @@ export const LiveWaveform: React.FC<LiveWaveformProps> = ({
     };
 
     resize();
-
     const observer = new ResizeObserver(resize);
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
 
+  // ✅ Single persistent loop — mounted once, never torn down by prop changes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -70,17 +82,19 @@ export const LiveWaveform: React.FC<LiveWaveformProps> = ({
 
       ctx.clearRect(0, 0, width, height);
 
-      if (isRecording && !isPaused && ampRef.current.length) {
+      if (
+        isRecordingRef.current &&
+        !isPausedRef.current &&
+        ampRef.current.length
+      ) {
         ampRef.current.shift();
 
         const jitter = MIN_HEIGHT + Math.random() * 0.15;
-        const latestVal = Math.max(audioLevel, jitter);
+        const latestVal = Math.max(audioLevelRef.current, jitter);
         const prev = ampRef.current[ampRef.current.length - 1] ?? MIN_HEIGHT;
         const smoothed = prev * SMOOTHING + latestVal * (1 - SMOOTHING);
 
         ampRef.current.push(smoothed);
-
-        // advance carrier phase only while actively recording, so it "flows"
         phaseRef.current += 0.35;
       }
 
@@ -92,20 +106,18 @@ export const LiveWaveform: React.FC<LiveWaveformProps> = ({
         ctx.beginPath();
         ctx.lineWidth = 2;
         ctx.lineCap = "round";
-        ctx.strokeStyle = isPaused ? "#8696A0" : "#00a884";
+        ctx.strokeStyle = isPausedRef.current ? "#8696A0" : "#00a884";
 
-        // finer resolution than the amplitude samples, for a smooth curve
         const pointsPerSample = 6;
         const totalPoints = (n - 1) * pointsPerSample;
 
         for (let i = 0; i <= totalPoints; i++) {
-          const t = i / pointsPerSample; // fractional index into samples[]
+          const t = i / pointsPerSample;
           const idx = Math.floor(t);
           const frac = t - idx;
-
           const a0 = samples[idx];
           const a1 = samples[Math.min(idx + 1, n - 1)];
-          const envelope = a0 + (a1 - a0) * frac; // interpolated amplitude
+          const envelope = a0 + (a1 - a0) * frac;
 
           const x = (i / totalPoints) * width;
           const angle =
@@ -117,7 +129,6 @@ export const LiveWaveform: React.FC<LiveWaveformProps> = ({
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
-
         ctx.stroke();
       }
 
@@ -129,7 +140,7 @@ export const LiveWaveform: React.FC<LiveWaveformProps> = ({
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [audioLevel, isRecording, isPaused]);
+  }, []);
 
   return (
     <div ref={containerRef} className="w-full h-full">

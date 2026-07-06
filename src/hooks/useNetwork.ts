@@ -1,7 +1,7 @@
 // hooks/useNetwork.ts
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSocketContext } from './useSocket';
-import { USER_WENT_ONLINE_EVENT, USER_WENT_OFFLINE_EVENT } from '../enums';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSocketContext } from "./useSocket";
+import { USER_WENT_ONLINE_EVENT, USER_WENT_OFFLINE_EVENT } from "../enums";
 
 export const useNetwork = () => {
   const { socket, connected } = useSocketContext();
@@ -11,9 +11,8 @@ export const useNetwork = () => {
     setIsOnline(true);
 
     // ✅ Notify backend that user is online
-    if (socket?.connected && connected) { 
+    if (socket?.connected && connected) {
       socket.emit(USER_WENT_ONLINE_EVENT);
-      console.log('🟢 Notified backend: User is ONLINE');
     }
   }, [socket, connected]);
 
@@ -23,29 +22,29 @@ export const useNetwork = () => {
     // ✅ Notify backend that user is offline
     if (socket?.connected && connected) {
       socket.emit(USER_WENT_OFFLINE_EVENT);
-      console.log('🔴 Notified backend: User is OFFLINE');
     }
   }, [socket, connected]);
 
   useEffect(() => {
-    window.addEventListener('online', setOnline);
-    window.addEventListener('offline', setOffline);
+    window.addEventListener("online", setOnline);
+    window.addEventListener("offline", setOffline);
 
-    // Notify backend of current status when socket connects
+    return () => {
+      window.removeEventListener("online", setOnline);
+      window.removeEventListener("offline", setOffline);
+    };
+  }, [setOffline, setOnline]);
+
+  useEffect(() => {
     if (socket?.connected && connected && navigator.onLine) {
       socket.emit(USER_WENT_ONLINE_EVENT);
     }
-
-    return () => {
-      window.removeEventListener('online', setOnline);
-      window.removeEventListener('offline', setOffline);
-    };
-  }, [setOffline, setOnline, socket, connected]);
+  }, [connected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return useMemo(
     () => ({
       isOnline,
     }),
-    [isOnline]
+    [isOnline],
   );
 };
