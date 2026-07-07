@@ -1,12 +1,20 @@
-import { createContext, ReactNode, useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import {
+  createContext,
+  ReactNode,
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useAppDispatch, useAppSelector } from '../redux/redux.hooks.ts';
-import { JOIN_CHAT_EVENT } from '../enums/index.ts';
-import { RootState } from '../app/store.ts';
-import { type EmojiClickData } from 'emoji-picker-react';
-import messageSound from '../assets/audio/message-notification.mp3';
-import reactionSound from '../assets/audio/send-message-notification.mp3';
+import { useAppDispatch, useAppSelector } from "../redux/redux.hooks.ts";
+import { JOIN_CHAT_EVENT } from "../enums/index.ts";
+import { RootState } from "../app/store.ts";
+import { type EmojiClickData } from "emoji-picker-react";
+import messageSound from "../assets/audio/message-notification.mp3";
+import reactionSound from "../assets/audio/send-message-notification.mp3";
 
 import {
   onMessageReceived,
@@ -15,24 +23,24 @@ import {
   onChatMessageDelete,
   updateMessageReactions,
   replaceOptimisticMessage,
-} from '../features/chats/chat.reducer.ts';
-import { useDeleteChatMessageMutation } from '../features/chats/chat.slice.ts';
-import { User } from '../types/auth.ts';
-import { AudioManager } from '../utils/index.ts';
-import { toast } from 'react-toastify';
-import { useSocketContext } from '../hooks/useSocket.ts';
-import { ChatListItemInterface, ChatMessageInterface } from '../types/chat.ts';
-import { useNetwork } from '../hooks/useNetwork.ts';
-import { fileToBase64, messageQueue } from '../utils/messageQueue.ts';
-import { useMessageQueue } from '../hooks/useMessageQueue.ts';
-import { useTyping } from '../hooks/useTyping.ts';
-import { getFuzzyMatches } from '../utils/fuzzySearch.ts';
-import { FileProgressMap, useSendMessage } from '../hooks/useSendMessage.ts';
-import { captureVideoThumbnail } from '../utils/mediaUtils.ts';
+} from "../features/chats/chat.reducer.ts";
+import { useDeleteChatMessageMutation } from "../features/chats/chat.slice.ts";
+import { User } from "../types/auth.ts";
+import { AudioManager } from "../utils/index.ts";
+import { toast } from "react-toastify";
+import { useSocketContext } from "../hooks/useSocket.ts";
+import { ChatListItemInterface, ChatMessageInterface } from "../types/chat.ts";
+import { useNetwork } from "../hooks/useNetwork.ts";
+import { fileToBase64, messageQueue } from "../utils/messageQueue.ts";
+import { useMessageQueue } from "../hooks/useMessageQueue.ts";
+import { useTyping } from "../hooks/useTyping.ts";
+import { getFuzzyMatches } from "../utils/fuzzySearch.ts";
+import { FileProgressMap, useSendMessage } from "../hooks/useSendMessage.ts";
+import { captureVideoThumbnail } from "../utils/mediaUtils.ts";
 
 type FileType = {
   files: File[] | null;
-  type: 'document-file' | 'image-file';
+  type: "document-file" | "image-file";
 };
 
 type MessageContextValue = {
@@ -66,7 +74,10 @@ type MessageContextValue = {
   handleRemoveFile: (indexToRemove: number) => void;
   onMessageReceive: (data: any) => void;
   onChatMessageDeleted: (data: any) => void;
-  handleEmojiSimpleSelect: (emojiData: EmojiClickData, event: MouseEvent) => void;
+  handleEmojiSimpleSelect: (
+    emojiData: EmojiClickData,
+    event: MouseEvent,
+  ) => void;
   handleEmojiSelect: (emojiData: EmojiClickData, event: MouseEvent) => void;
   setAttachmentFiles: React.Dispatch<React.SetStateAction<FileType>>;
   handleSelectUser: (selectedUser: User) => void;
@@ -77,10 +88,12 @@ type MessageContextValue = {
   handleDeleteChatMessage: (messageId: string) => Promise<void>;
   handleReplyToChatMessage: () => Promise<void>;
   handleFileChange: (
-    fileType: 'document-file' | 'image-file',
+    fileType: "document-file" | "image-file",
     event: React.ChangeEvent<HTMLInputElement>,
   ) => void;
-  handleShowMentionUserMenu: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  handleShowMentionUserMenu: (
+    event: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => void;
   handleSetOpenReply: (messageId: string) => void;
 
   handleSetCloseReply: () => void;
@@ -97,21 +110,32 @@ type MessageContextValue = {
   };
 };
 
-export const MessageContext = createContext<MessageContextValue>({} as MessageContextValue);
+export const MessageContext = createContext<MessageContextValue>(
+  {} as MessageContextValue,
+);
 
-export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const MessageProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const { currentChat, unreadMessages } = useAppSelector((state: RootState) => state.chat);
-  const { user: currentUser } = useAppSelector((state: RootState) => state.auth);
+  const { currentChat, unreadMessages } = useAppSelector(
+    (state: RootState) => state.chat,
+  );
+  const { user: currentUser } = useAppSelector(
+    (state: RootState) => state.auth,
+  );
   const dispatch = useAppDispatch();
-  const [message, setMessage] = useState<string>('');
+  const [message, setMessage] = useState<string>("");
   const { socket } = useSocketContext();
   const [attachmentFiles, setAttachmentFiles] = useState<FileType>({
     files: null,
-    type: 'document-file',
+    type: "document-file",
   });
-  const [videoThumbnails, setVideoThumbnails] = useState<{ [fileName: string]: string }>({});
-  const [showMentionUserMenu, setShowMentionUserMenu] = useState<boolean>(false);
+  const [videoThumbnails, setVideoThumbnails] = useState<{
+    [fileName: string]: string;
+  }>({});
+  const [showMentionUserMenu, setShowMentionUserMenu] =
+    useState<boolean>(false);
   const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [showReply, setShowReply] = useState<boolean>(false);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
@@ -121,11 +145,12 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // const [sendMessage] = useSendMessageMutation();
 
-  const { sendMessage, fileProgress, overallProgress, isLoading } = useSendMessage();
+  const { sendMessage, fileProgress, overallProgress, isLoading } =
+    useSendMessage();
 
   const [deleteChatMessage] = useDeleteChatMessageMutation();
 
-  const [messageToReply, setMessageToReply] = useState('');
+  const [messageToReply, setMessageToReply] = useState("");
   const messageAudioManagerRef = useRef<AudioManager | null>(null);
   const reactionAudioManagerRef = useRef<AudioManager | null>(null);
 
@@ -136,7 +161,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const [isAudioReady, setIsAudioReady] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionQuery, setMentionQuery] = useState("");
   const { isOnline } = useNetwork();
 
   // Use refs for stable callback dependencies
@@ -160,26 +185,30 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     // Add event listeners for user interaction to initialize audio
     const handleUserInteraction = async () => {
-      if (messageAudioManagerRef.current && reactionAudioManagerRef.current && !isAudioReady) {
+      if (
+        messageAudioManagerRef.current &&
+        reactionAudioManagerRef.current &&
+        !isAudioReady
+      ) {
         await messageAudioManagerRef.current.initializeAudio();
         await reactionAudioManagerRef.current.initializeAudio();
         setIsAudioReady(true);
 
         // Remove listeners after first interaction
-        document.removeEventListener('click', handleUserInteraction);
-        document.removeEventListener('keydown', handleUserInteraction);
-        document.removeEventListener('touchstart', handleUserInteraction);
+        document.removeEventListener("click", handleUserInteraction);
+        document.removeEventListener("keydown", handleUserInteraction);
+        document.removeEventListener("touchstart", handleUserInteraction);
       }
     };
 
-    document.addEventListener('click', handleUserInteraction);
-    document.addEventListener('keydown', handleUserInteraction);
-    document.addEventListener('touchstart', handleUserInteraction);
+    document.addEventListener("click", handleUserInteraction);
+    document.addEventListener("keydown", handleUserInteraction);
+    document.addEventListener("touchstart", handleUserInteraction);
 
     return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
+      document.removeEventListener("click", handleUserInteraction);
+      document.removeEventListener("keydown", handleUserInteraction);
+      document.removeEventListener("touchstart", handleUserInteraction);
     };
   }, [isAudioReady]);
 
@@ -202,18 +231,18 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       // We need to find the trigger '@' which is:
       // either at the start of the string or preceded by a space
       // and is followed by our current query
-      const wordsBefore = textBeforeCursor.split(' ');
+      const wordsBefore = textBeforeCursor.split(" ");
       const lastWord = wordsBefore[wordsBefore.length - 1];
 
-      if (lastWord.startsWith('@')) {
+      if (lastWord.startsWith("@")) {
         wordsBefore[wordsBefore.length - 1] = `@${userToSelect.username} `;
-        const newTextBefore = wordsBefore.join(' ');
+        const newTextBefore = wordsBefore.join(" ");
         const newMessage = newTextBefore + textAfterCursor;
 
         setMessage(newMessage);
         setShowMentionUserMenu(false);
         setSelectedUser(userToSelect);
-        setMentionQuery(''); // Reset query
+        setMentionQuery(""); // Reset query
 
         // Senior Tip: Refocus and place cursor AFTER the new mention
         setTimeout(() => {
@@ -226,26 +255,32 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     [message, setMessage],
   );
 
-  const handleShowMentionUserMenu = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    event.preventDefault();
-    const value = event.target.value;
-    const cursorPosition = event.target.selectionStart;
+  const handleShowMentionUserMenu = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      event.preventDefault();
 
-    // Split text into words to find the current word being typed
-    const textBeforeCursor = value.substring(0, cursorPosition);
-    const words = textBeforeCursor.split(' ');
-    const currentWord = words[words.length - 1];
+      if (currentChat && !currentChat.isGroupChat) return;
 
-    if (currentWord.startsWith('@')) {
-      // The query is everything after the first '@' in the current word
-      const query = currentWord.substring(1);
-      setMentionQuery(query);
-      setShowMentionUserMenu(true);
-    } else {
-      setShowMentionUserMenu(false);
-      setMentionQuery('');
-    }
-  }, []);
+      const value = event.target.value;
+      const cursorPosition = event.target.selectionStart;
+
+      // Split text into words to find the current word being typed
+      const textBeforeCursor = value.substring(0, cursorPosition);
+      const words = textBeforeCursor.split(" ");
+      const currentWord = words[words.length - 1];
+
+      if (currentWord.startsWith("@")) {
+        // The query is everything after the first '@' in the current word
+        const query = currentWord.substring(1);
+        setMentionQuery(query);
+        setShowMentionUserMenu(true);
+      } else {
+        setShowMentionUserMenu(false);
+        setMentionQuery("");
+      }
+    },
+    [currentChat],
+  );
 
   const checkScrollPosition = useCallback(() => {
     if (bottomRef.current) {
@@ -268,13 +303,16 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     const container = bottomRef.current;
     if (container) {
-      container.addEventListener('scroll', checkScrollPosition);
-      return () => container.removeEventListener('scroll', checkScrollPosition);
+      container.addEventListener("scroll", checkScrollPosition);
+      return () => container.removeEventListener("scroll", checkScrollPosition);
     }
   }, [checkScrollPosition]);
 
   const handleFileChange = useCallback(
-    (fileType: 'document-file' | 'image-file', event: React.ChangeEvent<HTMLInputElement>) => {
+    (
+      fileType: "document-file" | "image-file",
+      event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
       const target = event.target;
       const files = target.files;
 
@@ -283,12 +321,15 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         // Generate thumbnails for video files
         fileArray.forEach(async (file) => {
-          if (file.type.startsWith('video/')) {
+          if (file.type.startsWith("video/")) {
             try {
               const thumbnail = await captureVideoThumbnail(file);
-              setVideoThumbnails((prev) => ({ ...prev, [file.name]: thumbnail }));
+              setVideoThumbnails((prev) => ({
+                ...prev,
+                [file.name]: thumbnail,
+              }));
             } catch (err) {
-              console.error('Thumbnail generation failed:', err);
+              console.error("Thumbnail generation failed:", err);
             }
           }
         });
@@ -296,7 +337,9 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
         setAttachmentFiles((prev) => {
           // If the previous files are null, initialize with an empty array
           const updatedFiles =
-            prev.files && prev.type === fileType ? [...prev.files, ...fileArray] : fileArray;
+            prev.files && prev.type === fileType
+              ? [...prev.files, ...fileArray]
+              : fileArray;
           const newState = {
             type: fileType,
             files: updatedFiles,
@@ -305,14 +348,17 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
         });
       }
 
-      target.value = '';
+      target.value = "";
     },
     [],
   );
 
   const [openEmoji, setOpenEmoji] = useState<boolean>(false);
 
-  const handleOpenAndCloseEmoji = useCallback(() => setOpenEmoji(!openEmoji), [openEmoji]);
+  const handleOpenAndCloseEmoji = useCallback(
+    () => setOpenEmoji(!openEmoji),
+    [openEmoji],
+  );
 
   const insertEmoji = useCallback(
     (emojiData: EmojiClickData) => {
@@ -326,7 +372,8 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       const start = input.selectionStart || 0;
       const end = input.selectionEnd || 0;
-      const newMessage = message.slice(0, start) + emojiData.emoji + message.slice(end);
+      const newMessage =
+        message.slice(0, start) + emojiData.emoji + message.slice(end);
       setMessage(newMessage);
 
       setTimeout(() => {
@@ -351,32 +398,38 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     [insertEmoji],
   );
 
-  const handleEmojiSimpleSelect = useCallback((emojiData: EmojiClickData, event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setMessage((prev) => {
-      const newMessage = prev + emojiData.emoji;
+  const handleEmojiSimpleSelect = useCallback(
+    (emojiData: EmojiClickData, event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setMessage((prev) => {
+        const newMessage = prev + emojiData.emoji;
 
-      return newMessage;
-    });
-    setOpenEmoji(false);
-  }, []);
+        return newMessage;
+      });
+      setOpenEmoji(false);
+    },
+    [],
+  );
 
-  const handleOnMessageChange = useCallback((evt: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = evt.target.value;
-    setMessage(value);
-  }, []);
+  const handleOnMessageChange = useCallback(
+    (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const value = evt.target.value;
+      setMessage(value);
+    },
+    [],
+  );
 
   const getAllMessages = useCallback(async () => {
     // Early return checks
     if (!socket) {
-      console.log('No socket connection, cannot get reduxStateMessages');
+      console.log("No socket connection, cannot get reduxStateMessages");
       return;
     }
 
     const chatId = currentChatRef.current?._id;
     if (!chatId) {
-      console.log('No chat selected, cannot get reduxStateMessages');
+      console.log("No chat selected, cannot get reduxStateMessages");
       return;
     }
 
@@ -404,7 +457,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (bottomRef.current) {
       bottomRef.current.scrollTo({
         top: bottomRef.current.scrollHeight,
-        behavior: 'smooth',
+        behavior: "smooth",
       });
       // isAtBottomRef.current = true;
     }
@@ -412,10 +465,12 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const onMessageReceive = useCallback(
     (data: any) => {
-      console.log('Received message:', data);
-      console.log('Received message attachments:', data.attachments);
+      console.log("Received message:", data);
+      console.log("Received message attachments:", data.attachments);
       dispatch(onMessageReceived({ data }));
-      dispatch(updateChatLastMessage({ chatToUpdateId: data.chat, message: data }));
+      dispatch(
+        updateChatLastMessage({ chatToUpdateId: data.chat, message: data }),
+      );
 
       const isCurrentChat = data.chat === currentChat?._id;
       const isFromCurrentUser = data.sender._id === currentUser?._id;
@@ -434,7 +489,13 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
         playMessageSound();
       }
     },
-    [currentChat?._id, currentUser?._id, dispatch, playMessageSound, scrollToBottom],
+    [
+      currentChat?._id,
+      currentUser?._id,
+      dispatch,
+      playMessageSound,
+      scrollToBottom,
+    ],
   );
 
   const onChatMessageDeleted = useCallback(
@@ -470,44 +531,47 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     [deleteChatMessage, dispatch, playMessageSound],
   );
 
-  const processMentionsContent = useCallback((message: string, availableUsers: User[]) => {
-    // regex updated to handle @ in usernames
-    // it looks for @ followed by characters until it hits a space or end of string
-    // then it verifies if that "word" matches a known username
-    const mentionRegex = /(?:^|\s)@([^\s]+)/g;
-    const mentions: Array<{
-      userId: string;
-      username: string;
-      position: number;
-    }> = [];
+  const processMentionsContent = useCallback(
+    (message: string, availableUsers: User[]) => {
+      // regex updated to handle @ in usernames
+      // it looks for @ followed by characters until it hits a space or end of string
+      // then it verifies if that "word" matches a known username
+      const mentionRegex = /(?:^|\s)@([^\s]+)/g;
+      const mentions: Array<{
+        userId: string;
+        username: string;
+        position: number;
+      }> = [];
 
-    let match: any;
+      let match: any;
 
-    while ((match = mentionRegex.exec(message)) !== null) {
-      const fullMatch = match[0]; // e.g., " @john@dev"
-      const rawUsername = match[1]; // e.g., "john@dev"
+      while ((match = mentionRegex.exec(message)) !== null) {
+        const fullMatch = match[0]; // e.g., " @john@dev"
+        const rawUsername = match[1]; // e.g., "john@dev"
 
-      // Calculate the exact start position of the '@' character
-      const atIndex = match.index + (fullMatch.startsWith(' ') ? 1 : 0);
+        // Calculate the exact start position of the '@' character
+        const atIndex = match.index + (fullMatch.startsWith(" ") ? 1 : 0);
 
-      const mentionedUser = availableUsers.find(
-        (user) => user.username.toLowerCase() === rawUsername.toLowerCase(),
-      );
+        const mentionedUser = availableUsers.find(
+          (user) => user.username.toLowerCase() === rawUsername.toLowerCase(),
+        );
 
-      if (mentionedUser) {
-        mentions.push({
-          userId: mentionedUser._id,
-          username: mentionedUser.username,
-          position: atIndex,
-        });
+        if (mentionedUser) {
+          mentions.push({
+            userId: mentionedUser._id,
+            username: mentionedUser.username,
+            position: atIndex,
+          });
+        }
       }
-    }
 
-    return {
-      content: message,
-      mentions: mentions,
-    };
-  }, []);
+      return {
+        content: message,
+        mentions: mentions,
+      };
+    },
+    [],
+  );
 
   const handleReplyToChatMessage = useCallback(async () => {
     const chat = currentChatRef.current;
@@ -532,17 +596,17 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         scrollToBottom();
 
-        setMessage(''); // Move here
-        setAttachmentFiles({ files: null, type: 'document-file' }); // Move here
+        setMessage(""); // Move here
+        setAttachmentFiles({ files: null, type: "document-file" }); // Move here
         setShowReply(false); // Close reply UI after sending
-        setMessageToReply(''); // Reset messageToReply
+        setMessageToReply(""); // Reset messageToReply
 
         // Play sound when message is sent
         playMessageSound();
       })
       .catch((error: any) => {
         console.error(error);
-        toast('Failed to send message', { type: 'error' });
+        toast("Failed to send message", { type: "error" });
       });
   }, [
     socket,
@@ -569,7 +633,9 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     (indexToRemove: number) => {
       if (attachmentFiles?.files) {
         const fileToRemove = attachmentFiles.files[indexToRemove];
-        const updatedFiles = attachmentFiles.files.filter((_, index) => index !== indexToRemove);
+        const updatedFiles = attachmentFiles.files.filter(
+          (_, index) => index !== indexToRemove,
+        );
 
         if (fileToRemove && videoThumbnails[fileToRemove.name]) {
           setVideoThumbnails((prev) => {
@@ -595,7 +661,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const handleSetCloseReply = useCallback(() => {
     setShowReply(false);
-    setMessageToReply('');
+    setMessageToReply("");
   }, []);
 
   const sendChatMessage = useCallback(async () => {
@@ -609,11 +675,14 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       clearTimeout(typingTimeoutRef.current);
     }
 
-    const processedMessage = processMentionsContent(message, currentChat?.participants);
+    const processedMessage = processMentionsContent(
+      message,
+      currentChat?.participants,
+    );
 
     // Clear input fields immediately for better UX
     const files = attachmentFiles.files;
-    const tempId = 'temp-' + Date.now();
+    const tempId = "temp-" + Date.now();
 
     const convertedFiles = await Promise.all(
       (files || [])?.map(async (file) => await fileToBase64(file)),
@@ -626,7 +695,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
       sender: currentUser!,
       chat: currentChat._id,
       attachments: convertedFiles,
-      status: 'queued', // Custom status
+      status: "queued", // Custom status
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -634,7 +703,11 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     console.log({ tempMessage });
 
     try {
-      dispatch(onMessageReceived({ data: tempMessage as unknown as ChatMessageInterface }));
+      dispatch(
+        onMessageReceived({
+          data: tempMessage as unknown as ChatMessageInterface,
+        }),
+      );
 
       if (!isOnline) {
         await messageQueue.add({
@@ -644,12 +717,15 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
           mentions: processedMessage.mentions,
         });
 
-        toast.info('You are offline. Message will be sent when you reconnect.', {
-          autoClose: 3000,
-        });
+        toast.info(
+          "You are offline. Message will be sent when you reconnect.",
+          {
+            autoClose: 3000,
+          },
+        );
 
         setTimeout(() => {
-          setMessage('');
+          setMessage("");
           setAttachmentFiles({} as any);
         }, 2000);
         return;
@@ -664,8 +740,8 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
         },
       });
 
-      console.log('Server response:', response);
-      console.log('Server response attachments:', response.data?.attachments);
+      console.log("Server response:", response);
+      console.log("Server response attachments:", response.data?.attachments);
 
       playMessageSound();
       scrollToBottom();
@@ -678,11 +754,11 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
         }),
       );
 
-      setMessage('');
+      setMessage("");
       setAttachmentFiles({} as any);
     } catch (error) {
-      console.error('Failed to send:', error);
-      toast.error('Failed to send message');
+      console.error("Failed to send:", error);
+      toast.error("Failed to send message");
     }
   }, [
     socket,
@@ -797,5 +873,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({ children })
     ],
   );
 
-  return <MessageContext.Provider value={value}>{children}</MessageContext.Provider>;
+  return (
+    <MessageContext.Provider value={value}>{children}</MessageContext.Provider>
+  );
 };

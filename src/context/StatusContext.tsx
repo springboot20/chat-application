@@ -259,8 +259,10 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
       formData.append("statusMedias", file);
     });
 
+    formData.append("privacyType", privacy);
+
     if (privacy === "selected" || privacy === "except") {
-      formData.append("selectedContacts", JSON.stringify(selectedContacts));
+      formData.append("selectedContactIds", JSON.stringify(selectedContacts));
     }
 
     // 3. Append the metadata as a string
