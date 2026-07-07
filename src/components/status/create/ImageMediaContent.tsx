@@ -1,16 +1,25 @@
-import { PlusIcon, TrashIcon, XMarkIcon, PhotoIcon, PencilIcon } from '@heroicons/react/24/outline';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useStatusStories } from '../../../hooks/useStatusStories';
-import { MediaContentTypes } from './MediaContentTypes';
-import { Fragment, useCallback, useState } from 'react';
-import { useObjectURL } from '../../../hooks/useObjectUrl';
-import { classNames } from '../../../utils';
-import { getCroppedImg } from '../../../utils/canvas';
-import { getOrientation } from 'get-orientation/browser';
-import Cropper from 'react-easy-crop';
-import CameraViewfinder from '../CameraViewFinder';
-import CaptionInputComponent from '../CaptionInputComponent';
-import { StatusPrivacyDisplay, StatusPrivacySettings } from '../StatusPrivacySettings';
+import {
+  PlusIcon,
+  TrashIcon,
+  XMarkIcon,
+  PhotoIcon,
+  PencilIcon,
+} from "@heroicons/react/24/outline";
+import { AnimatePresence, motion } from "framer-motion";
+import { useStatusStories } from "../../../hooks/useStatusStories";
+import { MediaContentTypes } from "./MediaContentTypes";
+import { Fragment, useCallback, useState } from "react";
+import { useObjectURL } from "../../../hooks/useObjectUrl";
+import { classNames } from "../../../utils";
+import { getCroppedImg } from "../../../utils/canvas";
+import { getOrientation } from "get-orientation/browser";
+import Cropper from "react-easy-crop";
+import CameraViewfinder from "../CameraViewFinder";
+import CaptionInputComponent from "../CaptionInputComponent";
+import {
+  StatusPrivacyDisplay,
+  StatusPrivacySettings,
+} from "../StatusPrivacySettings";
 
 const ORIENTATION_TO_ANGLE: Record<number, number> = {
   1: 0, // Standard orientation
@@ -28,8 +37,8 @@ export default function ImageMediaContent() {
     closeMediaContent,
   } = useStatusStories();
 
-  const [viewMode, setViewMode] = useState<'gallery' | 'camera'>('gallery');
-  const [cameraMode, setCameraMode] = useState<'image' | 'video'>('image');
+  const [viewMode, setViewMode] = useState<"gallery" | "camera">("gallery");
+  const [cameraMode, setCameraMode] = useState<"image" | "video">("image");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showPrivacySettings, setShowPrivacySettings] = useState(false);
 
@@ -41,12 +50,14 @@ export default function ImageMediaContent() {
 
   const activeFile = selectedFiles[activeFileIndex];
   const mainPreviewUrl = useObjectURL(activeFile);
-  const editingFileUrl = useObjectURL(editingIndex !== null ? selectedFiles[editingIndex] : null);
+  const editingFileUrl = useObjectURL(
+    editingIndex !== null ? selectedFiles[editingIndex] : null,
+  );
 
   const handleCapture = (file: File) => {
     setSelectedFiles((prev) => [...prev, file].slice(0, 6));
     setActiveFileIndex(selectedFiles.length); // Auto-focus the new capture
-    setViewMode('gallery'); // Return to gallery to preview/edit
+    setViewMode("gallery"); // Return to gallery to preview/edit
   };
 
   const onCropComplete = useCallback((_: any, celebratedPixels: any) => {
@@ -80,9 +91,13 @@ export default function ImageMediaContent() {
 
     if (!croppedBlob) return;
 
-    const croppedFile = new File([croppedBlob], selectedFiles[editingIndex].name, {
-      type: 'image/jpeg',
-    });
+    const croppedFile = new File(
+      [croppedBlob],
+      selectedFiles[editingIndex].name,
+      {
+        type: "image/jpeg",
+      },
+    );
 
     setSelectedFiles((prev) => {
       const updated = [...prev];
@@ -114,41 +129,49 @@ export default function ImageMediaContent() {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className='flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16'>
-        <header className='h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 font-nunito shrink-0'>
+        className="flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16"
+      >
+        <header className="h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 font-nunito shrink-0">
           <button
-            type='button'
+            type="button"
             onClick={closeMediaContent}
-            className='size-8 flex items-center justify-center rounded-full justify-self-end'>
-            <XMarkIcon className='h-5 text-gray-800 dark:text-white' />
+            className="size-8 flex items-center justify-center rounded-full justify-self-end"
+          >
+            <XMarkIcon className="h-5 text-gray-800 dark:text-white" />
           </button>
           <MediaContentTypes />
-          <div className='w-10' /> {/* Spacer for balance */}
+          <div className="w-10" /> {/* Spacer for balance */}
         </header>
 
-        <div className='p-4 space-y-4 flex-1 overflow-y-auto mb-20 lg:mb-0'>
+        <div className="p-4 flex flex-col h-full mb-20 lg:mb-0">
           {/* SUB-SWITCHER: Gallery vs Camera */}
-          <div className='flex justify-center'>
-            <div className='flex bg-black/20 p-1 rounded-full'>
+          <div className="flex justify-center">
+            <div className="flex bg-black/20 p-1 rounded-full">
               <button
-                type='button'
-                onClick={() => setViewMode('gallery')}
+                type="button"
+                onClick={() => setViewMode("gallery")}
                 className={classNames(
-                  'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
-                  viewMode === 'gallery' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
-                )}>
+                  "px-6 py-1.5 rounded-full text-xs font-bold transition-all",
+                  viewMode === "gallery"
+                    ? "bg-white text-indigo-600 shadow-md"
+                    : "text-gray-400",
+                )}
+              >
                 Gallery
               </button>
               <button
-                type='button'
+                type="button"
                 onClick={() => {
-                  setViewMode('camera');
-                  setCameraMode('image');
+                  setViewMode("camera");
+                  setCameraMode("image");
                 }}
                 className={classNames(
-                  'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
-                  viewMode === 'camera' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
-                )}>
+                  "px-6 py-1.5 rounded-full text-xs font-bold transition-all",
+                  viewMode === "camera"
+                    ? "bg-white text-indigo-600 shadow-md"
+                    : "text-gray-400",
+                )}
+              >
                 Camera
               </button>
             </div>
@@ -157,39 +180,46 @@ export default function ImageMediaContent() {
           {/* Main Preview Area */}
           <div
             className={classNames(
-              'relative aspect-square w-full bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 group',
-              mainPreviewUrl ? 'h-[35rem]' : 'h-[25rem]',
-            )}>
-            <AnimatePresence mode='wait'>
-              {viewMode === 'camera' ? (
-                <div className='h-full relative'>
-                  <CameraViewfinder mode={cameraMode} onCapture={handleCapture} />
+              // 'relative aspect-square w-full bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 group',
+              // mainPreviewUrl ? 'h-[35rem]' : 'h-[25rem]',
+              "relative w-full bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 group my-4",
+              "flex-1 min-h-[16rem] max-h-[70vh]",
+            )}
+          >
+            <AnimatePresence mode="wait">
+              {viewMode === "camera" ? (
+                <div className="h-full relative">
+                  <CameraViewfinder
+                    mode={cameraMode}
+                    onCapture={handleCapture}
+                  />
                 </div>
               ) : (
-                <div className='h-full relative'>
+                <div className="h-full relative">
                   {mainPreviewUrl ? (
                     <Fragment>
                       <button
-                        type='button'
+                        type="button"
                         onClick={() => setEditingIndex(activeFileIndex)}
-                        className='absolute top-4 right-4 z-40 bg-gray-600/60 text-white backdrop-blur-md px-4 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-x-2'>
-                        Edit <PencilIcon className='size-4' />
+                        className="absolute top-4 right-4 z-40 bg-gray-600/60 text-white backdrop-blur-md px-4 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-x-2"
+                      >
+                        Edit <PencilIcon className="size-4" />
                       </button>
                       <img
                         src={mainPreviewUrl}
-                        className='h-full w-full object-contain'
-                        alt='Preview'
+                        className="h-full w-full object-contain"
+                        alt="Preview"
                       />
 
                       {/* MOVE CAPTION INSIDE THE RELATIVE CONTAINER AND POSITION ABSOLUTE */}
-                      <div className='absolute bottom-4 inset-x-0 px-4 z-30'>
-                        <CaptionInputComponent file={activeFile} type='image' />
+                      <div className="absolute bottom-4 inset-x-0 px-4 z-30">
+                        <CaptionInputComponent file={activeFile} type="image" />
                       </div>
                     </Fragment>
                   ) : (
-                    <div className='h-full w-full flex flex-col items-center justify-center text-gray-400'>
-                      <PhotoIcon className='h-12 w-12 mb-2 opacity-20' />
-                      <p className='text-sm font-medium'>No image selected</p>
+                    <div className="h-full w-full flex flex-col items-center justify-center text-gray-400">
+                      <PhotoIcon className="h-12 w-12 mb-2 opacity-20" />
+                      <p className="text-sm font-medium">No image selected</p>
                     </div>
                   )}
                 </div>
@@ -204,10 +234,11 @@ export default function ImageMediaContent() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className='absolute inset-0 z-50 bg-black flex flex-col'>
-                <div className='relative flex-1'>
+                className="absolute inset-0 z-50 bg-black flex flex-col"
+              >
+                <div className="relative flex-1">
                   <Cropper
-                    image={editingFileUrl || ''}
+                    image={editingFileUrl || ""}
                     crop={crop}
                     zoom={zoom}
                     rotation={rotation}
@@ -219,54 +250,60 @@ export default function ImageMediaContent() {
                   />
                 </div>
 
-                <div className='p-6 bg-gray-900 space-y-6'>
-                  <div className='flex flex-col gap-2'>
+                <div className="p-6 bg-gray-900 space-y-6">
+                  <div className="flex flex-col gap-2">
                     <fieldset>
-                      <label htmlFor='zoom-level' className='text-white text-xs font-nunito'>
+                      <label
+                        htmlFor="zoom-level"
+                        className="text-white text-xs font-nunito"
+                      >
                         Zoom
                       </label>
                       <input
-                        id='zoom-level'
-                        type='range'
+                        id="zoom-level"
+                        type="range"
                         min={1}
                         max={3}
                         step={0.1}
                         value={zoom}
                         onChange={(e) => setZoom(Number(e.target.value))}
-                        className='w-full'
+                        className="w-full"
                       />
                     </fieldset>
 
                     <fieldset>
                       <label
-                        htmlFor='rotation-angle'
-                        className='text-white text-xs mt-2 font-nunito'>
+                        htmlFor="rotation-angle"
+                        className="text-white text-xs mt-2 font-nunito"
+                      >
                         Rotation: {rotation}°
                       </label>
                       <input
-                        id='rotation-angle'
-                        type='range'
+                        id="rotation-angle"
+                        type="range"
                         min={0}
                         max={360}
                         step={1}
                         value={rotation}
                         onChange={(e) => setRotation(Number(e.target.value))}
-                        className='w-full'
+                        className="w-full"
                       />
                     </fieldset>
                   </div>
 
-                  <div className='flex gap-4'>
+                  <div className="flex gap-4">
                     <button
-                      type='button'
+                      type="button"
                       onClick={() => setEditingIndex(null)}
-                      className='flex-1 py-3 text-white font-bold bg-white/10 rounded-xl'>
+                      className="flex-1 py-3 text-white font-bold bg-white/10 rounded-xl"
+                    >
                       Cancel
                     </button>
                     <button
-                      type='button'
+                      type="button"
                       onClick={handleSaveCrop}
-                      className='flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl'>
+                      className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl"
+                    >
                       Apply Crop
                     </button>
                   </div>
@@ -276,21 +313,23 @@ export default function ImageMediaContent() {
           </AnimatePresence>
 
           {selectedFiles.length > 0 && (
-            <div className='w-full mt-3 max-w-sm'>
-              <StatusPrivacyDisplay onOpenSettings={() => setShowPrivacySettings(true)} />
+            <div className="w-full mt-3 max-w-sm shrink-0">
+              <StatusPrivacyDisplay
+                onOpenSettings={() => setShowPrivacySettings(true)}
+              />
             </div>
           )}
-          
+
           {/* Thumbnail Gallery */}
-          <div className='flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide'>
+          <div className="flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide shrink-0">
             {/* Add More Button */}
             {selectedFiles.length < 6 && (
-              <label className='flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group'>
-                <PlusIcon className='size-6 text-gray-400 group-hover:text-blue-500' />
+              <label className="flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group">
+                <PlusIcon className="size-6 text-gray-400 group-hover:text-blue-500" />
                 <input
-                  type='file'
+                  type="file"
                   hidden
-                  accept='image/*'
+                  accept="image/*"
                   multiple
                   onChange={handleFileSelection}
                 />
@@ -329,21 +368,27 @@ function FileThumbnail({ file, isActive, onSelect, onRemove }: any) {
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       className={classNames(
-        'relative flex-shrink-0 size-16 rounded-xl overflow-hidden cursor-pointer ring-2 transition-all',
+        "relative flex-shrink-0 size-16 rounded-xl overflow-hidden cursor-pointer ring-2 transition-all",
         isActive
-          ? 'ring-blue-500 ring-offset-2 dark:ring-offset-gray-900'
-          : 'ring-transparent opacity-70 hover:opacity-100',
+          ? "ring-blue-500 ring-offset-2 dark:ring-offset-gray-900"
+          : "ring-transparent opacity-70 hover:opacity-100",
       )}
-      onClick={onSelect}>
-      <img src={url ? String(url) : ''} className='h-full w-full object-cover' alt='thumb' />
+      onClick={onSelect}
+    >
+      <img
+        src={url ? String(url) : ""}
+        className="h-full w-full object-cover"
+        alt="thumb"
+      />
       <button
-        type='button'
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onRemove();
         }}
-        className='absolute top-0.5 right-0.5 p-0.5 bg-black/50 text-white rounded-md hover:bg-red-500 transition-colors'>
-        <TrashIcon className='size-3' />
+        className="absolute top-0.5 right-0.5 p-0.5 bg-black/50 text-white rounded-md hover:bg-red-500 transition-colors"
+      >
+        <TrashIcon className="size-3" />
       </button>
     </motion.div>
   );

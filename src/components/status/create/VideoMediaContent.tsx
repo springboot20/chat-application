@@ -7,18 +7,22 @@ import {
   TrashIcon,
   VideoCameraIcon,
   XMarkIcon,
-} from '@heroicons/react/24/outline';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useStatusStories } from '../../../hooks/useStatusStories';
-import { MediaContentTypes } from './MediaContentTypes';
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { useObjectURL } from '../../../hooks/useObjectUrl';
-import { toast } from 'react-toastify';
-import { classNames } from '../../../utils';
-import CameraViewfinder from '../CameraViewFinder';
-import CaptionInputComponent from '../CaptionInputComponent';
-import { StatusPrivacyDisplay, StatusPrivacySettings } from '../StatusPrivacySettings';
-import { VideoThumbnail as SharedVideoThumbnail } from '../../shared/VideoThumbnail';
+} from "@heroicons/react/24/outline";
+import { motion, AnimatePresence } from "framer-motion";
+import { useStatusStories } from "../../../hooks/useStatusStories";
+import { MediaContentTypes } from "./MediaContentTypes";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { useObjectURL } from "../../../hooks/useObjectUrl";
+import { toast } from "react-toastify";
+import { classNames } from "../../../utils";
+import CameraViewfinder from "../CameraViewFinder";
+import CaptionInputComponent from "../CaptionInputComponent";
+import {
+  StatusPrivacyDisplay,
+  StatusPrivacySettings,
+} from "../StatusPrivacySettings";
+import { VideoThumbnail as SharedVideoThumbnail } from "../../shared/VideoThumbnail";
+import { trimVideoTo } from "../../../utils/video-trim";
 
 const MAX_DURATION = 30;
 
@@ -32,8 +36,9 @@ export default function VideoMediaContent() {
   } = useStatusStories();
 
   // Mode state: 'gallery' shows the upload/preview, 'camera' shows viewfinder
-  const [viewMode, setViewMode] = useState<'gallery' | 'camera'>('gallery');
+  const [viewMode, setViewMode] = useState<"gallery" | "camera">("gallery");
   const [showPrivacySettings, setShowPrivacySettings] = useState(false);
+  const [isTrimming, setIsTrimming] = useState(false);
   const selectedVideo = selectedVideoFiles[activeVideoFileIndex];
 
   const videoUrl = useObjectURL(selectedVideo);
@@ -46,7 +51,7 @@ export default function VideoMediaContent() {
     const newFiles = Array.from(files);
 
     if (newFiles.length > 5) {
-      toast.warning('You can only upload up to 5 videos at a time.');
+      toast.warning("You can only upload up to 5 videos at a time.");
       return;
     }
 
@@ -62,15 +67,41 @@ export default function VideoMediaContent() {
   const handleCapture = (file: File) => {
     setSelectedVideoFiles((prev) => [...prev, file]);
     setActiveVideoFileIndex(selectedVideoFiles.length);
-    setViewMode('gallery'); // Return to preview the recorded video
+    setViewMode("gallery"); // Return to preview the recorded video
   };
 
-  const handleMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    if (e.currentTarget.duration > MAX_DURATION) {
-      toast.warning(`Video too long! Please keep it under ${MAX_DURATION} seconds.`);
-      setSelectedVideoFiles((prev) => prev.filter((_, i) => i !== activeVideoFileIndex));
-    }
-  };
+  const handleMetadata = useCallback(
+    async (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      if (e.currentTarget.duration > MAX_DURATION) {
+        const originalFile = selectedVideoFiles[activeVideoFileIndex];
+        if (!originalFile) return;
+
+        setIsTrimming(true);
+        toast.info(`Trimming video to ${MAX_DURATION} seconds...`);
+
+        try {
+          const trimmedFile = await trimVideoTo(originalFile, MAX_DURATION);
+
+          setSelectedVideoFiles((prev) => {
+            const updated = [...prev];
+            updated[activeVideoFileIndex] = trimmedFile;
+            return updated;
+          });
+
+          toast.success("Video trimmed successfully");
+        } catch (err) {
+          console.error("Trim failed:", err);
+          toast.error("Could not trim video. Please try a shorter clip.");
+          setSelectedVideoFiles((prev) =>
+            prev.filter((_, i) => i !== activeVideoFileIndex),
+          );
+        } finally {
+          setIsTrimming(false);
+        }
+      }
+    },
+    [activeVideoFileIndex, selectedVideoFiles, setSelectedVideoFiles],
+  );
 
   const removeVideo = useCallback(
     (index: number) => {
@@ -92,75 +123,102 @@ export default function VideoMediaContent() {
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.85, opacity: 0 }}
-        className='flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16'>
-        <header className='h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 shrink-0'>
+        className="flex flex-col h-full bg-gray-600/30 overflow-hidden mt-16"
+      >
+        <header className="h-14 border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-4 shrink-0">
           <button
-            type='button'
+            type="button"
             onClick={closeMediaContent}
-            className='size-8 flex items-center justify-center rounded-full'>
-            <XMarkIcon className='h-5 text-gray-800 dark:text-white' />
+            className="size-8 flex items-center justify-center rounded-full"
+          >
+            <XMarkIcon className="h-5 text-gray-800 dark:text-white" />
           </button>
           <MediaContentTypes />
-          <div className='w-10' />
+          <div className="w-10" />
         </header>
 
-        <div className='flex-1 overflow-y-auto p-4 space-y-4 mb-20 lg:mb-0'>
+        <div className="flex-1 overflow-hidden flex flex-col p-4 mb-20 lg:mb-0">
           {/* Source Switcher */}
-          <div className='flex justify-center shrink-0'>
-            <div className='flex bg-black/20 p-1 rounded-full'>
+          <div className="flex justify-center shrink-0">
+            <div className="flex bg-black/20 p-1 rounded-full">
               <button
-                type='button'
-                onClick={() => setViewMode('gallery')}
+                type="button"
+                onClick={() => setViewMode("gallery")}
                 className={classNames(
-                  'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
-                  viewMode === 'gallery' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
-                )}>
+                  "px-6 py-1.5 rounded-full text-xs font-bold transition-all",
+                  viewMode === "gallery"
+                    ? "bg-white text-indigo-600 shadow-md"
+                    : "text-gray-400",
+                )}
+              >
                 Gallery
               </button>
               <button
-                type='button'
-                onClick={() => setViewMode('camera')}
+                type="button"
+                onClick={() => setViewMode("camera")}
                 className={classNames(
-                  'px-6 py-1.5 rounded-full text-xs font-bold transition-all',
-                  viewMode === 'camera' ? 'bg-white text-indigo-600 shadow-md' : 'text-gray-400',
-                )}>
+                  "px-6 py-1.5 rounded-full text-xs font-bold transition-all",
+                  viewMode === "camera"
+                    ? "bg-white text-indigo-600 shadow-md"
+                    : "text-gray-400",
+                )}
+              >
                 Camera
               </button>
             </div>
           </div>
 
-          <div className='relative aspect-[9/16] max-h-[520px] w-full mx-auto bg-black rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 shrink-0'>
-            <AnimatePresence mode='wait'>
-              {viewMode === 'camera' ? (
+          <div className="relative aspect-[9/16] w-auto mx-auto bg-black rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 my-4 flex-1 min-h-[16rem] max-h-[70vh]">
+            <AnimatePresence mode="wait">
+              {viewMode === "camera" ? (
                 <motion.div
-                  key='cam'
+                  key="cam"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className='h-full'>
-                  <CameraViewfinder mode='video' onCapture={handleCapture} />
+                  className="h-full"
+                >
+                  <CameraViewfinder mode="video" onCapture={handleCapture} />
                 </motion.div>
               ) : (
                 <motion.div
-                  key='gal'
+                  key="gal"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className='h-full'>
+                  className="h-full"
+                >
                   {videoUrl ? (
-                    <VideoPreviewPlayer file={selectedVideo} handleMetadata={handleMetadata} />
+                    <div className="relative">
+                      <VideoPreviewPlayer
+                        file={selectedVideo}
+                        handleMetadata={handleMetadata}
+                      />
+                      {isTrimming && (
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center rounded-2xl">
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="size-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                            <p className="text-white text-sm font-medium">
+                              Trimming to {MAX_DURATION}s...
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    <label className='h-full flex flex-col items-center justify-center cursor-pointer p-10 text-center'>
-                      <div className='p-6 bg-gray-100 dark:bg-white/5 rounded-full mb-4'>
-                        <VideoCameraIcon className='h-12 w-12 text-gray-400' />
+                    <label className="h-full flex flex-col items-center justify-center cursor-pointer p-10 text-center">
+                      <div className="p-6 bg-gray-100 dark:bg-white/5 rounded-full mb-4">
+                        <VideoCameraIcon className="h-12 w-12 text-gray-400" />
                       </div>
-                      <p className='text-sm font-medium text-gray-500'>
+                      <p className="text-sm font-medium text-gray-500">
                         Tap to upload a video status
                       </p>
-                      <p className='text-xs text-gray-400 mt-1'>Up to 30 seconds</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Up to 30 seconds
+                      </p>
                       <input
-                        type='file'
+                        type="file"
                         hidden
-                        accept='video/*'
+                        accept="video/*"
                         multiple
                         onChange={handleVideoSelection}
                       />
@@ -172,23 +230,27 @@ export default function VideoMediaContent() {
           </div>
 
           {/* Caption Field - Only show if a video is selected and in gallery mode */}
-          {videoUrl && <CaptionInputComponent file={selectedVideo as File} type='video' />}
+          {videoUrl && (
+            <CaptionInputComponent file={selectedVideo as File} type="video" />
+          )}
 
           {(selectedVideoFiles.length > 0 || selectedVideo) && (
-            <div className='w-full mt-3 max-w-sm'>
-              <StatusPrivacyDisplay onOpenSettings={() => setShowPrivacySettings(true)} />
+            <div className="w-full mt-3 max-w-sm">
+              <StatusPrivacyDisplay
+                onOpenSettings={() => setShowPrivacySettings(true)}
+              />
             </div>
           )}
 
-          <div className='flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide shrink-0'>
+          <div className="flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide shrink-0">
             {/* Add More Button */}
             {selectedVideoFiles.length < 6 && (
-              <label className='flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group'>
-                <PlusIcon className='size-6 text-gray-400 group-hover:text-blue-500' />
+              <label className="flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group">
+                <PlusIcon className="size-6 text-gray-400 group-hover:text-blue-500" />
                 <input
-                  type='file'
+                  type="file"
                   hidden
-                  accept='video/*'
+                  accept="video/*"
                   multiple
                   onChange={handleVideoSelection}
                 />
@@ -231,24 +293,32 @@ function VideoThumbnail({ file, isActive, onSelect, onRemove }: any) {
     <motion.div
       layout
       className={classNames(
-        'relative flex-shrink-0 size-16 rounded-xl overflow-hidden cursor-pointer ring-2 transition-all',
-        isActive ? 'ring-blue-500 ring-offset-2' : 'ring-transparent opacity-70',
+        "relative flex-shrink-0 size-16 rounded-xl overflow-hidden cursor-pointer ring-2 transition-all",
+        isActive
+          ? "ring-blue-500 ring-offset-2"
+          : "ring-transparent opacity-70",
       )}
-      onClick={onSelect}>
+      onClick={onSelect}
+    >
       {fileUrl ? (
-        <SharedVideoThumbnail url={fileUrl} className='h-full w-full' showPlayIcon={true} />
+        <SharedVideoThumbnail
+          url={fileUrl}
+          className="h-full w-full"
+          showPlayIcon={true}
+        />
       ) : (
-        <div className='h-full w-full bg-gray-800 animate-pulse' />
+        <div className="h-full w-full bg-gray-800 animate-pulse" />
       )}
 
       <button
-        type='button'
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onRemove();
         }}
-        className='absolute top-0.5 right-0.5 p-0.5 bg-black/50 text-white rounded-md hover:bg-red-500 z-10'>
-        <TrashIcon className='size-3' />
+        className="absolute top-0.5 right-0.5 p-0.5 bg-black/50 text-white rounded-md hover:bg-red-500 z-10"
+      >
+        <TrashIcon className="size-3" />
       </button>
     </motion.div>
   );
@@ -271,7 +341,8 @@ function VideoPreviewPlayer({
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      const currentProgress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+      const currentProgress =
+        (videoRef.current.currentTime / videoRef.current.duration) * 100;
       setProgress(currentProgress);
     }
   };
@@ -287,17 +358,18 @@ function VideoPreviewPlayer({
   // Allow user to click the bar to seek
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (videoRef.current) {
-      const seekTime = (Number(e.target.value) / 100) * videoRef.current.duration;
+      const seekTime =
+        (Number(e.target.value) / 100) * videoRef.current.duration;
       videoRef.current.currentTime = seekTime;
       setProgress(Number(e.target.value));
     }
   };
 
   return (
-    <div className='relative h-full w-full bg-black flex items-center justify-center group'>
+    <div className="relative h-full w-full bg-black flex items-center justify-center group">
       <video
         ref={videoRef}
-        src={videoUrl || ''}
+        src={videoUrl || ""}
         onLoadedDataCapture={(event) => {
           handleMetadata(event);
           if (videoRef.current) {
@@ -306,7 +378,7 @@ function VideoPreviewPlayer({
         }}
         onTimeUpdate={handleTimeUpdate}
         onClick={togglePlay}
-        className='h-full w-full object-contain'
+        className="h-full w-full object-contain"
         autoPlay
         muted={isMuted}
         loop
@@ -314,46 +386,59 @@ function VideoPreviewPlayer({
       />
 
       {/* Progress Bar Container */}
-      <div className='absolute top-0 left-0 w-full p-4 bg-gradient-to-b from-black/60 to-transparent z-20'>
+      <div className="absolute top-0 left-0 w-full p-4 bg-gradient-to-b from-black/60 to-transparent z-20">
         <fieldset>
-          <label htmlFor='range' className='sr-only'>
+          <label htmlFor="range" className="sr-only">
             Progress
           </label>
           <input
-            type='range'
-            id='range'
-            min='0'
-            max='100'
+            type="range"
+            id="range"
+            min="0"
+            max="100"
             value={progress}
             onChange={handleSeek}
-            className='w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:h-2 transition-all'
+            className="w-full h-1 bg-white/30 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:h-2 transition-all"
           />
         </fieldset>
-        <div className='flex justify-between mt-1'>
-          <span className='text-[10px] text-white font-medium'>
+        <div className="flex justify-between mt-1">
+          <span className="text-[10px] text-white font-medium">
             {videoRef.current ? Math.floor(videoRef.current.currentTime) : 0}s
           </span>
-          <span className='text-[10px] text-white font-medium'>{Math.floor(duration)}s</span>
+          <span className="text-[10px] text-white font-medium">
+            {Math.floor(duration)}s
+          </span>
         </div>
       </div>
 
       {/* Play/Pause Overlay Button (visible on hover or when paused) */}
       <div
-        className={`absolute inset-0 flex items-center justify-center transition-opacity ${isPlaying ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`}>
+        className={`absolute inset-0 flex items-center justify-center transition-opacity ${isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}
+      >
         <button
-          type='button'
+          type="button"
           onClick={togglePlay}
-          className='p-4 bg-black/40 rounded-full text-white'>
-          {isPlaying ? <PauseIcon className='size-10' /> : <PlayIcon className='size-10' />}
+          className="p-4 bg-black/40 rounded-full text-white"
+        >
+          {isPlaying ? (
+            <PauseIcon className="size-10" />
+          ) : (
+            <PlayIcon className="size-10" />
+          )}
         </button>
       </div>
 
       {/* Mute/Unmute Toggle */}
       <button
-        type='button'
+        type="button"
         onClick={() => setIsMuted(!isMuted)}
-        className='absolute bottom-20 right-4 z-50 p-2 bg-black/50 rounded-full text-white'>
-        {isMuted ? <SpeakerXMarkIcon className='size-6' /> : <SpeakerWaveIcon className='size-6' />}
+        className="absolute bottom-20 right-4 z-50 p-2 bg-black/50 rounded-full text-white"
+      >
+        {isMuted ? (
+          <SpeakerXMarkIcon className="size-6" />
+        ) : (
+          <SpeakerWaveIcon className="size-6" />
+        )}
       </button>
     </div>
   );
