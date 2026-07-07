@@ -1,86 +1,73 @@
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosInstance } from 'axios';
-import { LocalStorage } from '../utils';
+import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
+import store from "../app/store";
+import { refreshAccessTokenIfNeeded } from "./refreshAccessToken";
 
 export const chatAppApiClient: AxiosInstance = axios.create({
   baseURL:
-    import.meta.env.MODE === 'production'
+    import.meta.env.MODE === "production"
       ? import.meta.env.VITE_CHAT_APP_BACKEND_URL
       : import.meta.env.VITE_CHAT_APP_BACKEND_LOCAL_URL,
+  withCredentials: true,
 });
+
+/**
+ * Attach the latest access token from Redux.
+ * Refreshing is handled exclusively by RTK Query.
+ */
+chatAppApiClient.interceptors.request.use(
+  (config) => {
+    const token = store.getState().auth.tokens?.accessToken;
+
+    if (token) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
 
 interface ChatAppServiceProps extends AxiosRequestConfig {
   showSuccessNotification?: boolean;
 }
 
-export const chatAppService = async ({
-  showSuccessNotification = true,
-  ...options
-}: ChatAppServiceProps) => {
-  chatAppApiClient.interceptors.response.use(
-    (config: AxiosResponse) => {
-      return config;
-    },
-    async (error) => {
-      const originalRequest = error?.config;
-
-      if (error.response && error.response?.status === 401 && !originalRequest?._retry) {
-        originalRequest._retry = true;
-
-        const token = LocalStorage.get('tokens')?.refreshToken;
-
-        if (token) {
-          try {
-            // Request new access token
-            const res = await chatAppService({
-              url: '/chat-app/auth/users/refresh',
-              data: {
-                inComingRefreshToken: token,
-              },
-            });
-
-            // Save new tokens
-            LocalStorage.set('tokens', res.data.tokens);
-
-            // Retry the original request with new token
-            originalRequest.headers.Authorization = `Bearer ${res.data.accessToken}`;
-
-            return chatAppApiClient(originalRequest);
-          } catch (refreshError) {
-            // Refresh token invalid, force logout or redirect to login
-            localStorage.clear();
-            window.location.href = '/login';
-          }
-        }
-      }
-
-      return Promise.reject(error);
-    },
-  );
-
-  return chatAppApiClient({ ...options });
+export const chatAppService = async ({ ...options }: ChatAppServiceProps) => {
+  return chatAppApiClient({
+    ...options,
+  });
 };
 
 export const buildFormData = (data: Record<string, any>): FormData => {
   const formData = new FormData();
 
   Object.keys(data).forEach((key) => {
-    if (key === 'attachments' && Array.isArray(data[key])) {
-      // Handle attachments array by appending each file individually
-      for (let i = 0; i < data[key].length; i++) {
-        formData.append('attachments', data[key][i]);
-      }
-    } else if (typeof data[key] === 'object' && !(data[key] instanceof File)) {
-      // Handle other objects by stringifying them
-      formData.append(key, JSON.stringify(data[key]));
-    } else if (key === 'mentions' && Array.isArray(data[key])) {
-      // Handle mentions array by appending each mentioned user individually
-      for (let i = 0; i < data[key].length; i++) {
-        formData.append('mentions', data[key][i]);
-      }
-    } else {
-      // Handle primitive values and File objects
-      formData.append(key, data[key]);
+    if (key === "attachments" && Array.isArray(data[key])) {
+      data[key].forEach((file: File) => {
+        formData.append("attachments", file);
+      });
+
+      return;
     }
+
+    if (key === "mentions" && Array.isArray(data[key])) {
+      data[key].forEach((mention: string) => {
+        formData.append("mentions", mention);
+      });
+
+      return;
+    }
+
+    if (
+      typeof data[key] === "object" &&
+      !(data[key] instanceof File) &&
+      data[key] !== null
+    ) {
+      formData.append(key, JSON.stringify(data[key]));
+      return;
+    }
+
+    formData.append(key, data[key]);
   });
 
   return formData;
@@ -88,9 +75,9 @@ export const buildFormData = (data: Record<string, any>): FormData => {
 
 interface SendPayload {
   chatId: string;
-  data: { [key: string]: any };
-  messageId?: string; // only for replies
-  onProgress?: (pct: number) => void;
+  data: Record<string, any>;
+  messageId?: string;
+  onProgress?: (percentage: number) => void;
 }
 
 interface RequestReturnResult {
@@ -103,32 +90,33 @@ export const sendRequest = async ({
   messageId,
   onProgress,
 }: SendPayload): Promise<RequestReturnResult> => {
+  await refreshAccessTokenIfNeeded({
+    dispatch: store.dispatch,
+    getState: store.getState,
+  });
+
   const url = messageId
     ? `/chat-app/messages/${chatId}/${messageId}/reply`
     : `/chat-app/messages/${chatId}`;
 
-  const method = messageId ? 'patch' : 'post';
-  const token = LocalStorage.get('tokens')?.accessToken;
+  const method = messageId ? "patch" : "post";
 
-  const api = await chatAppService({
-    method,
+  const response = await chatAppService({
     url,
+    method,
     data: buildFormData(data),
-    headers: {
-      // Let axios set Content-Type with boundary automatically
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    withCredentials: true, // if you use cookies instead of Bearer
     onUploadProgress: (progressEvent) => {
       const total = progressEvent.total ?? 0;
-      if (total > 0) {
-        const pct = Math.round((progressEvent.loaded / total) * 100);
-        onProgress?.(pct);
-      }
+
+      if (!total) return;
+
+      const percentage = Math.round((progressEvent.loaded / total) * 100);
+
+      onProgress?.(percentage);
     },
   });
 
   return {
-    response: api.data,
+    response: response.data,
   };
 };

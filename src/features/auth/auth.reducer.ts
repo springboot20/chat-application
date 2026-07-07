@@ -1,131 +1,117 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { InitialState, Token, User } from '../../types/auth';
-import { LocalStorage } from '../../utils';
-import { AuthApiSlice } from './auth.slice';
-import { jwtDecode } from 'jwt-decode';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { jwtDecode } from "jwt-decode";
+
+import { InitialState, Token, User } from "../../types/auth";
+import { LocalStorage } from "../../utils";
+import { AuthApiSlice } from "./auth.slice";
 
 const AuthStorage = {
   get: (key: string) => LocalStorage.get(key),
-  set: (key: string, value: any) => LocalStorage.set(key, value),
+  set: (key: string, value: unknown) => LocalStorage.set(key, value),
+
   clear: () => {
-    LocalStorage.set('user', null);
-    LocalStorage.set('authenticated', false);
-    LocalStorage.set('tokens', null);
+    LocalStorage.remove("tokens");
+    LocalStorage.remove("user");
+    LocalStorage.remove("authenticated");
   },
 };
 
 const getInitialState = (): InitialState => ({
-  tokens: LocalStorage.get('tokens') as Token,
-  user: LocalStorage.get('user') as User,
-  isAuthenticated: LocalStorage.get('authenticated') as boolean,
+  tokens: AuthStorage.get("tokens") as Token,
+  user: AuthStorage.get("user") as User,
+  isAuthenticated: (AuthStorage.get("authenticated") as boolean) ?? false,
 });
 
 const initialState: InitialState = getInitialState();
 
-const updateAuthState = (
-  state: InitialState,
-  {
-    tokens,
-    user,
-    isAuthenticated,
-  }: { isAuthenticated: boolean; tokens: Token; user?: User | null },
-) => {
-  state.tokens = tokens;
-  state.user = user || null;
-  state.isAuthenticated = isAuthenticated;
+const persistState = (state: InitialState) => {
+  AuthStorage.set("tokens", state.tokens);
+  AuthStorage.set("user", state.user);
+  AuthStorage.set("authenticated", state.isAuthenticated);
+};
 
-  AuthStorage.set('tokens', tokens);
-  AuthStorage.set('user', user);
-  AuthStorage.set('authenticated', state.isAuthenticated);
+const clearState = (state: InitialState) => {
+  state.tokens = null;
+  state.user = null;
+  state.isAuthenticated = false;
+
+  AuthStorage.clear();
 };
 
 const AuthSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
+
   reducers: {
     authenticationExpires: (state, action: PayloadAction<string>) => {
       try {
         if (!action.payload) {
           state.isAuthenticated = false;
+          persistState(state);
           return;
         }
 
-        const decodedToken = jwtDecode<{ exp: number }>(action.payload);
-        const expirationTime = decodedToken?.exp;
+        const decoded = jwtDecode<{ exp: number }>(action.payload);
 
-        if (!expirationTime || Date.now() >= expirationTime * 1000) {
-          state.isAuthenticated = false;
-        } else {
-          state.isAuthenticated = true;
-        }
+        state.isAuthenticated = decoded.exp * 1000 > Date.now();
 
-        AuthStorage.set('authenticated', state.isAuthenticated);
-      } catch (error) {
-        console.error('Error decoding token:', error);
+        persistState(state);
+      } catch {
         state.isAuthenticated = false;
+        persistState(state);
       }
     },
 
-    // Call this after a successful Refresh Token call
-    updateTokens: (state, action: PayloadAction<any>) => {
+    updateTokens: (state, action: PayloadAction<Token>) => {
       state.tokens = action.payload;
       state.isAuthenticated = true;
-      LocalStorage.set('tokens', action.payload);
+
+      persistState(state);
     },
 
-    // Manual/Force logout
     forceLogout: (state) => {
-      state.tokens = null;
-      state.user = null;
-      state.isAuthenticated = false;
-      LocalStorage.clear();
-      // Optional: window.location.href = "/login"; // Hard redirect to clear socket memory
+      clearState(state);
     },
   },
+
   extraReducers: (builder) => {
-    /**
-     * Register builder casing
-     */
-    builder.addMatcher(AuthApiSlice.endpoints.register.matchFulfilled, (state) => {
-      updateAuthState(state, { tokens: null!, user: null, isAuthenticated: false });
-    });
+    builder.addMatcher(
+      AuthApiSlice.endpoints.register.matchFulfilled,
+      (state) => {
+        clearState(state);
+      },
+    );
+
+    builder.addMatcher(
+      AuthApiSlice.endpoints.login.matchFulfilled,
+      (state, { payload }) => {
+        state.tokens = payload.data.tokens;
+        state.user = null;
+        state.isAuthenticated = true;
+
+        persistState(state);
+      },
+    );
 
     builder.addMatcher(
       AuthApiSlice.endpoints.getCurrentUser.matchFulfilled,
       (state, { payload }) => {
-        updateAuthState(state, {
-          tokens: state.tokens!,
-          user: payload.data.user,
-          isAuthenticated: state.isAuthenticated,
-        });
+        state.user = payload.data.user;
+
+        persistState(state);
       },
     );
 
-    builder.addMatcher(AuthApiSlice.endpoints.login.matchFulfilled, (state, { payload }) => {
-      console.log(payload);
-
-      // 1. Update State
-      state.tokens = payload.data.tokens;
-      state.user = null;
-      state.isAuthenticated = true;
-
-      // 2. Persist to Storage (ONLY PLACE THIS HAPPENS)
-      LocalStorage.set('tokens', payload.data.tokens);
-      LocalStorage.set('user', null);
-      LocalStorage.set('authenticated', true);
-    });
-
     builder.addMatcher(
-      AuthApiSlice.endpoints.logout.matchFulfilled, // Clear immediately when user clicks
+      AuthApiSlice.endpoints.logout.matchFulfilled,
       (state) => {
-        state.tokens = null;
-        state.user = null;
-        state.isAuthenticated = false;
-        LocalStorage.clear();
+        clearState(state);
       },
     );
   },
 });
 
 export const authReducer = AuthSlice.reducer;
-export const { authenticationExpires, updateTokens, forceLogout } = AuthSlice.actions;
+
+export const { authenticationExpires, updateTokens, forceLogout } =
+  AuthSlice.actions;
