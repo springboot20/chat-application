@@ -34,10 +34,10 @@ export const LiveWaveform: React.FC<LiveWaveformProps> = ({
     isPausedRef.current = isPaused;
   }, [isPaused]);
 
-  const SMOOTHING = 0.85;
+  const SMOOTHING = 0.95;
   const MIN_HEIGHT = 0.14;
   const SAMPLE_COUNT = 120;
-  const CYCLES_PER_SAMPLE = 1.3;
+  const CYCLES_PER_SAMPLE = 1.2;
   const MAX_HEIGHT_RATIO = 0.85;
 
   useEffect(() => {

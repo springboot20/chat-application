@@ -1,108 +1,186 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { isRejectedWithValue } from '@reduxjs/toolkit';
-import type { MiddlewareAPI, Middleware } from '@reduxjs/toolkit';
-import { toast } from 'react-toastify';
-import { RootState } from '../store';
-import { LocalStorage } from '../../utils';
-import { Token } from '../../types/auth';
+import {
+  BaseQueryFn,
+  FetchArgs,
+  FetchBaseQueryError,
+  createApi,
+  fetchBaseQuery,
+} from "@reduxjs/toolkit/query/react";
+import {
+  Middleware,
+  MiddlewareAPI,
+  isRejectedWithValue,
+} from "@reduxjs/toolkit";
+import { toast } from "react-toastify";
+import { Mutex } from "async-mutex";
+
+import { RootState } from "../store";
+import { refreshAccessTokenIfNeeded } from "../../api/refreshAccessToken";
 
 const env = import.meta.env;
 
+const mutex = new Mutex();
+
+/**
+ * Decode JWT expiry
+ */
+const getJwtExpiry = (token: string): number | null => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp ?? null;
+  } catch {
+    return null;
+  }
+};
+
+export const isTokenExpiringSoon = (token: string, threshold = 30): boolean => {
+  const exp = getJwtExpiry(token);
+
+  if (!exp) return true;
+
+  return exp - Date.now() / 1000 < threshold;
+};
+
 const baseQuery = fetchBaseQuery({
   baseUrl:
-    env.MODE === 'production' ? env.VITE_CHAT_APP_BACKEND_URL : env.VITE_CHAT_APP_BACKEND_LOCAL_URL,
-  prepareHeaders: (headers, { getState }) => {
-    // Get token from state
-    const token = (getState() as RootState).auth?.tokens?.accessToken;
+    env.MODE === "production"
+      ? env.VITE_CHAT_APP_BACKEND_URL
+      : env.VITE_CHAT_APP_BACKEND_LOCAL_URL,
 
-    // If we have a token, set the authorization header
+  credentials: "include",
+
+  prepareHeaders: (headers, { getState }) => {
+    const token = (getState() as RootState).auth.tokens?.accessToken;
+
     if (token) {
-      headers.set('authorization', `Bearer ${token}`);
+      headers.set("Authorization", `Bearer ${token}`);
     }
 
     return headers;
   },
-  credentials: 'include', // Include cookies
 });
 
-const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
-  // GATEKEEPER: Don't even try if we don't have a token (except for login/register)
-  const state = api.getState() as RootState;
-  const token = state.auth?.tokens?.accessToken;
-  const url = typeof args === 'string' ? args : args.url;
+const baseQueryWithReauth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  await mutex.waitForUnlock();
 
-  // List of public endpoints that don't need a token
-  const isPublicAction = url.includes('/login') || url.includes('/register');
+  const url = typeof args === "string" ? args : args.url;
 
-  if (!token && !isPublicAction) {
-    return { error: { status: 401, data: 'No token available' } };
+  const isRefreshRequest = url.includes("/auth/users/refresh");
+  const isLoginRequest = url.includes("/login");
+  const isRegisterRequest = url.includes("/register");
+  const isLogoutRequest = url.includes("/logout");
+
+  const isPublicRequest =
+    isLoginRequest || isRegisterRequest || isRefreshRequest || isLogoutRequest;
+
+  /**
+   * -------------------------------------------------
+   * PROACTIVE REFRESH
+   * -------------------------------------------------
+   */
+
+  if (!isPublicRequest) {
+    if (!mutex.isLocked()) {
+      const release = await mutex.acquire();
+
+      try {
+        const success = await refreshAccessTokenIfNeeded({
+          dispatch: api.dispatch,
+          getState: api.getState,
+        });
+
+        if (!success) {
+          return {
+            error: {
+              status: 401,
+              data: "Session expired",
+            },
+          };
+        }
+      } finally {
+        release();
+      }
+    } else {
+      await mutex.waitForUnlock();
+    }
   }
+
+  /**
+   * -------------------------------------------------
+   * MAIN REQUEST
+   * -------------------------------------------------
+   */
 
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result.error?.status === 401) {
-    const isRefreshAttempt = url.includes('/auth/users/refresh');
-    const isLogoutAttempt = url.includes('/auth/users/logout');
+  /**
+   * -------------------------------------------------
+   * REACTIVE REFRESH
+   * -------------------------------------------------
+   */
 
-    if (!isRefreshAttempt && !isLogoutAttempt) {
-      // Get refresh token from storage safely
-      const tokens: Token | null = LocalStorage.get('tokens');
+  if (result.error?.status === 401 && !isPublicRequest) {
+    if (!mutex.isLocked()) {
+      const release = await mutex.acquire();
 
-      if (!tokens?.refreshToken) {
-        api.dispatch({ type: 'auth/forceLogout' });
-        return result;
+      try {
+        const success = await refreshAccessTokenIfNeeded({
+          dispatch: api.dispatch,
+          getState: api.getState,
+          // extraOptions,
+        });
+
+        if (success) {
+          result = await baseQuery(args, api, extraOptions);
+        }
+      } finally {
+        release();
       }
+    } else {
+      await mutex.waitForUnlock();
 
-      const refreshResult: any = await baseQuery(
-        {
-          url: '/chat-app/auth/users/refresh',
-          body: { inComingRefreshToken: tokens.refreshToken },
-          method: 'POST',
-        },
-        api,
-        extraOptions,
-      );
-
-      if (refreshResult.data) {
-        api.dispatch({ type: 'auth/updateTokens', payload: refreshResult.data.data.tokens });
-        result = await baseQuery(args, api, extraOptions);
-      } else {
-        api.dispatch({ type: 'auth/forceLogout' });
-      }
-    } else if (isLogoutAttempt) {
-      api.dispatch({ type: 'auth/forceLogout' });
+      result = await baseQuery(args, api, extraOptions);
     }
   }
+
   return result;
 };
 
-/**
- * Log a warning and show a toast!
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const rtkQueryErrorLogger: Middleware = (_: MiddlewareAPI) => (next) => (action) => {
-  // RTK Query uses `createAsyncThunk` from redux-toolkit under the hood, so we're able to utilize these matchers!
-  if (isRejectedWithValue(action)) {
-    const message = action.payload
-      ? (action.payload as { data: any }).data?.message
-      : action.error.message;
-    toast.error(message, { className: 'text-sm' });
-  }
-  return next(action);
-};
+export const rtkQueryErrorLogger: Middleware =
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  (_: MiddlewareAPI) => (next) => (action) => {
+    if (isRejectedWithValue(action)) {
+      const message = action.payload
+        ? (action.payload as any).data?.message
+        : action.error.message;
+
+      toast.error(message, {
+        className: "text-sm",
+      });
+    }
+
+    return next(action);
+  };
 
 export const ApiService = createApi({
+  reducerPath: "ApiService",
+
   baseQuery: baseQueryWithReauth,
+
   tagTypes: [
-    'Auth',
-    'Chat',
-    'User',
-    'Message',
-    'StatusFeed',
-    'UserStatuses',
-    'Contacts',
-    'SuggestedFriends',
-    'BlockedContacts',
+    "Auth",
+    "Chat",
+    "User",
+    "Message",
+    "StatusFeed",
+    "UserStatuses",
+    "Contacts",
+    "SuggestedFriends",
+    "BlockedContacts",
   ],
+
   endpoints: () => ({}),
 });
