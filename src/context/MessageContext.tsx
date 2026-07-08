@@ -567,7 +567,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
         if (wordMatches.length === 0) continue;
 
         let matchedUser: User | undefined;
-        let matchedEnd = 0;
 
         // Try the longest word combination first, then shrink down to a single word
         const upperBound = Math.min(maxWordCount, wordMatches.length);
@@ -581,8 +580,8 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
           const user = usersByUsername.get(candidate);
           if (user) {
             matchedUser = user;
-            matchedEnd =
-              wordMatches[n - 1].index! + wordMatches[n - 1][0].length;
+            // matchedEnd =
+            //   wordMatches[n - 1].index! + wordMatches[n - 1][0].length;
             break;
           }
         }
