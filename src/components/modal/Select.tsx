@@ -1,22 +1,29 @@
-import { Combobox } from '@headlessui/react';
+import { Combobox } from "@headlessui/react";
 import {
   CheckIcon,
   ChevronUpDownIcon,
   NoSymbolIcon,
   UserPlusIcon,
-} from '@heroicons/react/24/outline';
-import React, { useEffect, useState } from 'react';
-import { classNames } from '../../utils';
+} from "@heroicons/react/24/outline";
+import React, { useEffect, useMemo, useState } from "react";
+import { classNames } from "../../utils";
+import { useDebounce } from "../../hooks/useDebounce";
+
+export type OptionType = {
+  value: string;
+  label: string;
+  isContact?: boolean;
+  isBlocked?: boolean;
+};
 
 export const SelectModalInput: React.FC<{
   value: string;
-  options: {
+  options: OptionType[];
+  onChange: (value: {
     value: string;
     label: string;
     isContact?: boolean;
-    isBlocked?: boolean;
-  }[];
-  onChange: (value: { value: string; label: string; isContact?: boolean }) => void;
+  }) => void;
   placeholder: string;
   onAddToContact?: (userId: string) => void;
   onToggleBlockContact?: (userId: string) => void;
@@ -40,12 +47,25 @@ export const SelectModalInput: React.FC<{
   lastElementRef,
   isFetching,
 }) => {
-  const [localOptions, setLocalOptions] = useState<typeof options>([]);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
+  const debouncedSearch = useDebounce(query, 500);
+
+  // Notify parent only after debounce
   useEffect(() => {
-    setLocalOptions(options);
-  }, [options]);
+    onSearchChange?.(debouncedSearch);
+  }, [debouncedSearch, onSearchChange]);
+
+  // Local filtering
+  const filteredOptions = useMemo(() => {
+    if (!debouncedSearch.trim()) {
+      return options;
+    }
+
+    return options.filter((opt) =>
+      opt.label.toLowerCase().includes(debouncedSearch.toLowerCase()),
+    );
+  }, [options, debouncedSearch]);
 
   const selectedOption = options?.find((opt) => opt.value === value) || null;
 
@@ -59,192 +79,200 @@ export const SelectModalInput: React.FC<{
 
   return (
     <Combobox
-      as='div'
+      as="div"
       nullable
       onChange={(val: any) => {
         if (val) {
           onChange(val);
-          setQuery('');
+          setQuery("");
         }
         if (onSearchChange) onSearchChange(val);
       }}
       value={selectedOption}
-      className='w-full'>
-      <div className='relative mt-4'>
+      className="w-full"
+    >
+      <div className="relative mt-4">
         <Combobox.Input
-          displayValue={(option: any) => option?.label || ''}
+          displayValue={(option: any) => option?.label || ""}
           onChange={(event) => {
-            const searchValue = event.target.value;
-            setQuery(searchValue);
-
-            if (onSearchChange) {
-              onSearchChange(searchValue);
-            }
-
-            if (searchValue.trim() === '') {
-              setLocalOptions(options || []);
-            } else {
-              setLocalOptions(
-                (options || []).filter((opt) =>
-                  opt.label.toLowerCase().includes(searchValue.toLowerCase()),
-                ),
-              );
-            }
+            setQuery(event.target.value);
           }}
           placeholder={placeholder}
-          className='w-full rounded-xl border-0 bg-gray-100 dark:bg-gray-800 py-3 pl-4 pr-10 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-all'
+          className="w-full rounded-md border border-gray-200 bg-gray-100 dark:bg-gray-800 py-3 pl-4 pr-10 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-all focus:outline-none"
         />
-        <div className='absolute inset-y-0 right-0 flex items-center rounded-r-xl px-3 pointer-events-none'>
-          <ChevronUpDownIcon className='h-5 w-5 text-gray-400' aria-hidden='true' />
+        <div className="absolute inset-y-0 right-0 flex items-center rounded-r-xl px-3 pointer-events-none">
+          <ChevronUpDownIcon
+            className="h-5 w-5 text-gray-400"
+            aria-hidden="true"
+          />
         </div>
       </div>
 
       {/* Always visible options list */}
       <Combobox.Options
         static
-        className='mt-2 max-h-[400px] overflow-auto rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 space-y-1'>
-        {localOptions?.length === 0 && query !== '' ? (
-          <div className='relative cursor-default select-none px-4 py-8 text-center text-gray-500 dark:text-gray-400'>
-            <div className='mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-2'>
-              <svg fill='none' viewBox='0 0 24 24' stroke='currentColor' className='w-full h-full'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={1.5}
-                  d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
-                />
-              </svg>
-            </div>
-            <p className='text-sm font-medium'>No results found</p>
-            <p className='text-xs mt-1'>Try a different search term</p>
-          </div>
-        ) : localOptions.length > 0 ? (
-          localOptions.map((opt, index) => {
-            const isLast = index === localOptions.length - 1;
-            const isContact = opt.isContact || false;
-
-            return (
-              <Combobox.Option
-                key={opt.value}
-                value={opt}
-                className={({ active }) =>
-                  classNames(
-                    'relative cursor-pointer select-none rounded-lg px-3 py-2.5 transition-all',
-                    active
-                      ? 'bg-violet-50 dark:bg-violet-900/30'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-700/50',
-                  )
-                }>
-                {({ selected }) => (
-                  <div
-                    ref={isLast ? lastElementRef : null}
-                    className='flex items-center justify-between gap-3'>
-                    <div className='flex items-center gap-3 flex-1 min-w-0'>
-                      <div className='flex-1 flex items-center gap-x-2 min-w-0'>
-                        {/* Avatar */}
-                        <div
-                          className={classNames(
-                            'h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold uppercase shrink-0 transition-all',
-                            selected
-                              ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md'
-                              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
-                          )}>
-                          {opt.label[0]}
-                        </div>
-                        <span
-                          className={classNames(
-                            'block truncate text-sm',
-                            selected
-                              ? 'font-semibold text-gray-900 dark:text-white'
-                              : 'font-medium text-gray-700 dark:text-gray-300',
-                          )}>
-                          {opt.label}
-                        </span>
-                      </div>
-
-                      {isContact && (
-                        <span className='text-[10px] text-violet-600 dark:text-violet-400 font-medium uppercase tracking-wider'>
-                          In Contacts
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className='flex items-center gap-2 shrink-0'>
-                      {showAddToContact && !isContact && onAddToContact && (
-                        <button
-                          type='button'
-                          onClick={(e) => handleAddToContact(e, opt.value)}
-                          className='py-1.5 px-2 rounded-lg bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-all group flex items-center gap-x-2'
-                          title='Add to contacts'>
-                          <UserPlusIcon className='h-4 w-4 text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform' />
-                          <span className='text-white font-nunito text-xs'>Add</span>
-                        </button>
-                      )}
-
-                      {showBlockContact && isContact && onToggleBlockContact && (
-                        <button
-                          type='button'
-                          disabled={isBlocking}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onToggleBlockContact(opt.value);
-                          }}
-                          className={classNames(
-                            'inline-flex justify-center items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset transition-colors',
-                            opt.isBlocked
-                              ? 'bg-red-50 text-red-700 ring-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-900'
-                              : 'bg-white text-red-600 ring-red-200 hover:bg-red-50 dark:bg-transparent dark:text-red-400 dark:ring-red-900 dark:hover:bg-red-900/10',
-                          )}
-                          title='Add to contacts'>
-                          <NoSymbolIcon className='h-4 w-4' />
-                          {opt?.isBlocked ? 'Unblock' : 'Block'}
-                        </button>
-                      )}
-                      {selected && (
-                        <CheckIcon
-                          className='h-5 w-5 text-violet-600 dark:text-violet-400'
-                          strokeWidth={2.5}
-                          aria-hidden='true'
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </Combobox.Option>
-            );
-          })
-        ) : (
-          !isFetching && (
-            <div className='px-4 py-8 text-center text-gray-500 dark:text-gray-400'>
-              <div className='mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-2'>
+        className="mt-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 space-y-1 overflow-hidden"
+      >
+        <div className="max-h-[400px] overflow-auto p-2">
+          {filteredOptions?.length === 0 && debouncedSearch !== "" ? (
+            <div className="relative cursor-default select-none px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+              <div className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-2">
                 <svg
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'
-                  className='w-full h-full'>
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  className="w-full h-full"
+                >
                   <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     strokeWidth={1.5}
-                    d='M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
               </div>
-              <p className='text-sm font-medium'>No users found</p>
+              <p className="text-sm font-medium">No results found</p>
+              <p className="text-xs mt-1">Try a different search term</p>
             </div>
-          )
-        )}
+          ) : filteredOptions?.length > 0 ? (
+            filteredOptions?.map((opt, index) => {
+              const isLast = index === filteredOptions.length - 1;
+              const isContact = opt.isContact || false;
 
-        {isFetching && (
-          <div className='px-4 py-4 text-center'>
-            <div className='inline-flex items-center gap-2 text-violet-600 dark:text-violet-400'>
-              <div className='h-4 w-4 animate-spin rounded-full border-2 border-violet-600 dark:border-violet-400 border-t-transparent'></div>
-              <span className='text-sm font-medium'>Loading more...</span>
+              return (
+                <Combobox.Option
+                  key={opt.value}
+                  value={opt}
+                  className={({ active }) =>
+                    classNames(
+                      "relative cursor-pointer select-none rounded-lg px-3 py-2.5 transition-all",
+                      active
+                        ? "bg-violet-50 dark:bg-violet-900/30"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700/50",
+                    )
+                  }
+                >
+                  {({ selected }) => (
+                    <div
+                      ref={isLast ? lastElementRef : null}
+                      className="flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="flex-1 flex items-center gap-x-2 min-w-0">
+                          {/* Avatar */}
+                          <div
+                            className={classNames(
+                              "h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold uppercase shrink-0 transition-all",
+                              selected
+                                ? "bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md"
+                                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
+                            )}
+                          >
+                            {opt.label[0]}
+                          </div>
+                          <span
+                            className={classNames(
+                              "block truncate text-sm",
+                              selected
+                                ? "font-semibold text-gray-900 dark:text-white"
+                                : "font-medium text-gray-700 dark:text-gray-300",
+                            )}
+                          >
+                            {opt.label}
+                          </span>
+                        </div>
+
+                        {isContact && (
+                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-medium uppercase tracking-wider">
+                            In Contacts
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {showAddToContact && !isContact && onAddToContact && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleAddToContact(e, opt.value)}
+                            className="py-1.5 px-2.5 border border-violet-200 rounded-full bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-all group flex items-center gap-x-2"
+                            title="Add to contacts"
+                          >
+                            <UserPlusIcon className="h-4 w-4 text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform" />
+                            <span className="dark:text-white text-violet-600  font-nunito text-xs">
+                              Add
+                            </span>
+                          </button>
+                        )}
+
+                        {showBlockContact &&
+                          isContact &&
+                          onToggleBlockContact && (
+                            <button
+                              type="button"
+                              disabled={isBlocking}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onToggleBlockContact(opt.value);
+                              }}
+                              className={classNames(
+                                "inline-flex justify-center items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset transition-colors",
+                                opt.isBlocked
+                                  ? "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-900"
+                                  : "bg-white text-red-600 ring-red-200 hover:bg-red-50 dark:bg-transparent dark:text-red-400 dark:ring-red-900 dark:hover:bg-red-900/10",
+                              )}
+                              title="Add to contacts"
+                            >
+                              <NoSymbolIcon className="h-4 w-4" />
+                              {opt?.isBlocked ? "Unblock" : "Block"}
+                            </button>
+                          )}
+                        {selected && (
+                          <CheckIcon
+                            className="h-5 w-5 text-violet-600 dark:text-violet-400"
+                            strokeWidth={2.5}
+                            aria-hidden="true"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </Combobox.Option>
+              );
+            })
+          ) : (
+            !isFetching && (
+              <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                <div className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-2">
+                  <svg
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    className="w-full h-full"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium">No users found</p>
+              </div>
+            )
+          )}
+
+          {isFetching && (
+            <div className="px-4 py-4 text-center">
+              <div className="inline-flex items-center gap-2 text-violet-600 dark:text-violet-400">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-violet-600 dark:border-violet-400 border-t-transparent"></div>
+                <span className="text-sm font-medium">Loading more...</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </Combobox.Options>
     </Combobox>
   );

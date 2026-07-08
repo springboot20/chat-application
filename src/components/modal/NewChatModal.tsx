@@ -15,7 +15,7 @@ import {
   useGetMyContactsQuery,
   useToggleBlockContactMutation,
 } from "../../features/contacts/contact.api.slice";
-import { SelectModalInput } from "./Select";
+import { OptionType, SelectModalInput } from "./Select";
 import {
   useCreateGroupChatMutation,
   useCreateUserChatMutation,
@@ -206,7 +206,7 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
     useCreateUserChatMutation();
 
   const myContacts = useMemo(
-    () => (contactsResponse?.data?.contacts || []) as any[],
+    () => contactsResponse?.data?.contacts,
     [contactsResponse?.data],
   );
 
@@ -215,20 +215,27 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
   const handleBlockToggle = async (contactRecordId: string) => {
     if (!contactRecordId) return;
 
-    const contactRecord = myContacts?.find(
-      (c) => c.contact._id === contactRecordId,
+    const contactRecord = myContacts?.find((c) =>
+      typeof c.contact === "string"
+        ? c.contact === contactRecordId
+        : c.contact._id === contactRecordId,
     );
-    const isBlocked = contactRecord.isBlocked;
+
+    const isBlocked = contactRecord?.isBlocked;
+    const contactInfo =
+      typeof contactRecord?.contact !== "string"
+        ? contactRecord?.contact
+        : undefined;
 
     if (
       !window.confirm(
-        `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${contactRecord.contact.username}?`,
+        `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${contactInfo?.username}?`,
       )
     )
       return;
 
     try {
-      const res = await toggleBlock(contactRecord._id).unwrap();
+      const res = await toggleBlock(String(contactInfo?._id)).unwrap();
       toast.success(
         res.message ||
           `User ${isBlocked ? "unblocked" : "blocked"} successfully`,
@@ -255,17 +262,34 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
   );
 
   const selectOptions = useMemo(() => {
-    return myContacts.map((item) => ({
-      label: item.contact.username,
-      value: item.contact._id,
-      isBlocked: item.isBlocked,
-      isContact: true,
-    }));
+    return myContacts?.map((item) => {
+      const contactInfo =
+        typeof item?.contact !== "string" ? item?.contact : undefined;
+
+      return {
+        label: contactInfo?.username,
+        value: contactInfo?._id,
+        isBlocked: item.isBlocked,
+        isContact: true,
+      };
+    });
   }, [myContacts]);
 
   const getUserById = (id: string) => {
-    const contactUser = myContacts.find((c) => c.contact._id === id);
-    if (contactUser) return { ...contactUser.contact, isContact: true };
+    const contactUser = myContacts?.find((contact) => {
+      const contactInfo =
+        typeof contact?.contact !== "string" ? contact?.contact : undefined;
+
+      return contactInfo?._id === id;
+    });
+
+    if (contactUser)
+      return {
+        ...contactUser,
+        contact: contactUser.contact as User,
+        isContact: true,
+      };
+
     return undefined;
   };
 
@@ -304,11 +328,11 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
                   <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white font-bold text-base md:text-lg uppercase shadow-lg shrink-0">
-                    {selectedUser.username[0]}
+                    {selectedUser.contact.username[0]}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                      {selectedUser.username}
+                      {selectedUser.contact.username}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
                       Ready to chat
@@ -331,12 +355,12 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
       <div className="mb-4 md:mb-0">
         <SelectModalInput
           placeholder="Search contacts..."
-          options={selectOptions}
+          options={selectOptions as OptionType[]}
           value={selectedUserId || ""}
           onChange={({ value }) => setSelectedUserId(value)}
           onSearchChange={(val) => {
             setSearchQuery(val);
-            if (!val) setCurrentPage(1);
+            setCurrentPage(1);
           }}
           isFetching={isFetching}
           isBlocking={isBlocking}
@@ -356,7 +380,7 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
           <Button
             onClick={handleStartChat}
             disabled={isCreatingChat}
-            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white py-2.5 md:py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+            className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white py-2.5 md:py-3 rounded-md font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
           >
             {isCreatingChat ? (
               <span className="flex items-center justify-center gap-2">
@@ -395,7 +419,7 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
     useToggleBlockContactMutation();
 
   const myContacts = useMemo(
-    () => (contactsResponse?.data?.contacts || []) as any[],
+    () => contactsResponse?.data?.contacts,
     [contactsResponse?.data],
   );
 
@@ -404,20 +428,27 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
   const handleBlockToggle = async (contactRecordId: string) => {
     if (!contactRecordId) return;
 
-    const contactRecord = myContacts?.find(
-      (c) => c.contact._id === contactRecordId,
+    const contactRecord = myContacts?.find((c) =>
+      typeof c.contact === "string"
+        ? c.contact === contactRecordId
+        : c.contact._id === contactRecordId,
     );
-    const isBlocked = contactRecord.isBlocked;
+
+    const isBlocked = contactRecord?.isBlocked;
+    const contactInfo =
+      typeof contactRecord?.contact !== "string"
+        ? contactRecord?.contact
+        : undefined;
 
     if (
       !window.confirm(
-        `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${contactRecord.contact.username}?`,
+        `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${contactInfo?.username}?`,
       )
     )
       return;
 
     try {
-      const res = await toggleBlock(contactRecord._id).unwrap();
+      const res = await toggleBlock(String(contactInfo?._id)).unwrap();
       toast.success(
         res.message ||
           `User ${isBlocked ? "unblocked" : "blocked"} successfully`,
@@ -444,17 +475,34 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
   );
 
   const selectOptions = useMemo(() => {
-    return myContacts.map((item) => ({
-      label: item.contact.username,
-      value: item.contact._id,
-      isBlocked: item.isBlocked,
-      isContact: true,
-    }));
+    return myContacts?.map((item) => {
+      const contactInfo =
+        typeof item?.contact !== "string" ? item?.contact : undefined;
+
+      return {
+        label: contactInfo?.username,
+        value: contactInfo?._id,
+        isBlocked: item.isBlocked,
+        isContact: true,
+      };
+    });
   }, [myContacts]);
 
   const getUserById = (id: string) => {
-    const contactUser = myContacts.find((c) => c.contact._id === id);
-    if (contactUser) return { ...contactUser.contact, isContact: true };
+    const contactUser = myContacts?.find((contact) => {
+      const contactInfo =
+        typeof contact?.contact !== "string" ? contact?.contact : undefined;
+
+      return contactInfo?._id === id;
+    });
+
+    if (contactUser)
+      return {
+        ...contactUser,
+        contact: contactUser.contact as User,
+        isContact: true,
+      };
+
     return undefined;
   };
 
@@ -509,10 +557,10 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
                         className="flex items-center gap-1.5 md:gap-2 bg-white dark:bg-gray-800 px-2 md:px-3 py-1 md:py-1.5 rounded-full text-xs font-medium text-gray-900 dark:text-white shadow-sm"
                       >
                         <div className="h-4 w-4 md:h-5 md:w-5 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-[9px] md:text-[10px] font-bold uppercase">
-                          {user.username[0]}
+                          {user.contact.username[0]}
                         </div>
                         <span className="max-w-[80px] md:max-w-none truncate">
-                          {user.username}
+                          {user.contact.username}
                         </span>
                         <button
                           onClick={() =>
@@ -544,7 +592,7 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
           placeholder="Enter group name..."
           value={groupName}
           onChange={(e) => setGroupName(e.target.value)}
-          className="w-full rounded-xl border-0 bg-gray-100 dark:bg-gray-800 py-2.5 md:py-3 px-3 md:px-4 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-all"
+          className="w-full rounded-md border border-gray-200 focus:outline-none bg-gray-100 dark:bg-gray-800 py-2.5 md:py-3 px-3 md:px-4 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-all"
         />
       </div>
 
@@ -552,7 +600,7 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
       <div className="mb-4 md:mb-0">
         <SelectModalInput
           placeholder="Search contacts to add..."
-          options={selectOptions}
+          options={selectOptions as OptionType[]}
           value=""
           onChange={({ value }) =>
             setParticipants((prev) =>
@@ -561,7 +609,7 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
           }
           onSearchChange={(val) => {
             setSearchQuery(val);
-            if (!val) setCurrentPage(1);
+            setCurrentPage(1);
           }}
           isFetching={isFetching}
           isBlocking={isBlocking}
@@ -576,7 +624,7 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
         <Button
           onClick={handleCreateGroupChat}
           disabled={isCreating || !groupName.trim() || participants.length < 2}
-          className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white py-2.5 md:py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+          className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white py-2.5 md:py-3 rounded-md font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
         >
           {isCreating ? (
             <span className="flex items-center justify-center gap-2">
@@ -610,6 +658,10 @@ const DiscoverUsersList = () => {
   const [pendingContactId, setPendingContactId] = useState<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
+  const { data: contactsResponse } = useGetMyContactsQuery({
+    page: currentPage,
+  });
+
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   const {
@@ -620,6 +672,11 @@ const DiscoverUsersList = () => {
     page: currentPage,
     search: debouncedSearch,
   });
+
+  const myContacts = useMemo(
+    () => contactsResponse?.data?.contacts,
+    [contactsResponse?.data],
+  );
 
   const [addToContact] = useAddToContactMutation();
 
@@ -647,12 +704,21 @@ const DiscoverUsersList = () => {
   );
 
   const selectOptions = useMemo(() => {
-    return availableUsers.map((u) => ({
-      label: u.username,
-      value: u._id,
-      isContact: false,
-    }));
-  }, [availableUsers]);
+    return availableUsers.map((u) => {
+      const alreadyInContact = myContacts?.some((item) => {
+        const contactInfo =
+          typeof item?.contact !== "string" ? item?.contact : undefined;
+
+        return contactInfo?._id === u?._id;
+      });
+
+      return {
+        label: u.username,
+        value: u._id,
+        isContact: alreadyInContact,
+      };
+    });
+  }, [availableUsers, myContacts]);
 
   const handleAddToContactClick = (contactId: string) => {
     setPendingContactId(contactId);
@@ -769,14 +835,14 @@ const DiscoverUsersList = () => {
                     setPendingContactId(null);
                     setSelectedCategory("friend");
                   }}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="flex-1 px-4 py-2.5 rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmAddContact}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg"
+                  className="flex-1 px-4 py-2.5 rounded-md bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold hover:from-violet-700 hover:to-indigo-700 transition-all shadow-lg"
                 >
                   Add Contact
                 </button>

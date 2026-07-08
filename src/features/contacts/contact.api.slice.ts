@@ -11,14 +11,18 @@ export interface User {
   };
 }
 
-export interface Contact {
-  _id: string;
-  owner: string | User;
-  contact: User;
+export interface ContactEntry {
+  contact: User | string;
   category?: string;
   isBlocked: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Contact {
+  // _id: string;
+  // owner: string | User;
+  contactsList: Array<ContactEntry>;
 }
 
 export interface ApiResponse<T> {
@@ -45,7 +49,7 @@ export const ContactApiSlice = ApiService.injectEndpoints({
   endpoints(builder) {
     return {
       getMyContacts: builder.query<
-        ApiResponse<{ contacts: Contact[]; pagination: Pagination }>,
+        ApiResponse<{ contacts: Array<ContactEntry>; pagination: Pagination }>,
         { page?: number; limit?: number }
       >({
         query: ({ limit = 12, page = 1 }) => ({
@@ -84,7 +88,10 @@ export const ContactApiSlice = ApiService.injectEndpoints({
         providesTags: ["BlockedContacts"],
       }),
 
-      addToContact: builder.mutation<ApiResponse<Contact>, AddContactPayload>({
+      addToContact: builder.mutation<
+        ApiResponse<ContactEntry>,
+        AddContactPayload
+      >({
         query: (payload) => ({
           url: "/chat-app/contacts/add",
           method: "POST",
@@ -137,35 +144,48 @@ export const ContactApiSlice = ApiService.injectEndpoints({
         invalidatesTags: ["Contacts", "SuggestedFriends"],
       }),
 
-      toggleBlockContact: builder.mutation<ApiResponse<Contact>, string>({
+      toggleBlockContact: builder.mutation<ApiResponse<ContactEntry>, string>({
         query: (contactId) => ({
           url: `/chat-app/contacts/${contactId}/block`,
           method: "PATCH",
         }),
-        // Optimistic update
-        async onQueryStarted(contactId, { dispatch, queryFulfilled }) {
-          // Optimistically update contacts list
-          const patchContacts = dispatch(
-            ContactApiSlice.util.updateQueryData(
-              "getMyContacts",
-              {},
-              (draft) => {
-                const contact = draft.data.contacts.find(
-                  (c) => c._id === contactId,
-                );
-                if (contact) {
-                  contact.isBlocked = !contact.isBlocked;
-                }
-              },
-            ),
-          );
 
-          try {
-            await queryFulfilled;
-          } catch {
-            patchContacts.undo();
-          }
-        },
+        // async onQueryStarted(contactId, { dispatch, queryFulfilled }) {
+        //   // Optimistically remove the contact from the visible list
+        //   const patchContacts = dispatch(
+        //     ContactApiSlice.util.updateQueryData(
+        //       "getMyContacts",
+        //       {},
+        //       (draft) => {
+        //         draft.data.contacts = draft.data.contacts.filter((contact) => {
+        //           const info =
+        //             typeof contact.contact !== "string"
+        //               ? contact.contact
+        //               : undefined;
+
+        //           return info?._id !== contactId;
+        //         });
+        //       },
+        //     ),
+        //   );
+
+        //   try {
+        //     const { data } = await queryFulfilled;
+
+        //     // If the user was actually UNBLOCKED, restore the list from the server
+        //     if (!data.data.isBlocked) {
+        //       dispatch(
+        //         ContactApiSlice.util.invalidateTags([
+        //           "Contacts",
+        //           "BlockedContacts",
+        //         ]),
+        //       );
+        //     }
+        //   } catch {
+        //     patchContacts.undo();
+        //   }
+        // },
+
         invalidatesTags: ["Contacts", "BlockedContacts"],
       }),
 
@@ -182,7 +202,7 @@ export const ContactApiSlice = ApiService.injectEndpoints({
               {},
               (draft) => {
                 draft.data.contacts = draft.data.contacts.filter(
-                  (contact) => contact._id !== contactId,
+                  (contact) => contact.contact !== contactId,
                 );
               },
             ),
