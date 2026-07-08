@@ -1,5 +1,5 @@
-import { ApiService } from '../../app/services/api.service';
-import { ChatApiSlice } from '../chats/chat.slice';
+import { ApiService } from "../../app/services/api.service";
+import { ChatApiSlice } from "../chats/chat.slice";
 
 export interface User {
   _id: string;
@@ -71,23 +71,23 @@ export const ContactApiSlice = ApiService.injectEndpoints({
         forceRefetch({ currentArg, previousArg }) {
           return currentArg?.page !== previousArg?.page;
         },
-        providesTags: ['Contacts'],
+        providesTags: ["Contacts"],
       }),
 
       getSuggestedFriends: builder.query<ApiResponse<User[]>, void>({
-        query: () => '/chat-app/contacts/suggestions',
-        providesTags: ['SuggestedFriends'],
+        query: () => "/chat-app/contacts/suggestions",
+        providesTags: ["SuggestedFriends"],
       }),
 
       getBlockedContacts: builder.query<ApiResponse<Contact[]>, void>({
-        query: () => '/chat-app/contacts/blocked',
-        providesTags: ['BlockedContacts'],
+        query: () => "/chat-app/contacts/blocked",
+        providesTags: ["BlockedContacts"],
       }),
 
       addToContact: builder.mutation<ApiResponse<Contact>, AddContactPayload>({
         query: (payload) => ({
-          url: '/chat-app/contacts/add',
-          method: 'POST',
+          url: "/chat-app/contacts/add",
+          method: "POST",
           body: payload,
         }),
         // Optimistic update
@@ -97,47 +97,67 @@ export const ContactApiSlice = ApiService.injectEndpoints({
 
             // Update contacts list
             dispatch(
-              ContactApiSlice.util.updateQueryData('getMyContacts', {}, (draft) => {
-                draft.data.contacts.unshift(data.data);
-              }),
+              ContactApiSlice.util.updateQueryData(
+                "getMyContacts",
+                { page: 1 },
+                (draft) => {
+                  draft.data.contacts.unshift(data.data);
+                },
+              ),
             );
 
             dispatch(
-              ChatApiSlice.util.updateQueryData('getAvailableUsers', {}, (draft) => {
-                draft.data.users = draft.data.users.filter(
-                  (user: any) => user?._id !== payload.contactId,
-                );
-              }),
+              ChatApiSlice.util.updateQueryData(
+                "getAvailableUsers",
+                {},
+                (draft) => {
+                  draft.data.users = draft.data.users.filter(
+                    (user: any) => user?._id !== payload.contactId,
+                  );
+                },
+              ),
             );
 
             // Remove from suggestions
             dispatch(
-              ContactApiSlice.util.updateQueryData('getSuggestedFriends', undefined, (draft) => {
-                draft.data = draft.data.filter((user) => user._id !== payload.contactId);
-              }),
+              ContactApiSlice.util.updateQueryData(
+                "getSuggestedFriends",
+                undefined,
+                (draft) => {
+                  draft.data = draft.data.filter(
+                    (user) => user._id !== payload.contactId,
+                  );
+                },
+              ),
             );
           } catch (error) {
-            console.error('Error adding contact:', error);
+            console.error("Error adding contact:", error);
           }
         },
-        invalidatesTags: ['Contacts', 'SuggestedFriends'],
+        invalidatesTags: ["Contacts", "SuggestedFriends"],
       }),
 
       toggleBlockContact: builder.mutation<ApiResponse<Contact>, string>({
         query: (contactId) => ({
           url: `/chat-app/contacts/${contactId}/block`,
-          method: 'PATCH',
+          method: "PATCH",
         }),
         // Optimistic update
         async onQueryStarted(contactId, { dispatch, queryFulfilled }) {
           // Optimistically update contacts list
           const patchContacts = dispatch(
-            ContactApiSlice.util.updateQueryData('getMyContacts', {}, (draft) => {
-              const contact = draft.data.contacts.find((c) => c._id === contactId);
-              if (contact) {
-                contact.isBlocked = !contact.isBlocked;
-              }
-            }),
+            ContactApiSlice.util.updateQueryData(
+              "getMyContacts",
+              {},
+              (draft) => {
+                const contact = draft.data.contacts.find(
+                  (c) => c._id === contactId,
+                );
+                if (contact) {
+                  contact.isBlocked = !contact.isBlocked;
+                }
+              },
+            ),
           );
 
           try {
@@ -146,22 +166,26 @@ export const ContactApiSlice = ApiService.injectEndpoints({
             patchContacts.undo();
           }
         },
-        invalidatesTags: ['Contacts', 'BlockedContacts'],
+        invalidatesTags: ["Contacts", "BlockedContacts"],
       }),
 
       deleteContact: builder.mutation<ApiResponse<void>, string>({
         query: (contactId) => ({
           url: `/chat-app/contacts/${contactId}`,
-          method: 'DELETE',
+          method: "DELETE",
         }),
         // Optimistic update
         async onQueryStarted(contactId, { dispatch, queryFulfilled }) {
           const patchResult = dispatch(
-            ContactApiSlice.util.updateQueryData('getMyContacts', {}, (draft) => {
-              draft.data.contacts = draft.data.contacts.filter(
-                (contact) => contact._id !== contactId,
-              );
-            }),
+            ContactApiSlice.util.updateQueryData(
+              "getMyContacts",
+              {},
+              (draft) => {
+                draft.data.contacts = draft.data.contacts.filter(
+                  (contact) => contact._id !== contactId,
+                );
+              },
+            ),
           );
 
           try {
@@ -170,11 +194,14 @@ export const ContactApiSlice = ApiService.injectEndpoints({
             patchResult.undo();
           }
         },
-        invalidatesTags: ['Contacts'],
+        invalidatesTags: ["Contacts"],
       }),
     };
   },
 });
 
-export const { useGetMyContactsQuery, useAddToContactMutation, useToggleBlockContactMutation } =
-  ContactApiSlice;
+export const {
+  useGetMyContactsQuery,
+  useAddToContactMutation,
+  useToggleBlockContactMutation,
+} = ContactApiSlice;

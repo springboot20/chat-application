@@ -533,33 +533,64 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
 
   const processMentionsContent = useCallback(
     (message: string, availableUsers: User[]) => {
-      // regex updated to handle @ in usernames
-      // it looks for @ followed by characters until it hits a space or end of string
-      // then it verifies if that "word" matches a known username
-      const mentionRegex = /(?:^|\s)@([^\s]+)/g;
       const mentions: Array<{
         userId: string;
         username: string;
         position: number;
       }> = [];
 
-      let match: any;
+      if (!message) return { content: message, mentions };
 
-      while ((match = mentionRegex.exec(message)) !== null) {
-        const fullMatch = match[0]; // e.g., " @john@dev"
-        const rawUsername = match[1]; // e.g., "john@dev"
+      // Map lowercase username -> user for fast lookup
+      const usersByUsername = new Map(
+        availableUsers.map((user) => [user.username.toLowerCase(), user]),
+      );
 
-        // Calculate the exact start position of the '@' character
-        const atIndex = match.index + (fullMatch.startsWith(" ") ? 1 : 0);
+      // Usernames may contain spaces (e.g. "john doe"), so figure out the
+      // longest possible username in words, to bound how many words we try to match
+      const maxWordCount = availableUsers.reduce(
+        (max, user) => Math.max(max, user.username.trim().split(/\s+/).length),
+        1,
+      );
 
-        const mentionedUser = availableUsers.find(
-          (user) => user.username.toLowerCase() === rawUsername.toLowerCase(),
-        );
+      // Find every '@' that starts a mention: preceded by start-of-string or whitespace
+      const atPositions: number[] = [];
+      for (let i = 0; i < message.length; i++) {
+        if (message[i] === "@" && (i === 0 || /\s/.test(message[i - 1]))) {
+          atPositions.push(i);
+        }
+      }
 
-        if (mentionedUser) {
+      for (const atIndex of atPositions) {
+        const rest = message.slice(atIndex + 1);
+        const wordMatches = [...rest.matchAll(/\S+/g)];
+        if (wordMatches.length === 0) continue;
+
+        let matchedUser: User | undefined;
+        let matchedEnd = 0;
+
+        // Try the longest word combination first, then shrink down to a single word
+        const upperBound = Math.min(maxWordCount, wordMatches.length);
+        for (let n = upperBound; n >= 1; n--) {
+          const candidate = wordMatches
+            .slice(0, n)
+            .map((m) => m[0])
+            .join(" ")
+            .toLowerCase();
+
+          const user = usersByUsername.get(candidate);
+          if (user) {
+            matchedUser = user;
+            matchedEnd =
+              wordMatches[n - 1].index! + wordMatches[n - 1][0].length;
+            break;
+          }
+        }
+
+        if (matchedUser) {
           mentions.push({
-            userId: mentionedUser._id,
-            username: mentionedUser.username,
+            userId: matchedUser._id,
+            username: matchedUser.username,
             position: atIndex,
           });
         }
@@ -567,12 +598,12 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
 
       return {
         content: message,
-        mentions: mentions,
+        mentions,
       };
     },
     [],
   );
-
+  
   const handleReplyToChatMessage = useCallback(async () => {
     const chat = currentChatRef.current;
     if (!chat?._id || !socket) return;
@@ -675,10 +706,14 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
       clearTimeout(typingTimeoutRef.current);
     }
 
+    console.log(currentChat?.participants);
+
     const processedMessage = processMentionsContent(
       message,
       currentChat?.participants,
     );
+
+    console.log(processedMessage, "processedMessage");
 
     // Clear input fields immediately for better UX
     const files = attachmentFiles.files;

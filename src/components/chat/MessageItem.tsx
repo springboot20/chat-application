@@ -673,8 +673,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         <span
           key={`mention-${mention.userId}-${index}`}
           className={classNames(
-            "font-bold cursor-pointer hover:underline transition-colors",
-            "text-[#027eb5] dark:text-[#53bdeb]",
+            "!font-bold !cursor-pointer !hover:underline !transition-colors",
+            "!text-[#027eb5] !dark:text-[#53bdeb]",
           )}
           onClick={(e) => {
             e.stopPropagation();

@@ -43,31 +43,18 @@ export const buildFormData = (data: Record<string, any>): FormData => {
 
   Object.keys(data).forEach((key) => {
     if (key === "attachments" && Array.isArray(data[key])) {
-      data[key].forEach((file: File) => {
-        formData.append("attachments", file);
-      });
-
-      return;
-    }
-
-    if (key === "mentions" && Array.isArray(data[key])) {
-      data[key].forEach((mention: string) => {
-        formData.append("mentions", mention);
-      });
-
-      return;
-    }
-
-    if (
+      for (let i = 0; i < data[key].length; i++) {
+        formData.append("attachments", data[key][i]);
+      }
+    } else if (
       typeof data[key] === "object" &&
-      !(data[key] instanceof File) &&
-      data[key] !== null
+      data[key] !== null &&
+      !(data[key] instanceof File)
     ) {
       formData.append(key, JSON.stringify(data[key]));
-      return;
+    } else {
+      formData.append(key, data[key]);
     }
-
-    formData.append(key, data[key]);
   });
 
   return formData;
