@@ -73,7 +73,6 @@ const AuthSlice = createSlice({
       clearState(state);
     },
   },
-
   extraReducers: (builder) => {
     builder.addMatcher(
       AuthApiSlice.endpoints.register.matchFulfilled,
@@ -88,7 +87,6 @@ const AuthSlice = createSlice({
         state.tokens = payload.data.tokens;
         state.user = null;
         state.isAuthenticated = true;
-
         persistState(state);
       },
     );
@@ -97,7 +95,16 @@ const AuthSlice = createSlice({
       AuthApiSlice.endpoints.getCurrentUser.matchFulfilled,
       (state, { payload }) => {
         state.user = payload.data.user;
+        persistState(state);
+      },
+    );
 
+    builder.addMatcher(
+      AuthApiSlice.endpoints.updateAccount.matchFulfilled,
+      (state, { payload }) => {
+        if (state.user) {
+          Object.assign(state.user, payload.data);
+        }
         persistState(state);
       },
     );

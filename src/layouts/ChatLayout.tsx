@@ -48,7 +48,7 @@ import { classNames } from "../utils";
 import { ChatListItemInterface } from "../types/chat";
 import { useTyping } from "../hooks/useTyping";
 import { useMessage } from "../hooks/useMessage";
-import { useNetwork } from "../hooks/useNetwork";
+// import { useNetwork } from "../hooks/useNetwork";
 import {
   StatusGroup,
   StatusStoriesApiSlice,
@@ -70,7 +70,7 @@ export const ChatLayout: React.FC = () => {
   const { chats, currentChat, onNewChat, _onChatLeave, onGroupChatRename } =
     useChat();
   const messageHook = useMessage();
-  const { isOnline: hasInternet } = useNetwork();
+  // const { isOnline: hasInternet } = useNetwork();
 
   const [activeTab, setActiveTab] = useState<
     "chat_messages" | "status" | "settings"
@@ -257,12 +257,12 @@ export const ChatLayout: React.FC = () => {
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
     socket?.on(NEW_GROUP_NAME, onGroupChatRename);
-    socket?.on(MESSAGE_DELIVERED_EVENT, (payload) => {
-      dispatch(updateMessageDelivery(payload));
-    });
-    socket?.on(MESSAGE_SEEN_EVENT, (payload) => {
-      dispatch(markMessagesAsSeen(payload));
-    });
+    socket?.on(MESSAGE_DELIVERED_EVENT, (payload) =>
+      dispatch(updateMessageDelivery(payload)),
+    );
+    socket?.on(MESSAGE_SEEN_EVENT, (payload) =>
+      dispatch(markMessagesAsSeen(payload)),
+    );
     socket.on(NEW_STATUS_EVENT, handleNewStatus);
     socket.on(STATUS_DELETED_EVENT, handleStatusDeleted);
 
@@ -279,12 +279,12 @@ export const ChatLayout: React.FC = () => {
       socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);
       socket?.off(NEW_GROUP_NAME, onGroupChatRename);
       socket?.off(UPDATE_CHAT_LAST_MESSAGE_EVENT, onUpdateChatLastMessage);
-      socket?.off(MESSAGE_DELIVERED_EVENT, (payload) => {
-        dispatch(updateMessageDelivery(payload));
-      });
-      socket?.off(MESSAGE_SEEN_EVENT, (payload) => {
-        dispatch(markMessagesAsSeen(payload));
-      });
+      socket?.off(MESSAGE_DELIVERED_EVENT, (payload) =>
+        dispatch(updateMessageDelivery(payload)),
+      );
+      socket?.off(MESSAGE_SEEN_EVENT, (payload) =>
+        dispatch(markMessagesAsSeen(payload)),
+      );
       socket.off(NEW_STATUS_EVENT, handleNewStatus);
       socket.off(STATUS_DELETED_EVENT, handleStatusDeleted);
     };
@@ -319,15 +319,15 @@ export const ChatLayout: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (!hasInternet) {
-      toast.warning("You are offline. Messages will be queued.", {
-        toastId: "offline-warning",
-      });
-    } else {
-      toast.dismiss("offline-warning");
-    }
-  }, [hasInternet]);
+  // useEffect(() => {
+  //   if (!hasInternet) {
+  //     toast.warning("You are offline. Messages will be queued.", {
+  //       toastId: "offline-warning",
+  //     });
+  //   } else {
+  //     toast.dismiss("offline-warning");
+  //   }
+  // }, [hasInternet]);
 
   return (
     <Disclosure as={Fragment}>

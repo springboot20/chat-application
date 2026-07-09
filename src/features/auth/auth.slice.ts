@@ -103,12 +103,14 @@ export const AuthApiSlice = ApiService.injectEndpoints({
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
+          console.log({ data });
 
           dispatch(
             AuthApiSlice.util.updateQueryData(
               "getCurrentUser",
               undefined,
               (draft) => {
+                console.log({ draft: draft?.data?.user });
                 // Same shape — user is nested at draft.data.user
                 if (draft?.data?.user) {
                   Object.assign(draft.data.user, data.data);
@@ -120,6 +122,7 @@ export const AuthApiSlice = ApiService.injectEndpoints({
           console.error("Error updating account cache:", error);
         }
       },
+      // invalidatesTags: ["Auth"],
     }),
 
     changePassword: builder.mutation<Response, any>({

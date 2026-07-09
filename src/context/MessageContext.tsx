@@ -602,7 +602,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
     },
     [],
   );
-  
+
   const handleReplyToChatMessage = useCallback(async () => {
     const chat = currentChatRef.current;
     if (!chat?._id || !socket) return;
@@ -755,6 +755,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
           "You are offline. Message will be sent when you reconnect.",
           {
             autoClose: 3000,
+            position: "top-center",
           },
         );
 
