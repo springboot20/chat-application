@@ -607,7 +607,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
 
     const processedMessage = processMentionsContent(message, chat.participants);
 
-    const linkPreviewUrl = message.match(/(https?:\/\/[^\s]+)/i)?.[0];
+    const linkPreviewUrl = message?.match(/(https?:\/\/[^\s]+)/i)?.[0];
 
     const payload = {
       chatId: chat._id,
@@ -711,7 +711,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
       currentChat?.participants,
     );
 
-    const linkPreviewUrl = message.match(/(https?:\/\/[^\s]+)/i)?.[0];
+    const linkPreviewUrl = message?.match(/(https?:\/\/[^\s]+)/i)?.[0];
 
     // Clear input fields immediately for better UX
     const files = attachmentFiles.files;
