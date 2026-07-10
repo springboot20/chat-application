@@ -1,6 +1,6 @@
-import { MediaContentType } from '../../../context/StatusContext';
-import { useStatusStories } from '../../../hooks/useStatusStories';
-import { classNames } from '../../../utils';
+import { MediaContentType } from "../../../context/StatusContext";
+import { useStatusStories } from "../../../hooks/useStatusStories";
+import { classNames } from "../../../utils";
 
 type MediaContentTypeButtonProps = {
   handleMediaContentTypeChange: (type: MediaContentType) => void;
@@ -9,10 +9,11 @@ type MediaContentTypeButtonProps = {
 };
 
 export const MediaContentTypes = () => {
-  const { MEDIA_TYPES, mediaContentType, setMediaContentType } = useStatusStories();
+  const { MEDIA_TYPES, mediaContentType, setMediaContentType } =
+    useStatusStories();
 
   return (
-    <div className='flex items-center gap-x-3'>
+    <div className="flex items-center gap-x-3">
       {MEDIA_TYPES.map((type) => {
         return (
           <MediaContentTypeButton
@@ -34,12 +35,13 @@ const MediaContentTypeButton: React.FC<MediaContentTypeButtonProps> = ({
 }) => {
   return (
     <button
-      type='button'
+      type="button"
       className={classNames(
-        'capitalize text-sm font-medium font-nunito rounded-3xl px-6 py-1.5 dark:text-white transition-colors dark:hover:bg-gray-600/30',
-        isSelected && 'dark:bg-gray-600/30',
+        "capitalize text-sm font-medium font-nunito rounded-3xl px-6 py-1.5 dark:text-white transition-colors dark:hover:bg-gray-600/30",
+        isSelected && "bg-gray-600/30",
       )}
-      onClick={() => handleMediaContentTypeChange(type)}>
+      onClick={() => handleMediaContentTypeChange(type)}
+    >
       <span>{type}</span>
     </button>
   );

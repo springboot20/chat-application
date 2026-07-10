@@ -30,8 +30,8 @@ const ORIENTATION_TO_ANGLE: Record<number, number> = {
 
 export default function ImageMediaContent() {
   const {
-    selectedFiles,
-    setSelectedFiles,
+    selectedImageFiles,
+    setSelectedImageFiles,
     activeFileIndex,
     setActiveFileIndex,
     closeMediaContent,
@@ -48,15 +48,15 @@ export default function ImageMediaContent() {
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-  const activeFile = selectedFiles[activeFileIndex];
+  const activeFile = selectedImageFiles[activeFileIndex];
   const mainPreviewUrl = useObjectURL(activeFile);
   const editingFileUrl = useObjectURL(
-    editingIndex !== null ? selectedFiles[editingIndex] : null,
+    editingIndex !== null ? selectedImageFiles[editingIndex] : null,
   );
 
   const handleCapture = (file: File) => {
-    setSelectedFiles((prev) => [...prev, file].slice(0, 6));
-    setActiveFileIndex(selectedFiles.length); // Auto-focus the new capture
+    setSelectedImageFiles((prev) => [...prev, file].slice(0, 6));
+    setActiveFileIndex(selectedImageFiles.length); // Auto-focus the new capture
     setViewMode("gallery"); // Return to gallery to preview/edit
   };
 
@@ -69,7 +69,7 @@ export default function ImageMediaContent() {
     if (!files) return;
 
     const newFiles = Array.from(files);
-    setSelectedFiles((prev) => {
+    setSelectedImageFiles((prev) => {
       const combined = [...newFiles, ...prev].slice(0, 6); // Max 6 images
       return combined;
     });
@@ -79,7 +79,7 @@ export default function ImageMediaContent() {
   const handleSaveCrop = async () => {
     if (editingIndex === null || !editingFileUrl || !croppedAreaPixels) return;
 
-    const orientation = await getOrientation(selectedFiles[editingIndex]);
+    const orientation = await getOrientation(selectedImageFiles[editingIndex]);
     const rotationAngle = ORIENTATION_TO_ANGLE[orientation] ?? 0;
 
     const croppedBlob = (await getCroppedImg({
@@ -93,13 +93,13 @@ export default function ImageMediaContent() {
 
     const croppedFile = new File(
       [croppedBlob],
-      selectedFiles[editingIndex].name,
+      selectedImageFiles[editingIndex].name,
       {
         type: "image/jpeg",
       },
     );
 
-    setSelectedFiles((prev) => {
+    setSelectedImageFiles((prev) => {
       const updated = [...prev];
       updated[editingIndex] = croppedFile;
       return updated;
@@ -111,7 +111,7 @@ export default function ImageMediaContent() {
 
   const removeImage = useCallback(
     (index: number) => {
-      setSelectedFiles((prev) => {
+      setSelectedImageFiles((prev) => {
         const filtered = prev.filter((_, i) => i !== index);
         // Adjust active index if we deleted the current or last item
         if (activeFileIndex >= filtered.length) {
@@ -120,7 +120,7 @@ export default function ImageMediaContent() {
         return filtered;
       });
     },
-    [activeFileIndex, setActiveFileIndex, setSelectedFiles],
+    [activeFileIndex, setActiveFileIndex, setSelectedImageFiles],
   );
 
   return (
@@ -154,7 +154,7 @@ export default function ImageMediaContent() {
                   "px-6 py-1.5 rounded-full text-xs font-bold transition-all",
                   viewMode === "gallery"
                     ? "bg-white text-indigo-600 shadow-md"
-                    : "text-gray-400",
+                    : "text-gray-800 dark:text-gray-400",
                 )}
               >
                 Gallery
@@ -169,7 +169,7 @@ export default function ImageMediaContent() {
                   "px-6 py-1.5 rounded-full text-xs font-bold transition-all",
                   viewMode === "camera"
                     ? "bg-white text-indigo-600 shadow-md"
-                    : "text-gray-400",
+                    : "text-gray-800 dark:text-gray-400",
                 )}
               >
                 Camera
@@ -312,7 +312,7 @@ export default function ImageMediaContent() {
             )}
           </AnimatePresence>
 
-          {selectedFiles.length > 0 && (
+          {selectedImageFiles.length > 0 && (
             <div className="w-full mt-3 max-w-sm shrink-0">
               <StatusPrivacyDisplay
                 onOpenSettings={() => setShowPrivacySettings(true)}
@@ -323,9 +323,9 @@ export default function ImageMediaContent() {
           {/* Thumbnail Gallery */}
           <div className="flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide shrink-0">
             {/* Add More Button */}
-            {selectedFiles.length < 6 && (
-              <label className="flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group">
-                <PlusIcon className="size-6 text-gray-400 group-hover:text-blue-500" />
+            {selectedImageFiles.length < 6 && (
+              <label className="flex-shrink-0 size-16 border-2 border-dashed border-gray-500 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group">
+                <PlusIcon className="size-6 text-gray-600 group-hover:text-blue-500" />
                 <input
                   type="file"
                   hidden
@@ -337,7 +337,7 @@ export default function ImageMediaContent() {
             )}
 
             <AnimatePresence>
-              {selectedFiles.map((file, idx) => (
+              {selectedImageFiles.map((file, idx) => (
                 <FileThumbnail
                   key={file.name + idx}
                   file={file}

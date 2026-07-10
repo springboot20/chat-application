@@ -148,7 +148,7 @@ export default function VideoMediaContent() {
                   "px-6 py-1.5 rounded-full text-xs font-bold transition-all",
                   viewMode === "gallery"
                     ? "bg-white text-indigo-600 shadow-md"
-                    : "text-gray-400",
+                    : "text-gray-800 dark:text-gray-400",
                 )}
               >
                 Gallery
@@ -160,7 +160,7 @@ export default function VideoMediaContent() {
                   "px-6 py-1.5 rounded-full text-xs font-bold transition-all",
                   viewMode === "camera"
                     ? "bg-white text-indigo-600 shadow-md"
-                    : "text-gray-400",
+                    : "text-gray-800 dark:text-gray-400",
                 )}
               >
                 Camera
@@ -188,7 +188,7 @@ export default function VideoMediaContent() {
                   className="h-full"
                 >
                   {videoUrl ? (
-                    <div className="relative">
+                    <div className="relative size-full">
                       <VideoPreviewPlayer
                         file={selectedVideo}
                         handleMetadata={handleMetadata}
@@ -245,8 +245,8 @@ export default function VideoMediaContent() {
           <div className="flex items-center gap-3 overflow-x-auto py-2 px-2 scrollbar-hide shrink-0">
             {/* Add More Button */}
             {selectedVideoFiles.length < 6 && (
-              <label className="flex-shrink-0 size-16 border-2 border-dashed border-gray-300 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group">
-                <PlusIcon className="size-6 text-gray-400 group-hover:text-blue-500" />
+              <label className="flex-shrink-0 size-16 border-2 border-dashed border-gray-500 dark:border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors group">
+                <PlusIcon className="size-6 text-gray-600 group-hover:text-blue-500" />
                 <input
                   type="file"
                   hidden

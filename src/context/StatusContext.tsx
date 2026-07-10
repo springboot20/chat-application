@@ -53,7 +53,7 @@ type StatusContextValue = {
   captions: CaptionsType;
   activeVideoFileIndex: number;
   selectedVideoFiles: File[];
-  selectedFiles: File[];
+  selectedImageFiles: File[];
   activeFileIndex: number;
   activeStatusIndex: number;
   progress: number;
@@ -65,7 +65,7 @@ type StatusContextValue = {
 
   setPrivacy: React.Dispatch<React.SetStateAction<PrivacyType>>;
   setSelectedContacts: React.Dispatch<React.SetStateAction<string[]>>;
-  setSelectedFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  setSelectedImageFiles: React.Dispatch<React.SetStateAction<File[]>>;
   setSelectedVideoFiles: React.Dispatch<React.SetStateAction<File[]>>;
   editorRef: React.RefObject<HTMLDivElement>;
   setTextContent: React.Dispatch<React.SetStateAction<string>>;
@@ -109,7 +109,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
 
   const [mediaContentType, setMediaContentType] =
     useState<MediaContentType | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
   const [selectedVideoFiles, setSelectedVideoFiles] = useState<File[]>([]);
 
   const [addNewMediaStatus, { isLoading: isAddingNewMediaStatus }] =
@@ -181,7 +181,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
   const resetCreationState = useCallback(() => {
     setTextContent("");
     setMediaContentType(null);
-    setSelectedFiles([]);
+    setSelectedImageFiles([]);
     setActiveFileIndex(0);
     setCaptions({ image: [], video: [] });
     setSelectedTextBackground(randomlySelectColor());
@@ -214,7 +214,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
 
   const closeMediaContent = useCallback(() => {
     setMediaContentType(null);
-    setSelectedFiles([]); // Reset files on close
+    setSelectedImageFiles([]); // Reset files on close
     setActiveFileIndex(0);
   }, []);
 
@@ -237,7 +237,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     }
     const formData = new FormData();
 
-    const overallFiles = [...selectedFiles, ...selectedVideoFiles];
+    const overallFiles = [...selectedImageFiles, ...selectedVideoFiles];
 
     // 1. Prepare Metadata based on your Mongoose Schema structure
     const metadata = overallFiles.map((file) => {
@@ -271,6 +271,14 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     try {
       await addNewMediaStatus(formData).unwrap();
 
+      if (mediaContentType === "video") {
+        setSelectedVideoFiles([]);
+      }
+
+      if (mediaContentType === "image") {
+        setSelectedImageFiles([]);
+      }
+
       await Promise.all([
         Promise.resolve(setTimeout(() => resetCreationState(), 2500)),
         Promise.resolve(setTimeout(() => handleStatusWindowChange(null), 3000)),
@@ -280,7 +288,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [
     mediaContentType,
-    selectedFiles,
+    selectedImageFiles,
     selectedVideoFiles,
     privacy,
     textContent,
@@ -309,8 +317,8 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
       colors: BACKGROUND_COLORS,
       onContentChange,
 
-      selectedFiles,
-      setSelectedFiles,
+      selectedImageFiles,
+      setSelectedImageFiles,
       activeFileIndex,
       setActiveFileIndex,
       setCaptions,
@@ -346,7 +354,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
       closeMediaContent,
       textContent,
       onContentChange,
-      selectedFiles,
+      selectedImageFiles,
       activeFileIndex,
       captions,
       selectedVideoFiles,
