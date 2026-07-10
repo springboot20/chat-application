@@ -98,7 +98,12 @@ export const UserProfileModal = ({
   if (!user) return null;
 
   const isMe = currentUser?._id === user._id;
-  const contactRecord = myContacts.find((c) => c.contact._id === user._id);
+  const contactRecord = myContacts.find((c) => {
+    const normalizedContact =
+      typeof c.contact !== "string" ? c.contact : undefined;
+
+    return normalizedContact?._id === user._id;
+  });
   const isContact = !!contactRecord;
   const isBlocked = contactRecord?.isBlocked || false;
 
@@ -113,15 +118,21 @@ export const UserProfileModal = ({
   };
 
   const handleBlockToggle = async () => {
-    if (!contactRecord?._id) return;
+    if (!contactRecord) return;
     if (
       !window.confirm(
         `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${user.username}?`,
       )
     )
       return;
+
+    const normalizedContact =
+      typeof contactRecord.contact !== "string"
+        ? contactRecord.contact
+        : undefined;
+
     try {
-      const res = await toggleBlock(contactRecord._id).unwrap();
+      const res = await toggleBlock(String(normalizedContact?._id)).unwrap();
       toast.success(
         res.message ||
           `User ${isBlocked ? "unblocked" : "blocked"} successfully`,
