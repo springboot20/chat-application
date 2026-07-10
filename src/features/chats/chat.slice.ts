@@ -1,5 +1,6 @@
-import { ApiService } from '../../app/services/api.service';
-import { ChatListItemInterface, ChatMessageInterface } from '../../types/chat';
+import { ApiService } from "../../app/services/api.service";
+import { ChatListItemInterface, ChatMessageInterface } from "../../types/chat";
+import { ApiResponse } from "../contacts/contact.api.slice";
 
 interface Response {
   data: any;
@@ -22,29 +23,46 @@ interface PollingMutation {
   allowMultipleAnswer: boolean;
 }
 
+export interface LinkPreview {
+  url: string;
+  title: string;
+  description: string;
+  image: string;
+  favicon: string;
+  hostname: string;
+  siteName: string;
+}
+
 export const ChatApiSlice = ApiService.injectEndpoints({
   endpoints: (builder) => ({
+    getLinkPreview: builder.query<ApiResponse<LinkPreview>, string>({
+      query: (url) => ({
+        url: "/chat-app/links/link-preview/",
+        params: { url },
+      }),
+    }),
+
     getUserChats: builder.query<Response, void>({
       query: () => ({
-        url: '/chat-app/chats/',
+        url: "/chat-app/chats/",
       }),
       providesTags: (result) =>
         result?.data?.message?.length
           ? [
               // eslint-disable-next-line no-unsafe-optional-chaining
               ...result?.data?.message?.map((chat: ChatListItemInterface) => ({
-                type: 'Chat' as const,
+                type: "Chat" as const,
                 id: chat._id,
               })),
-              { type: 'Chat', id: 'CHAT' },
+              { type: "Chat", id: "CHAT" },
             ]
-          : [{ type: 'Chat', id: 'CHAT' }],
+          : [{ type: "Chat", id: "CHAT" }],
     }),
 
     createUserChat: builder.mutation<Response, string>({
       query: (receiverId) => ({
         url: `/chat-app/chats/create-chat/${receiverId}`,
-        method: 'POST',
+        method: "POST",
         body: {},
       }),
     }),
@@ -55,17 +73,17 @@ export const ChatApiSlice = ApiService.injectEndpoints({
         const params = new URLSearchParams({});
 
         if (page) {
-          params.append('page', page.toString());
+          params.append("page", page.toString());
         }
 
         if (search) {
-          params.append('search', search);
+          params.append("search", search);
         }
 
         const query = params.toString();
 
         return {
-          url: `/chat-app/auth/users/available-users?${query ? query + '&limit=12' : ''}`,
+          url: `/chat-app/auth/users/available-users?${query ? query + "&limit=12" : ""}`,
         };
       },
 
@@ -94,9 +112,9 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     createGroupChat: builder.mutation<Response, GroupChatInterface>({
       query: ({ name, participants }) => {
         return {
-          url: '/chat-app/chats/group-chat',
+          url: "/chat-app/chats/group-chat",
           body: { name, participants },
-          method: 'POST',
+          method: "POST",
         };
       },
     }),
@@ -106,7 +124,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
         return {
           url: `/chat-app/messages/${chatId}/polling-vote`,
           body: { allowMultipleAnswer, options, questionTitle },
-          method: 'POST',
+          method: "POST",
         };
       },
     }),
@@ -119,20 +137,23 @@ export const ChatApiSlice = ApiService.injectEndpoints({
         return {
           url: `/chat-app/messages/${chatId}/${messageId}/polling-vote/vote/${optionId}`,
           body: {},
-          method: 'PATCH',
+          method: "PATCH",
         };
       },
     }),
 
     getGroupChat: builder.query<Response, string>({
       query: (chatId) => `/chat-app/chats/group-chat/${chatId}`,
-      providesTags: (_, __, chatId) => [{ type: 'Chat', chatId }],
+      providesTags: (_, __, chatId) => [{ type: "Chat", chatId }],
     }),
 
-    updateGroupChatDetails: builder.mutation<Response, { name: string; chatId: string }>({
+    updateGroupChatDetails: builder.mutation<
+      Response,
+      { name: string; chatId: string }
+    >({
       query: ({ chatId, name }) => ({
         url: `/chat-app/chats/group-chat/${chatId}`,
-        method: 'PATCH',
+        method: "PATCH",
         body: { name },
       }),
     }),
@@ -140,7 +161,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     deleteGroupChatDetails: builder.mutation<Response, string>({
       query: (chatId) => ({
         url: `/chat-app/chats/group-chat/${chatId}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
     }),
 
@@ -150,7 +171,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     >({
       query: ({ chatId, participantId }) => ({
         url: `/chat-app/chats/group-chat/${chatId}/${participantId}`,
-        method: 'POST',
+        method: "POST",
       }),
     }),
 
@@ -160,21 +181,21 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     >({
       query: ({ chatId, participantId }) => ({
         url: `/chat-app/chats/group-chat/${chatId}/${participantId}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
     }),
 
     leaveChatGroup: builder.mutation<Response, string>({
       query: (chatId) => ({
         url: `/chat-app/chats/leave/group-chat/${chatId}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
     }),
 
     deleteOneOneChatMessage: builder.mutation<Response, string>({
       query: (chatId) => ({
         url: `/chat-app/chats/delete-one-on-one/${chatId}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
     }),
 
@@ -187,12 +208,12 @@ export const ChatApiSlice = ApiService.injectEndpoints({
           ? [
               // eslint-disable-next-line no-unsafe-optional-chaining
               ...result?.data.map((message: ChatMessageInterface) => ({
-                type: 'Message' as const,
+                type: "Message" as const,
                 id: message._id,
               })),
-              { type: 'Message', id: 'MESSAGE' },
+              { type: "Message", id: "MESSAGE" },
             ]
-          : [{ type: 'Message', id: 'MESSAGE' }],
+          : [{ type: "Message", id: "MESSAGE" }],
     }),
 
     reactToChatMessage: builder.mutation<
@@ -201,15 +222,18 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     >({
       query: ({ chatId, messageId, ...rest }) => ({
         url: `/chat-app/messages/${chatId}/${messageId}/react`,
-        method: 'PATCH',
+        method: "PATCH",
         body: { ...rest },
       }),
     }),
 
-    deleteChatMessage: builder.mutation<Response, { chatId: string; messageId: string }>({
+    deleteChatMessage: builder.mutation<
+      Response,
+      { chatId: string; messageId: string }
+    >({
       query: ({ chatId, messageId }) => ({
         url: `/chat-app/messages/${chatId}/${messageId}/delete`,
-        method: 'DELETE',
+        method: "DELETE",
         body: {},
       }),
     }),
@@ -217,7 +241,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     markMessagesAsSeen: builder.mutation<Response, string>({
       query: (chatId) => ({
         url: `/chat-app/messages/${chatId}/messages/seen`,
-        method: 'PUT',
+        method: "PUT",
         body: {},
       }),
     }),
@@ -225,6 +249,7 @@ export const ChatApiSlice = ApiService.injectEndpoints({
 });
 
 export const {
+  useLazyGetLinkPreviewQuery,
   useGetUserChatsQuery,
   useCreateUserChatMutation,
   useGetAvailableUsersQuery,

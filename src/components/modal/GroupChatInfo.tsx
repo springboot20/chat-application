@@ -325,35 +325,54 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
                                     .filter(
                                       (u) =>
                                         !groupChatDetails?.participants?.find(
-                                          (p) => p._id === u.contact._id,
+                                          (p) => {
+                                            const normalizedContact =
+                                              typeof u.contact !== "string"
+                                                ? u.contact
+                                                : undefined;
+
+                                            return (
+                                              p._id === normalizedContact?._id
+                                            );
+                                          },
                                         ),
                                     )
-                                    .map(({ contact }) => (
-                                      <div
-                                        key={contact._id}
-                                        className="flex items-center justify-between p-2 rounded hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer"
-                                        onClick={() =>
-                                          handleAddParticipant(contact._id)
-                                        }
-                                      >
-                                        <div className="flex items-center gap-2">
-                                          <img
-                                            src={contact?.avatar?.url}
-                                            className="h-8 w-8 rounded-full bg-gray-300"
-                                            alt=""
-                                          />
-                                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                            {contact?.username}
-                                          </span>
+                                    .map(({ contact }) => {
+                                      const normalizedContact =
+                                        typeof contact !== "string"
+                                          ? contact
+                                          : undefined;
+                                      return (
+                                        <div
+                                          key={normalizedContact?._id}
+                                          className="flex items-center justify-between p-2 rounded hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer"
+                                          onClick={() =>
+                                            handleAddParticipant(
+                                              String(normalizedContact?._id),
+                                            )
+                                          }
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <img
+                                              src={
+                                                normalizedContact?.avatar?.url
+                                              }
+                                              className="h-8 w-8 rounded-full bg-gray-300"
+                                              alt=""
+                                            />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                              {normalizedContact?.username}
+                                            </span>
+                                          </div>
+                                          <div className="px-2 py-1.5 flex items-center gap-x-1 bg-indigo-600 rounded-lg">
+                                            <span className="text-white font-nunito font-bold text-xs">
+                                              Add
+                                            </span>
+                                            <UserPlusIcon className="h-4 w-4 text-white" />
+                                          </div>
                                         </div>
-                                        <div className="px-2 py-1.5 flex items-center gap-x-1 bg-indigo-600 rounded-lg">
-                                          <span className="text-white font-nunito font-bold text-xs">
-                                            Add
-                                          </span>
-                                          <UserPlusIcon className="h-4 w-4 text-white" />
-                                        </div>
-                                      </div>
-                                    ))
+                                      );
+                                    })
                                 ) : searchQuery ? (
                                   <p className="text-xs text-center text-gray-500 py-2">
                                     No users found

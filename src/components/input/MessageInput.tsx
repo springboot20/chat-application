@@ -38,6 +38,8 @@ import { useMessage } from "../../hooks/useMessage";
 import { PollingMessageModal } from "../modal/PollingModal";
 import { useSendMessage } from "../../hooks/useSendMessage";
 import { FileUploadPreview } from "../file/FIleUploadPreview";
+import { useLinkPreview } from "../../hooks/useLinkPreview";
+import { LinkPreviewCard } from "../chat/LinkPreview";
 
 interface MessageInputProps {
   reduxStateMessages: ChatMessageInterface[];
@@ -106,7 +108,10 @@ const MessageInput = ({
   const { isOnline } = useNetwork();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const [previewDismissed, setPreviewDismissed] = useState(false);
   const { sendMessage, fileProgress, overallProgress } = useSendMessage();
+
+  const { preview } = useLinkPreview(message);
 
   // ✅ CRITICAL FIX: Track if we're in a drag gesture to prevent premature UI hiding
   const [isDraggingMic, setIsDraggingMic] = useState(false);
@@ -299,6 +304,10 @@ const MessageInput = ({
     }
   }, [isRecordingCancelled, resetLock]);
 
+  useEffect(() => {
+    setPreviewDismissed(false);
+  }, [message]);
+
   return (
     <Fragment>
       <PollingMessageModal
@@ -463,6 +472,13 @@ const MessageInput = ({
               })()}
             </div>
           </div>
+        )}
+
+        {preview && !previewDismissed && (
+          <LinkPreviewCard
+            preview={preview}
+            onDismiss={() => setPreviewDismissed(true)}
+          />
         )}
 
         {/* File Attachments */}

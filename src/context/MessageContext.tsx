@@ -465,8 +465,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
 
   const onMessageReceive = useCallback(
     (data: any) => {
-      console.log("Received message:", data);
-      console.log("Received message attachments:", data.attachments);
       dispatch(onMessageReceived({ data }));
       dispatch(
         updateChatLastMessage({ chatToUpdateId: data.chat, message: data }),
@@ -609,6 +607,8 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
 
     const processedMessage = processMentionsContent(message, chat.participants);
 
+    const linkPreviewUrl = message.match(/(https?:\/\/[^\s]+)/i)?.[0];
+
     const payload = {
       chatId: chat._id,
       messageId: messageToReply,
@@ -616,6 +616,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
         content: processedMessage.content,
         attachments: attachmentFiles.files,
         mentions: processedMessage.mentions,
+        linkPreviewUrl,
       },
     };
 
@@ -705,14 +706,12 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
       clearTimeout(typingTimeoutRef.current);
     }
 
-    console.log(currentChat?.participants);
-
     const processedMessage = processMentionsContent(
       message,
       currentChat?.participants,
     );
 
-    console.log(processedMessage, "processedMessage");
+    const linkPreviewUrl = message.match(/(https?:\/\/[^\s]+)/i)?.[0];
 
     // Clear input fields immediately for better UX
     const files = attachmentFiles.files;
@@ -729,6 +728,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
       sender: currentUser!,
       chat: currentChat._id,
       attachments: convertedFiles,
+      linkPreviewUrl,
       status: "queued", // Custom status
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -771,6 +771,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
         data: {
           content: processedMessage.content,
           attachments: files,
+          linkPreviewUrl,
           mentions: processedMessage.mentions,
         },
       });

@@ -1,5 +1,5 @@
-import { DBStorageKeys, IndexDBStorageService } from '.';
-import { Attachment } from '../types/chat';
+import { DBStorageKeys, IndexDBStorageService } from ".";
+import { Attachment } from "../types/chat";
 
 export interface SerializedFile {
   name: string;
@@ -18,6 +18,7 @@ interface QueuedMessage {
   contentType?: string;
   timestamp: number;
   replyId?: string;
+  linkPreviewUrl?: string | null;
 }
 
 interface QueuedMessageInput {
@@ -27,14 +28,15 @@ interface QueuedMessageInput {
   mentions?: any[];
   polling?: Record<string, any>;
   contentType?: string;
+  linkPreviewUrl?: string;
   replyId?: string;
 }
 
-export function resolveFileType(file: File): Attachment['fileType'] {
-  if (file.type.startsWith('image/')) return 'image';
-  if (file.type.startsWith('video/')) return 'video';
-  if (file.type.startsWith('audio/')) return 'voice';
-  return 'document';
+export function resolveFileType(file: File): Attachment["fileType"] {
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type.startsWith("video/")) return "video";
+  if (file.type.startsWith("audio/")) return "voice";
+  return "document";
 }
 
 export const fileToBase64 = (file: File): Promise<Attachment> =>
@@ -43,7 +45,7 @@ export const fileToBase64 = (file: File): Promise<Attachment> =>
 
     reader.onload = () =>
       resolve({
-        url: '', // no server URL yet
+        url: "", // no server URL yet
         localPath: reader.result as string, // base64 data URL
         isLocal: true,
         fileType: resolveFileType(file),
@@ -55,16 +57,22 @@ export const fileToBase64 = (file: File): Promise<Attachment> =>
     reader.readAsDataURL(file);
   });
 
-export const base64ToFile = ({ localPath, fileName, fileType }: Attachment): File => {
-  if (!localPath) throw new Error('Source path is empty');
+export const base64ToFile = ({
+  localPath,
+  fileName,
+  fileType,
+}: Attachment): File => {
+  if (!localPath) throw new Error("Source path is empty");
 
   // 1. Remove the Data URL prefix (if it exists)
   // This splits at the comma and takes everything after it.
-  const base64String = localPath?.includes(',') ? localPath.split(',')[1] : localPath;
+  const base64String = localPath?.includes(",")
+    ? localPath.split(",")[1]
+    : localPath;
 
   // 2. Clean the string
   // atob fails if there are newlines or spaces (common in database storage)
-  const cleanBase64 = base64String?.trim()?.replace(/\s/g, '');
+  const cleanBase64 = base64String?.trim()?.replace(/\s/g, "");
 
   try {
     const binary = atob(cleanBase64);
@@ -74,7 +82,7 @@ export const base64ToFile = ({ localPath, fileName, fileType }: Attachment): Fil
     }
     return new File([bytes], String(fileName), { type: fileType });
   } catch (e) {
-    console.error('Decoding failed for file:', fileName);
+    console.error("Decoding failed for file:", fileName);
     throw e;
   }
 };
@@ -90,7 +98,7 @@ class MessageQueue {
     this.ready = this.idb
       .initializeDB()
       .then(() => this.loadFromDB())
-      .catch((err) => console.error('MessageQueue init failed:', err));
+      .catch((err) => console.error("MessageQueue init failed:", err));
   }
 
   private async ensureReady() {
@@ -101,7 +109,7 @@ class MessageQueue {
     try {
       this.queue = await this.idb.getAll<QueuedMessage>(STORE);
     } catch (err) {
-      console.error('Failed to load queued messages:', err);
+      console.error("Failed to load queued messages:", err);
       this.queue = [];
     }
   }
@@ -128,6 +136,7 @@ class MessageQueue {
       mentions: message.mentions,
       polling: message.polling,
       contentType: message.contentType,
+      linkPreviewUrl: message.linkPreviewUrl,
       replyId: message.replyId,
       attachments: serializedFiles,
     };
