@@ -18,7 +18,7 @@ export function LinkPreviewCard({ preview, onDismiss }: Props) {
         )}
       >
         {/* Thumbnail / fallback icon */}
-        <div className="w-16 h-16 shrink-0 bg-gray-200 dark:bg-white/5 flex items-center justify-center">
+        <div className="w-24 h-auto shrink-0 bg-gray-200 dark:bg-white/5 flex items-center justify-center">
           {preview.image ? (
             <img
               src={preview.image}
