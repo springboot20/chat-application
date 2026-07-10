@@ -2,6 +2,7 @@ import {
   ArrowUturnLeftIcon,
   CheckIcon,
   ClockIcon,
+  LinkIcon,
   NoSymbolIcon,
 } from "@heroicons/react/24/outline";
 import { ChatMessageInterface } from "../../types/chat";
@@ -651,20 +652,59 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     setShowProfileModal(true);
   };
 
+  const URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+
+  const renderTextWithLinks = (text: string, keyPrefix: string) => {
+    const segments = text.split(URL_REGEX);
+
+    return segments.map((segment, i) => {
+      if (!segment) return null;
+
+      if (URL_REGEX.test(segment)) {
+        // reset lastIndex since .test() with the global flag mutates it
+        URL_REGEX.lastIndex = 0;
+
+        const href = segment.startsWith("http")
+          ? segment
+          : `https://${segment}`;
+
+        return (
+          <a
+            key={`${keyPrefix}-link-${i}`}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-[#027eb5] dark:text-[#53bdeb] underline hover:opacity-80 break-all"
+          >
+            {segment}
+          </a>
+        );
+      }
+
+      return <span key={`${keyPrefix}-text-${i}`}>{segment}</span>;
+    });
+  };
+
   const renderMessageWithMention = () => {
     const { content, mentions } = message;
-    if (!mentions || mentions.length === 0) return <span>{content}</span>;
+
+    if (!mentions || mentions.length === 0) {
+      return <span>{renderTextWithLinks(content, "plain")}</span>;
+    }
+
     const sortedMentions = [...mentions].sort(
       (a, b) => a.position - b.position,
     );
-    const parts = [];
+    const parts: React.ReactNode[] = [];
     let lastIndex = 0;
 
     sortedMentions.forEach((mention, index) => {
       if (mention.position > lastIndex) {
+        const segment = content.substring(lastIndex, mention.position);
         parts.push(
           <span key={`text-${index}`}>
-            {content.substring(lastIndex, mention.position)}
+            {renderTextWithLinks(segment, `seg-${index}`)}
           </span>,
         );
       }
@@ -673,8 +713,8 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         <span
           key={`mention-${mention.userId}-${index}`}
           className={classNames(
-            "!font-bold !cursor-pointer !hover:underline !transition-colors",
-            "!text-[#027eb5] !dark:text-[#53bdeb]",
+            "font-bold cursor-pointer hover:underline transition-colors",
+            "text-[#027eb5] dark:text-[#53bdeb]",
           )}
           onClick={(e) => {
             e.stopPropagation();
@@ -693,7 +733,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     });
 
     if (lastIndex < content.length) {
-      parts.push(<span key="text-end">{content.substring(lastIndex)}</span>);
+      const segment = content.substring(lastIndex);
+      parts.push(
+        <span key="text-end">{renderTextWithLinks(segment, "end")}</span>,
+      );
     }
 
     return parts;
@@ -1172,21 +1215,27 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                                 {message.linkPreview.description}
                               </p>
                             )}
-                            <div className="flex items-center gap-1.5 mt-1">
-                              {message.linkPreview.favicon && (
-                                <img
-                                  src={message.linkPreview.favicon}
-                                  alt=""
-                                  className="w-3 h-3 shrink-0 rounded-sm"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                  }}
-                                />
-                              )}
-                              <span className="text-[10.5px] text-[#667781] dark:text-[#8696a0] uppercase truncate tracking-wide">
-                                {message.linkPreview.siteName ||
-                                  message.linkPreview.hostname}
-                              </span>
+                            <div className="flex items-center gap-1.5 mt-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-x-2">
+                                  <LinkIcon className="size-4 text-gray-400 dark:text-white" />
+                                  <span className="text-xs text-[#667781] dark:text-white truncate tracking-wide">
+                                    {message.linkPreview.hostname ||
+                                      message.linkPreview.siteName}
+                                  </span>
+                                </div>
+
+                                {message.linkPreview.favicon && (
+                                  <img
+                                    src={message.linkPreview.favicon}
+                                    alt=""
+                                    className="w-3 h-3 shrink-0 rounded-sm"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = "none";
+                                    }}
+                                  />
+                                )}
+                              </div>
                             </div>
                           </div>
                         )}
