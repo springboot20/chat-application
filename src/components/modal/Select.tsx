@@ -195,11 +195,11 @@ export const SelectModalInput: React.FC<{
                           <button
                             type="button"
                             onClick={(e) => handleAddToContact(e, opt.value)}
-                            className="py-1.5 px-2.5 border border-violet-200 rounded-full bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-all group flex items-center gap-x-2"
+                            className="py-1.5 px-2.5 border border-violet-200 dark:border-transparent rounded-full bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-all group flex items-center gap-x-2"
                             title="Add to contacts"
                           >
                             <UserPlusIcon className="h-4 w-4 text-violet-600 dark:text-violet-400 group-hover:scale-110 transition-transform" />
-                            <span className="dark:text-white text-violet-600  font-nunito text-xs">
+                            <span className="dark:text-white text-violet-600 font-nunito text-xs">
                               Add
                             </span>
                           </button>
