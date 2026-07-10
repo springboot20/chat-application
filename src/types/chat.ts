@@ -1,11 +1,12 @@
-import { User } from './auth';
-import { UserType } from './user';
+import { LinkPreview } from "../features/chats/chat.slice";
+import { User } from "./auth";
+import { UserType } from "./user";
 
 export interface Attachment {
   _id?: string;
   url: string;
   localPath?: string;
-  fileType?: 'image' | 'document' | 'video' | 'voice';
+  fileType?: "image" | "document" | "video" | "voice";
   fileName?: string;
   fileSize?: number;
   duration?: number; // for voice messages
@@ -56,9 +57,9 @@ type ReactionType = {
 
 export interface ChatMessageInterface {
   _id: string;
-  sender: Pick<UserType, '_id' | 'username' | 'avatar' | 'email'>;
+  sender: Pick<UserType, "_id" | "username" | "avatar" | "email">;
   content: string;
-  contentType: 'text-file' | 'polling' | 'contact';
+  contentType: "text-file" | "polling" | "contact";
   polling: PollingVoteInterface;
   attachments: Array<Attachment>;
   replyId?: string;
@@ -67,9 +68,10 @@ export interface ChatMessageInterface {
   reactions: ReactionType[];
   chat: string;
   repliedMessage: ChatMessageInterface | null;
-  status: 'sent' | 'delivered' | 'seen' | 'queued';
+  status: "sent" | "delivered" | "seen" | "queued";
   deliveredTo: string[]; // userIds
   seenBy: string[]; // userIds
+  linkPreview: LinkPreview;
   createdAt: string;
   updatedAt: string;
 }

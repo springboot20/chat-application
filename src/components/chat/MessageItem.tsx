@@ -1127,10 +1127,75 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 </div>
               ) : (
                 <>
-                  {message.content && (
+                  {message.content && !message.linkPreview && (
                     <p className="text-[14.2px] font-normal text-[#111b21] dark:text-[#e9edef] break-words leading-[19px] py-1 inline-block">
                       {renderMessageWithMention()}
                     </p>
+                  )}
+
+                  {message.content && message.linkPreview && (
+                    <div className="mt-1 mb-1">
+                      <a
+                        href={message.linkPreview.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className={classNames(
+                          "block overflow-hidden transition-opacity hover:opacity-95 rounded-md",
+                          isOwnedMessage
+                            ? "bg-[#c8f0c1] dark:bg-[#025144]"
+                            : "bg-[#f0f2f5] dark:bg-[#1a2c33]",
+                        )}
+                      >
+                        {message.linkPreview.image ? (
+                          <img
+                            src={message.linkPreview.image}
+                            alt=""
+                            className="w-full h-40 object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : null}
+
+                        {(message.linkPreview.title ||
+                          message.linkPreview.description ||
+                          message.linkPreview.hostname) && (
+                          <div className="px-2.5 py-2">
+                            {message.linkPreview.title && (
+                              <p className="text-[13.5px] font-semibold text-[#111b21] dark:text-[#e9edef] line-clamp-1">
+                                {message.linkPreview.title}
+                              </p>
+                            )}
+                            {message.linkPreview.description && (
+                              <p className="text-xs text-[#667781] dark:text-[#8696a0] line-clamp-2 mt-0.5">
+                                {message.linkPreview.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-1.5 mt-1">
+                              {message.linkPreview.favicon && (
+                                <img
+                                  src={message.linkPreview.favicon}
+                                  alt=""
+                                  className="w-3 h-3 shrink-0 rounded-sm"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                              )}
+                              <span className="text-[10.5px] text-[#667781] dark:text-[#8696a0] uppercase truncate tracking-wide">
+                                {message.linkPreview.siteName ||
+                                  message.linkPreview.hostname}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </a>
+
+                      <p className="text-[14.2px] font-normal text-[#111b21] dark:text-[#e9edef] break-words leading-[19px] py-1 px-1.5 inline-block">
+                        {renderMessageWithMention()}
+                      </p>
+                    </div>
                   )}
 
                   {message.contentType === "polling" && (

@@ -5,12 +5,6 @@ import {
   createApi,
   fetchBaseQuery,
 } from "@reduxjs/toolkit/query/react";
-import {
-  Middleware,
-  MiddlewareAPI,
-  isRejectedWithValue,
-} from "@reduxjs/toolkit";
-import { toast } from "react-toastify";
 import { Mutex } from "async-mutex";
 
 import { RootState } from "../store";
@@ -148,22 +142,6 @@ const baseQueryWithReauth: BaseQueryFn<
 
   return result;
 };
-
-export const rtkQueryErrorLogger: Middleware =
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  (_: MiddlewareAPI) => (next) => (action) => {
-    if (isRejectedWithValue(action)) {
-      const message = action.payload
-        ? (action.payload as any).data?.message
-        : action.error.message;
-
-      toast.error(message, {
-        className: "text-sm",
-      });
-    }
-
-    return next(action);
-  };
 
 export const ApiService = createApi({
   reducerPath: "ApiService",

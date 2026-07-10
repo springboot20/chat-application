@@ -1,5 +1,5 @@
 import { configureStore, combineReducers, type Reducer, type AnyAction } from '@reduxjs/toolkit';
-import { ApiService, rtkQueryErrorLogger } from './services/api.service';
+import { ApiService } from './services/api.service';
 import { authReducer, forceLogout } from '../features/auth/auth.reducer';
 import { chatReducer } from '../features/chats/chat.reducer';
 import statusSlice from '../features/status/status.slice';
@@ -26,7 +26,7 @@ const store = configureStore({
     gMD({
       immutableCheck: false, // Disable ImmutableStateInvariantMiddleware
       serializableCheck: false, // Optional: Disable SerializableStateInvariantMiddleware
-    }).concat(ApiService.middleware, rtkQueryErrorLogger),
+    }).concat(ApiService.middleware,),
   devTools: true,
 });
 
