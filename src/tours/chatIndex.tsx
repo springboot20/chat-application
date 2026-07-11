@@ -1,84 +1,49 @@
-import {
-  InboxIcon,
-  MagnifyingGlassIcon,
-  PencilSquareIcon,
-  ChatBubbleLeftRightIcon,
-} from "@heroicons/react/24/outline";
 import { Tour } from "nextstepjs";
 
-export const createChatIndexTour = (isMobile: boolean) => {
-  console.log(isMobile);
-  
-  const steps: Tour = {
+export const createChatIndexTour = (isMobile: boolean): Tour => {
+  console.log({ isMobile });
+  return {
     tour: "chat-index",
 
     steps: [
       {
-        icon: <ChatBubbleLeftRightIcon className="w-8 h-8 text-blue-500" />,
-        title: "Your Chat Hub",
-        selector: "#chat-navigation",
-        content: (
-          <>
-            Welcome to your conversation hub. From here, you can search existing
-            chats, browse your recent conversations, or start a brand-new chat
-            with any of your contacts. Everything you need to manage your
-            conversations is located in this panel.
-          </>
+        icon: (
+          <div className="inline-flex items-center justify-center p-4 rounded-full bg-[#615EF0]/10 text-[#615EF0]">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M17 2H7C4.24 2 2 4.23 2 6.98V13.96C2 16.71 4.24 18.94 7 18.94H8.5C8.77 18.94 9.13 19.12 9.3 19.34L10.8 21.33C11.46 22.21 12.54 22.21 13.2 21.33L14.7 19.34C14.89 19.09 15.19 18.94 15.5 18.94H17C19.76 18.94 22 16.71 22 13.96V6.98C22 4.23 19.76 2 17 2Z"
+                fill="currentColor"
+              />
+            </svg>
+          </div>
         ),
-        side: "right",
-        pointerPadding: 10,
-        pointerRadius: 8,
-      },
 
-      {
-        icon: <PencilSquareIcon className="w-8 h-8 text-emerald-500" />,
-        title: "Start a New Chat",
-        selector: "#create-chat",
-        content: (
-          <>
-            Click here to begin a new conversation. Choose one of your contacts,
-            and a new chat will be created instantly, ready for you to start
-            messaging.
-          </>
-        ),
-        side: "bottom",
-        pointerPadding: 10,
-        pointerRadius: 8,
-      },
+        title: "Main Workspace",
 
-      {
-        icon: <InboxIcon className="w-8 h-8 text-sky-500" />,
-        title: "Recent Conversations",
-        selector: "#chat-list",
-        content: (
-          <>
-            Your recent conversations appear here, with the most recent activity
-            shown first. Open any conversation to continue chatting, review
-            shared media, or catch up on unread messages.
-          </>
-        ),
-        side: "right",
-        pointerPadding: 10,
-        pointerRadius: 8,
-      },
+        selector: "#chat-index",
 
-      {
-        icon: <MagnifyingGlassIcon className="w-8 h-8 text-indigo-500" />,
-        title: "Search Conversations",
-        selector: "#search",
         content: (
           <>
-            Quickly find any conversation by searching for a contact's name.
-            Results update instantly as you type, helping you locate chats
-            without scrolling through your conversation history.
+            This is the main workspace of the application. The content shown
+            here changes based on what you select from the navigation. When you
+            open
+            <strong> Chats</strong>, you'll see your conversations and recent
+            messages. When you switch to <strong>Status</strong>, this area
+            displays the latest updates shared by your contacts. As new features
+            are added, they'll also appear here, making this the central place
+            where you interact with the application.
           </>
         ),
-        side: "bottom",
+
         pointerPadding: 10,
         pointerRadius: 8,
       },
     ],
   };
-
-  return steps;
 };
