@@ -1,7 +1,5 @@
-"use client";
-
 import React from "react";
-import { useTour } from "../../context/touring/TourContext";
+// import { useTour } from "../../context/touring/TourContext";
 import type { Tour } from "nextstepjs";
 
 interface Props {
@@ -10,19 +8,13 @@ interface Props {
   children?: React.ReactNode;
 }
 
-export default function StartTourButton({ steps, tourId, children }: Props) {
-  const { startTour } = useTour();
-
+export default function StartTourButton({ tourId, children }: Props) {
   console.log(tourId);
-
-  const handleStart = () => {
-    startTour(steps);
-  };
 
   return (
     <button
       type="button"
-      onClick={handleStart}
+      // onClick={handleStart}
       className="px-3 py-2 bg-colorB35 w-42 text-white rounded-md text-sm"
     >
       {children ?? "Start Tour"}
