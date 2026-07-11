@@ -1,0 +1,194 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { NextStepProvider, NextStepReact, useNextStep } from "nextstepjs";
+import type { Tour } from "nextstepjs";
+import { CustomCard } from "./TourCardComponent";
+import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks";
+import { AuthApiSlice } from "../../features/auth/auth.slice";
+import { toast } from "react-toastify";
+import { useLocation } from "react-router-dom";
+import { tourRegistry } from "../../tours";
+
+interface TourContextType {
+  restartTour: () => void;
+}
+
+export const TourContext = createContext<TourContextType>({
+  restartTour: () => {},
+});
+
+// A new component to wrap the NextStep and access its hook
+const NextStepWrapper: React.FC<{
+  children: React.ReactNode;
+  localTours: Tour[];
+  setLocalTours: React.Dispatch<React.SetStateAction<Tour[]>>;
+}> = ({ children, localTours, setLocalTours }) => {
+  const dispatch = useAppDispatch();
+
+  console.log({ localTours });
+
+  const startedTour = useRef<string>();
+  const location = useLocation();
+
+  const user = useAppSelector((state) => state.auth.user);
+  const matchedRoute = tourRegistry.find((tour) =>
+    tour.match(location.pathname),
+  );
+
+  const pendingTours = useMemo(() => {
+    if (!matchedRoute) return [];
+
+    const allTours = [...matchedRoute.shared, ...matchedRoute.page];
+
+    return allTours.filter((tour) => !user.completedTours.includes(tour.tour));
+  }, [matchedRoute, user.completedTours]);
+
+  useEffect(() => {
+    setLocalTours(pendingTours);
+  }, [pendingTours, setLocalTours]);
+
+  function waitForSelector(selector: string, callback: () => void) {
+    console.log("Waiting for:", selector);
+
+    const interval = setInterval(() => {
+      const element = document.querySelector(selector);
+
+      console.log(selector, element);
+
+      if (element) {
+        clearInterval(interval);
+        callback();
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }
+
+  useEffect(() => {
+    console.log(document.querySelector("#messages"));
+    console.log(document.querySelector("#message-input"));
+    console.log(document.querySelector("#attachment-button"));
+  }, []);
+
+  const handleTourComplete = useCallback(
+    async (tourName: string | null) => {
+      try {
+        if (!tourName) return;
+        // Update backend when tour is completed
+        const payload = {
+          completedTour: tourName,
+        };
+
+        const response = await dispatch(
+          AuthApiSlice.endpoints.updateAccount.initiate(payload),
+        );
+
+        if (AuthApiSlice.endpoints.updateAccount.matchFulfilled(response)) {
+          toast.success("Successfully updated user app tour");
+        }
+      } catch (error) {
+        console.error("Error updating tour status:", error);
+        // Handle error appropriately - maybe show an error toast
+      }
+    },
+    [dispatch],
+  );
+
+  // Access the hook here, inside the NextStepProvider's scope
+  const { startNextStep } = useNextStep();
+
+  useEffect(() => {
+    if (!pendingTours.length) return;
+
+    const nextTour = pendingTours[0].tour;
+
+    if (startedTour.current === nextTour) {
+      return;
+    }
+
+    startedTour.current = nextTour;
+
+    setLocalTours(pendingTours);
+
+    const firstSelector = pendingTours[0].steps[0].selector;
+    if (!firstSelector) return;
+
+    waitForSelector(firstSelector, () => {
+      console.log("FOUND", firstSelector);
+
+      startNextStep(nextTour);
+    });
+  }, [pendingTours, setLocalTours, startNextStep]);
+
+  return (
+    <NextStepReact
+      steps={localTours}
+      cardComponent={(props) => <CustomCard {...props} />}
+      onComplete={handleTourComplete}
+      onStart={(tourName) => {
+        console.log(`Tour ${tourName} started`);
+      }}
+      onStepChange={(step, tourName) => {
+        console.log(`Step changed to ${step} in ${tourName}`);
+      }}
+    >
+      <TourContext.Provider
+        value={{
+          restartTour() {
+            const matchedRoute = tourRegistry.find((tour) =>
+              tour.match(location.pathname),
+            );
+
+            if (!matchedRoute) return;
+
+            const tours = [...matchedRoute.shared, ...matchedRoute.page];
+
+            setLocalTours(tours);
+
+            setTimeout(() => {
+              startNextStep(tours[0].tour);
+            }, 100);
+          },
+        }}
+      >
+        {children}
+      </TourContext.Provider>
+    </NextStepReact>
+  );
+};
+
+export const TourProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [localTours, setLocalTours] = useState<Tour[]>([]);
+
+  const user = useAppSelector((state) => state.auth.user);
+
+  const canStartTour = !!user && Array.isArray(user.completedTours);
+
+  if (!canStartTour) {
+    return <>{children}</>;
+  }
+
+  return (
+    <NextStepProvider>
+      <NextStepWrapper localTours={localTours} setLocalTours={setLocalTours}>
+        {children}
+      </NextStepWrapper>
+    </NextStepProvider>
+  );
+};
+export const useTour = () => {
+  const ctx = useContext(TourContext);
+  if (!ctx) throw new Error("useTour must be used within TourProvider");
+  return ctx;
+};

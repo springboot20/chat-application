@@ -93,7 +93,7 @@ export const AuthApiSlice = ApiService.injectEndpoints({
 
     updateAccount: builder.mutation<
       Response,
-      { username?: string; about?: string }
+      { username?: string; about?: string; completedTour?: string }
     >({
       query: (data) => ({
         url: "/chat-app/auth/users/update-account",

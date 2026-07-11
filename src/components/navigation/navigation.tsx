@@ -1,11 +1,11 @@
-import React, { Fragment } from 'react';
-import { MessageTabComponent } from './MessageTab';
-import { StatusTabComponent } from './StatusTab';
-import { classNames } from '../../utils';
-import { SideNavigation } from './side-navigation';
-import { ChatListItemInterface } from '../../types/chat';
+import React, { Fragment } from "react";
+import { MessageTabComponent } from "./MessageTab";
+import { StatusTabComponent } from "./StatusTab";
+import { classNames } from "../../utils";
+import { SideNavigation } from "./side-navigation";
+import { ChatListItemInterface } from "../../types/chat";
 
-type Tab = 'status' | 'chat_messages' | 'settings';
+type Tab = "status" | "chat_messages" | "settings";
 
 type NavigationProps = {
   setActiveTab: React.Dispatch<React.SetStateAction<Tab>>;
@@ -27,20 +27,25 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <Fragment>
       <Fragment>
-        <SideNavigation activeTab={activeTab} setActiveTab={setActiveTab} onLogout={onLogout} />
-        {activeTab === 'chat_messages' && (
+        <SideNavigation
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onLogout={onLogout}
+        />
+        {activeTab === "chat_messages" && (
           <div
             className={classNames(
-              'flex-shrink-0 border-r dark:border-gray-600/30 lg:w-[30rem]',
-              currentChat ? 'hidden lg:block' : 'w-full lg:w-[30rem]', // Hide list on mobile when chatting
-              'lg:block lg:w-[30rem]',
-            )}>
+              "flex-shrink-0 border-r dark:border-gray-600/30 lg:w-[30rem]",
+              currentChat ? "hidden lg:block" : "w-full lg:w-[30rem]", // Hide list on mobile when chatting
+              "lg:block lg:w-[30rem]",
+            )}
+          >
             <MessageTabComponent open={open} close={close} />
           </div>
         )}
       </Fragment>
 
-      {activeTab === 'status' && (
+      {activeTab === "status" && (
         <Fragment>
           <StatusTabComponent />
         </Fragment>

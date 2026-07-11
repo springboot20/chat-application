@@ -494,6 +494,7 @@ const MessageInput = ({
         {/* Input Section */}
         <div className="max-w-8xl mx-auto px-4 py-3">
           <div
+            id="message-input"
             className={classNames(
               "flex flex-col rounded-lg border-[1.5px] transition-all duration-200 overflow-hidden",
               "dark:border-white/10 border-gray-300 focus-within:border-indigo-500 dark:focus-within:border-indigo-400",
@@ -553,7 +554,10 @@ const MessageInput = ({
                 <Disclosure>
                   {({ close, open }) => (
                     <>
-                      <Disclosure.Button className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400">
+                      <Disclosure.Button
+                        id="attachment-button"
+                        className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400"
+                      >
                         <span className="sr-only">Open file menu</span>
                         <PaperClipIcon className="h-5 w-5" />
                       </Disclosure.Button>

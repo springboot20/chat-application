@@ -14,6 +14,8 @@ export interface User {
   forgotPasswordTokenExpiry?: string;
   role: string;
   about?: string;
+  tourCompleted?: boolean;
+  completedTours: string[];
 }
 
 export type InitialState = {
@@ -28,7 +30,7 @@ export type Token = {
 };
 
 export enum AcceptedRoles {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-  MODERATOR = 'MODERATOR',
+  ADMIN = "ADMIN",
+  USER = "USER",
+  MODERATOR = "MODERATOR",
 }
