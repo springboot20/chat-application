@@ -3,9 +3,9 @@ import {
   PaperAirplaneIcon,
   PaperClipIcon,
 } from "@heroicons/react/24/outline";
-import { Step } from "nextstepjs";
+import { Tour } from "nextstepjs";
 
-export const chatRoomTour = {
+export const chatRoomTour: Tour = {
   tour: "chat-room",
 
   steps: [
@@ -37,7 +37,7 @@ export const chatRoomTour = {
           share links that automatically generate rich previews.
         </>
       ),
-      side: "top" as Step["side"],
+      side: "top",
       pointerPadding: 10,
       pointerRadius: 8,
     },
@@ -53,7 +53,7 @@ export const chatRoomTour = {
           it if needed, and send it directly to everyone in the chat.
         </>
       ),
-      side: "top" as Step["side"],
+      side: "top",
       pointerPadding: 10,
       pointerRadius: 8,
     },

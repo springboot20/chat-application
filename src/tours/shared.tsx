@@ -4,9 +4,9 @@ import {
   UserCircleIcon,
   CogIcon,
 } from "@heroicons/react/24/outline";
-import { Step } from "nextstepjs";
+import { Tour } from "nextstepjs";
 
-export const sharedNavigationTour = {
+export const sharedNavigationTour: Tour = {
   tour: "shared-navigation",
   steps: [
     {
@@ -21,7 +21,7 @@ export const sharedNavigationTour = {
           current conversation.
         </>
       ),
-      side: "right" as Step["side"],
+      side: "right",
       pointerPadding: 6,
       pointerRadius: 8,
     },
@@ -37,7 +37,7 @@ export const sharedNavigationTour = {
           you left off or quickly switch between active chats.
         </>
       ),
-      side: "right" as Step["side"],
+      side: "right",
       pointerPadding: 10,
       pointerRadius: 8,
     },
@@ -53,7 +53,7 @@ export const sharedNavigationTour = {
           account details.
         </>
       ),
-      side: "bottom-left" as Step["side"],
+      side: "bottom-left",
       pointerPadding: 10,
       pointerRadius: 8,
     },
@@ -69,7 +69,7 @@ export const sharedNavigationTour = {
           your experience.
         </>
       ),
-      side: "bottom-left" as Step["side"],
+      side: "bottom-left",
       pointerPadding: 10,
       pointerRadius: 8,
     },

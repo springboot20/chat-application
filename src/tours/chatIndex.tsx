@@ -4,7 +4,7 @@ import {
   PencilSquareIcon,
   ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
-import { Step, Tour } from "nextstepjs";
+import { Tour } from "nextstepjs";
 
 export const chatIndexTour: Tour = {
   tour: "chat-index",
@@ -22,7 +22,7 @@ export const chatIndexTour: Tour = {
           conversations is located in this panel.
         </>
       ),
-      side: "right" as Step["side"],
+      side: "right",
       pointerPadding: 10,
       pointerRadius: 8,
     },
@@ -38,7 +38,7 @@ export const chatIndexTour: Tour = {
           messaging.
         </>
       ),
-      side: "bottom" as Step["side"],
+      side: "bottom",
       pointerPadding: 10,
       pointerRadius: 8,
     },
@@ -54,7 +54,7 @@ export const chatIndexTour: Tour = {
           media, or catch up on unread messages.
         </>
       ),
-      side: "right" as Step["side"],
+      side: "right",
       pointerPadding: 10,
       pointerRadius: 8,
     },
@@ -70,7 +70,7 @@ export const chatIndexTour: Tour = {
           scrolling through your conversation history.
         </>
       ),
-      side: "bottom" as Step["side"],
+      side: "bottom",
       pointerPadding: 10,
       pointerRadius: 8,
     },
