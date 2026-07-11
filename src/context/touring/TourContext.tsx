@@ -9,14 +9,14 @@ import {
   useRef,
   useState,
 } from "react";
-import { NextStepProvider, NextStepReact, useNextStep } from "nextstepjs";
+import { NextStepProvider, NextStep, useNextStep } from "nextstepjs";
 import type { Tour } from "nextstepjs";
 import { CustomCard } from "./TourCardComponent";
 import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks";
 import { AuthApiSlice } from "../../features/auth/auth.slice";
 import { toast } from "react-toastify";
 import { useLocation } from "react-router-dom";
-import { tourRegistry } from "../../tours";
+import { tourRegistry } from "../../tours/registry";
 
 interface TourContextType {
   restartTour: () => void;
@@ -116,7 +116,7 @@ const NextStepWrapper: React.FC<{
   }, [pendingTours, setLocalTours, startNextStep]);
 
   return (
-    <NextStepReact
+    <NextStep
       steps={localTours}
       cardComponent={(props) => <CustomCard {...props} />}
       onComplete={handleTourComplete}
@@ -142,7 +142,7 @@ const NextStepWrapper: React.FC<{
       >
         {children}
       </TourContext.Provider>
-    </NextStepReact>
+    </NextStep>
   );
 };
 
