@@ -188,70 +188,72 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({
             </button>
           </div>
 
-          <div className="px-4 pt-4">
-            {/* Search */}
-            <div className="relative w-full rounded-xl overflow-hidden bg-gray-100 dark:bg-white/5 border border-transparent focus-within:border-[#615EF0] transition-all">
-              <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          <div id="chat-list" className="h-full w-full">
+            <div className="px-4 pt-4">
+              {/* Search */}
+              <div
+                id="search"
+                className="relative w-full rounded-xl overflow-hidden bg-gray-100 dark:bg-white/5 border border-transparent focus-within:border-[#615EF0] transition-all"
+              >
+                <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <SearchInput
+                  ref={inputRef}
+                  placeholder="Search messages"
+                  onChange={handleSearchChange}
+                  value={localSearchQuery}
+                  className="w-full pl-10 pr-4 py-3 bg-transparent focus:outline-none dark:text-white"
+                />
               </div>
-              <SearchInput
-                ref={inputRef}
-                placeholder="Search messages"
-                onChange={handleSearchChange}
-                value={localSearchQuery}
-                className="w-full pl-10 pr-4 py-3 bg-transparent focus:outline-none dark:text-white"
-              />
+
+              {/* Filter Pills */}
+              <div className="flex gap-2 my-4">
+                <FilterButton
+                  filterType="all"
+                  label="All"
+                  count={chatCounts.all}
+                />
+                <FilterButton
+                  filterType="unread"
+                  label="Unread"
+                  count={chatCounts.unread}
+                />
+              </div>
             </div>
 
-            {/* Filter Pills */}
-            <div className="flex gap-2 my-4">
-              <FilterButton
-                filterType="all"
-                label="All"
-                count={chatCounts.all}
-              />
-              <FilterButton
-                filterType="unread"
-                label="Unread"
-                count={chatCounts.unread}
-              />
+            {/* Chat List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              {isLoadingChats || isSearching ? (
+                <div className="flex justify-center mt-10">
+                  <Loading />
+                </div>
+              ) : filteredChats.length > 0 ? (
+                <div className="flex flex-col">
+                  {filteredChats.map((chat) => (
+                    <ChatItem
+                      key={chat._id}
+                      chat={chat}
+                      isActive={chat._id === currentChat?._id}
+                      user={user}
+                      onClick={handleChatSelect}
+                      onChatDelete={handleChatDelete}
+                      close={close}
+                      typingUsers={typingUsers}
+                      unreadCount={chat?.unreadCount}
+                      refetchChats={refetchChats}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center mt-20 px-10 text-center opacity-40">
+                  <MagnifyingGlassIcon className="h-12 w-12 mb-2 text-gray-400" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No chats found here.
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* Chat List */}
-          <div
-            className="flex-1 overflow-y-auto custom-scrollbar"
-            id="chat-list"
-          >
-            {isLoadingChats || isSearching ? (
-              <div className="flex justify-center mt-10">
-                <Loading />
-              </div>
-            ) : filteredChats.length > 0 ? (
-              <div className="flex flex-col">
-                {filteredChats.map((chat) => (
-                  <ChatItem
-                    key={chat._id}
-                    chat={chat}
-                    isActive={chat._id === currentChat?._id}
-                    user={user}
-                    onClick={handleChatSelect}
-                    onChatDelete={handleChatDelete}
-                    close={close}
-                    typingUsers={typingUsers}
-                    unreadCount={chat?.unreadCount}
-                    refetchChats={refetchChats}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center mt-20 px-10 text-center opacity-40">
-                <MagnifyingGlassIcon className="h-12 w-12 mb-2 text-gray-400" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  No chats found here.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
