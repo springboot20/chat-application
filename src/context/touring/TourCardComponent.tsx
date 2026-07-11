@@ -27,11 +27,11 @@ const CustomCard = ({
     >
       <div className="flex items-center gap-3 mb-4">
         {step?.icon && <div className="text-2xl">{step.icon}</div>}
-        <h3 className="text-xl font-bold dark:text-white">{step.title}</h3>
+        <h3 className="text-xl font-bold dark:text-white">{step?.title}</h3>
       </div>
 
       <div className="mb-6">
-        <p className="text-base dark:text-white">{step.content}</p>
+        <p className="text-base dark:text-white">{step?.content}</p>
       </div>
 
       <div className="text-white dark:text-purple-600">{arrow}</div>

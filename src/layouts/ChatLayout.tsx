@@ -343,7 +343,7 @@ export const ChatLayout: React.FC = () => {
       {({ open, close }) => (
         <div
           className={classNames(
-            "w-full flex items-stretch h-screen flex-shrink-0",
+            "w-full flex items-stretch h-screen flex-shrink-0 overflow-hidden",
           )}
         >
           <Navigation

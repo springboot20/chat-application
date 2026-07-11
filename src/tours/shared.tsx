@@ -1,19 +1,30 @@
 import {
-  HomeIcon,
+  BellIcon,
   ChatBubbleLeftRightIcon,
-  UserCircleIcon,
   CogIcon,
+  HomeIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
-import { Tour } from "nextstepjs";
+import { Step, Tour } from "nextstepjs";
+import { desktopSelectors, mobileSelectors } from "./selector";
 
-export const sharedNavigationTour: Tour = {
-  tour: "shared-navigation",
-  steps: [
+export function createSharedNavigationTour(isMobile: boolean): Tour {
+  const selectors = isMobile ? mobileSelectors : desktopSelectors;
+
+  const steps: Tour["steps"] = [
     {
       icon: <HomeIcon className="w-8 h-8 text-blue-500" />,
-      title: "Welcome to Your Workspace",
-      selector: "#sidebar",
-      content: (
+      title: isMobile ? "Bottom Navigation" : "Welcome to Your Workspace",
+
+      selector: selectors.navigation,
+
+      content: isMobile ? (
+        <>
+          This navigation bar gives you quick access to the most important parts
+          of the app. Use it to switch between your chats, status updates and
+          settings from anywhere.
+        </>
+      ) : (
         <>
           This sidebar is your main navigation hub. From here, you can access
           your chats, manage your profile, adjust your settings, and navigate
@@ -21,57 +32,114 @@ export const sharedNavigationTour: Tour = {
           current conversation.
         </>
       ),
-      side: "right",
-      pointerPadding: 6,
+
+      side: (isMobile ? "top" : "right") as Step["side"],
+      pointerPadding: 10,
       pointerRadius: 8,
     },
 
     {
       icon: <ChatBubbleLeftRightIcon className="w-8 h-8 text-green-500" />,
+
       title: "Your Conversations",
-      selector: "#chat-navigation",
-      content: (
-        <>
-          This section displays all your conversations, including direct
-          messages and group chats. Select any conversation to continue where
-          you left off or quickly switch between active chats.
-        </>
-      ),
-      side: "right",
-      pointerPadding: 10,
-      pointerRadius: 8,
-    },
 
-    {
-      icon: <UserCircleIcon className="w-8 h-8 text-purple-500" />,
-      title: "Your Profile",
-      selector: "#profile-menu",
-      content: (
-        <>
-          Access your personal profile to update your avatar, username, status,
-          and other account information. This is also where you can review your
-          account details.
-        </>
-      ),
-      side: "bottom-left",
-      pointerPadding: 10,
-      pointerRadius: 8,
-    },
+      selector: selectors.chats,
 
-    {
-      icon: <CogIcon className="w-8 h-8 text-indigo-500" aria-hidden="true" />,
-      title: "Application Settings",
-      selector: "#settings",
       content: (
         <>
-          Customize how the application works for you. Adjust appearance,
-          notifications, privacy preferences, and other settings to personalize
-          your experience.
+          This is where you'll find all of your conversations. Open any chat to
+          continue messaging, quickly switch between contacts, and always pick
+          up right where you left off.
         </>
       ),
-      side: "bottom-left",
+
+      side: (isMobile ? "top-left" : "right") as Step["side"],
       pointerPadding: 10,
       pointerRadius: 8,
     },
-  ],
-};
+    {
+      icon: <BellIcon className="w-8 h-8 text-amber-500" />,
+
+      title: "Status Updates",
+
+      selector: selectors.status,
+
+      content: (
+        <>
+          Stay updated with the latest activities from your contacts. View
+          recent status updates, share your own moments, and quickly catch up on
+          what your friends, family, or teammates have posted.
+        </>
+      ),
+
+      side: (isMobile ? "top" : "right") as Step["side"],
+      pointerPadding: 10,
+      pointerRadius: 8,
+    },
+  ];
+
+  // Desktop-only steps
+  if (!isMobile) {
+    steps.push(
+      {
+        icon: <UserCircleIcon className="w-8 h-8 text-purple-500" />,
+        title: "Your Profile",
+        selector: selectors?.profile,
+        content: (
+          <>
+            Open your profile to update your avatar, display name, about
+            section, and other account information. It's your personal space
+            within the application.
+          </>
+        ),
+
+        side: "bottom-left",
+        pointerPadding: 10,
+        pointerRadius: 8,
+      },
+      {
+        icon: <CogIcon className="w-8 h-8 text-indigo-500" />,
+        title: "Application Settings",
+        selector: selectors.settings,
+        content: (
+          <>
+            Customize the application to match your preferences. Manage your
+            appearance, notifications, privacy settings, and other options to
+            personalize your experience.
+          </>
+        ),
+
+        side: "bottom-left",
+        pointerPadding: 10,
+        pointerRadius: 8,
+      },
+    );
+  }
+
+  // Mobile-only settings
+  if (isMobile) {
+    steps.push({
+      icon: <CogIcon className="w-8 h-8 text-indigo-500" />,
+
+      title: "Settings",
+
+      selector: selectors.settings,
+
+      content: (
+        <>
+          Tap here whenever you want to manage your account, change your
+          preferences, adjust notifications, or customize how the app works.
+        </>
+      ),
+
+      side: "top-right",
+      pointerPadding: 10,
+      pointerRadius: 8,
+    });
+  }
+
+  return {
+    tour: "shared-navigation",
+    steps,
+  };
+}

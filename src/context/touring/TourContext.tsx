@@ -16,7 +16,8 @@ import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks";
 import { AuthApiSlice } from "../../features/auth/auth.slice";
 import { toast } from "react-toastify";
 import { useLocation } from "react-router-dom";
-import { tourRegistry } from "../../tours/registry";
+import { createTourRegistry } from "../../tours/registry";
+import { useIsMobile } from "../../hooks/useMobile";
 
 interface TourContextType {
   restartTour: () => void;
@@ -32,16 +33,18 @@ const NextStepWrapper: React.FC<{
   localTours: Tour[];
   setLocalTours: React.Dispatch<React.SetStateAction<Tour[]>>;
 }> = ({ children, localTours, setLocalTours }) => {
-  const dispatch = useAppDispatch();
-
-  const startedTour = useRef<string>();
   const location = useLocation();
+  const isMobile = useIsMobile();
+  const startedTour = useRef<string>();
 
+  const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+
+  const tourRegistry = useMemo(() => createTourRegistry(isMobile), [isMobile]);
+
   const matchedRoute = tourRegistry.find((tour) =>
     tour.match(location.pathname),
   );
-
   const pendingTours = useMemo(() => {
     if (!matchedRoute) return [];
 

@@ -98,6 +98,7 @@ const SideNavigation: React.FC<SideNavigationProps> = ({
               {navLinks.map(({ tab, Icon }, index) => {
                 return (
                   <li
+                    id={tab === "status" ? tab : ""}
                     key={index}
                     onClick={() => {
                       setActiveTab(tab as Tab);
