@@ -1,18 +1,18 @@
-import { ChatListItemInterface, ChatMessageInterface } from '../types/chat';
-import { useAppDispatch, useAppSelector } from '../redux/redux.hooks';
-import { RootState } from '../app/store.ts';
-import { useGetUserChatsQuery } from '../features/chats/chat.slice';
+import { ChatListItemInterface, ChatMessageInterface } from "../types/chat";
+import { useAppDispatch, useAppSelector } from "../redux/redux.hooks";
+import { RootState } from "../app/store.ts";
+import { useGetUserChatsQuery } from "../features/chats/chat.slice";
 import {
   newChat,
   onChatLeave,
   updateChatLastMessage,
   updateGroupName,
   setUnreadMessages, // Added this to clear unreads via hook if needed
-} from '../features/chats/chat.reducer';
-import { toast } from 'react-toastify';
-import { createSelector } from '@reduxjs/toolkit';
-import { useCallback, useMemo } from 'react';
-import { getMessageObjectMetaData } from '../utils/index.ts';
+} from "../features/chats/chat.reducer";
+import { toast } from "react-toastify";
+import { createSelector } from "@reduxjs/toolkit";
+import { useCallback, useMemo } from "react";
+import { getMessageObjectMetaData } from "../utils/index.ts";
 
 // Refined selector to ensure we don't cause unnecessary re-renders
 const selectChatState = (state: RootState) => state.chat;
@@ -26,9 +26,14 @@ const selectChatsData = createSelector([selectChatState], (chatState) => ({
 
 export const useChat = () => {
   const dispatch = useAppDispatch();
-  const { user: currentUser } = useAppSelector((state: RootState) => state.auth);
+  const { user: currentUser, isAuthenticated } = useAppSelector(
+    (state: RootState) => state.auth,
+  );
 
-  const { isLoading: isLoadingChats, refetch: refetchChats } = useGetUserChatsQuery();
+  const { isLoading: isLoadingChats, refetch: refetchChats } =
+    useGetUserChatsQuery(undefined, {
+      skip: !isAuthenticated,
+    });
 
   const {
     chats: chatsFromState,
@@ -95,8 +100,8 @@ export const useChat = () => {
   const _onChatLeave = useCallback(
     (chat: ChatListItemInterface) => {
       dispatch(onChatLeave({ chat }));
-      toast('A chat you were participating in has been deleted', {
-        type: 'info',
+      toast("A chat you were participating in has been deleted", {
+        type: "info",
       });
     },
     [dispatch],

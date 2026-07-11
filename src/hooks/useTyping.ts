@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
-import { ChatListItemInterface } from '../types/chat';
-import { User } from '../types/auth';
-import { useSocketContext } from './useSocket';
-import { STOP_TYPING_EVENT, TYPING_EVENT } from '../enums';
+import { useState, useRef, useCallback } from "react";
+import { ChatListItemInterface } from "../types/chat";
+import { User } from "../types/auth";
+import { useSocketContext } from "./useSocket";
+import { STOP_TYPING_EVENT, TYPING_EVENT } from "../enums";
 
 interface useTypingProps {
   currentChat: ChatListItemInterface;
@@ -22,7 +22,7 @@ export interface TypingUser {
 }
 
 export const useTyping = ({ currentChat, user }: useTypingProps) => {
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const { socket } = useSocketContext();
@@ -66,17 +66,17 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
    */
   const handleStartTyping = useCallback(
     (data: TypingEventData) => {
-      console.log('📨 Received START_TYPING event:', data);
+      console.log("📨 Received START_TYPING event:", data);
 
       // Only process if it's for the current chat
       if (data.chatId !== currentChat?._id) {
-        console.log('❌ Ignoring - different chat');
+        console.log("❌ Ignoring - different chat");
         return;
       }
 
       // ✅ Don't show typing indicator for current user
       if (data.userId === user?._id) {
-        console.log('❌ Ignoring - current user typing');
+        console.log("❌ Ignoring - current user typing");
         return;
       }
 
@@ -84,7 +84,9 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
 
       // Add user to typing users or update their timestamp
       setTypingUsers((prev) => {
-        const existingUserIndex = prev.findIndex((u) => u.userId === data.userId);
+        const existingUserIndex = prev.findIndex(
+          (u) => u.userId === data.userId,
+        );
 
         if (existingUserIndex >= 0) {
           // Update existing user's timestamp
@@ -94,11 +96,11 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
             username: data.username,
             timestamp,
           };
-          console.log('✅ Updated typing user:', data.username);
+          console.log("✅ Updated typing user:", data.username);
           return updated;
         } else {
           // Add new user
-          console.log('✅ Added new typing user:', data.username);
+          console.log("✅ Added new typing user:", data.username);
           return [
             ...prev,
             {
@@ -121,7 +123,9 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
       typingTimeoutRef.current = setTimeout(() => {
         setTypingUsers((prev) => {
           const now = Date.now();
-          const filtered = prev.filter((u) => now - u.timestamp < AUTO_STOP_TYPING_DELAY);
+          const filtered = prev.filter(
+            (u) => now - u.timestamp < AUTO_STOP_TYPING_DELAY,
+          );
 
           if (filtered.length === 0) {
             setIsTyping(false);
@@ -131,7 +135,7 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
         });
       }, AUTO_STOP_TYPING_DELAY);
     },
-    [currentChat?._id, user?._id]
+    [currentChat?._id, user?._id],
   );
 
   /**
@@ -139,11 +143,11 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
    */
   const handleStopTyping = useCallback(
     (data: TypingEventData) => {
-      console.log('📨 Received STOP_TYPING event:', data);
+      console.log("📨 Received STOP_TYPING event:", data);
 
       // Only process if it's for the current chat
       if (data.chatId !== currentChat?._id) {
-        console.log('❌ Ignoring - different chat');
+        console.log("❌ Ignoring - different chat");
         return;
       }
 
@@ -152,7 +156,7 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
         const newTypingUsers = prev.filter((u) => u.userId !== data.userId);
 
         console.log(
-          `✅ Removed typing user: ${data.username}, remaining: ${newTypingUsers.length}`
+          `✅ Removed typing user: ${data.username}, remaining: ${newTypingUsers.length}`,
         );
 
         // If no users are typing, hide the typing indicator
@@ -169,7 +173,7 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
         return newTypingUsers;
       });
     },
-    [currentChat?._id]
+    [currentChat?._id],
   );
 
   /**
@@ -178,7 +182,7 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
   const getTypingText = useCallback(() => {
     const count = typingUsers.length;
 
-    if (count === 0) return '';
+    if (count === 0) return "";
 
     if (count === 1) {
       return `${typingUsers[0].username} is typing...`;
@@ -190,7 +194,7 @@ export const useTyping = ({ currentChat, user }: useTypingProps) => {
 
     const others = count - 2;
     return `${typingUsers[0].username}, ${typingUsers[1].username}, and ${others} other${
-      others > 1 ? 's' : ''
+      others > 1 ? "s" : ""
     } are typing...`;
   }, [typingUsers]);
 

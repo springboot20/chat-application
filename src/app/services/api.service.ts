@@ -75,8 +75,9 @@ const baseQueryWithReauth: BaseQueryFn<
    * PROACTIVE REFRESH
    * -------------------------------------------------
    */
+  const accessToken = (api.getState() as RootState).auth.tokens?.accessToken;
 
-  if (!isPublicRequest) {
+  if (!isPublicRequest && accessToken) {
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
 

@@ -42,7 +42,7 @@ import {
   updatePollVote,
 } from "../features/chats/chat.reducer";
 import { useLogoutMutation } from "../features/auth/auth.slice";
-import { ApiService } from "../app/services/api.service";
+// import { ApiService } from "../app/services/api.service";
 import { toast } from "react-toastify";
 import { classNames } from "../utils";
 import { ChatListItemInterface } from "../types/chat";
@@ -241,6 +241,20 @@ export const ChatLayout: React.FC = () => {
     [dispatch, selectedStatusToView],
   );
 
+  const handleDelivered = useCallback(
+    (payload: any) => {
+      dispatch(updateMessageDelivery(payload));
+    },
+    [dispatch],
+  );
+
+  const handleSeen = useCallback(
+    (payload: any) => {
+      dispatch(markMessagesAsSeen(payload));
+    },
+    [dispatch],
+  );
+
   // Global socket listeners
   useEffect(() => {
     if (!socket) return;
@@ -257,12 +271,8 @@ export const ChatLayout: React.FC = () => {
     socket?.on(NEW_CHAT_EVENT, onNewChat);
     socket?.on(LEAVE_CHAT_EVENT, _onChatLeave);
     socket?.on(NEW_GROUP_NAME, onGroupChatRename);
-    socket?.on(MESSAGE_DELIVERED_EVENT, (payload) =>
-      dispatch(updateMessageDelivery(payload)),
-    );
-    socket?.on(MESSAGE_SEEN_EVENT, (payload) =>
-      dispatch(markMessagesAsSeen(payload)),
-    );
+    socket.on(MESSAGE_DELIVERED_EVENT, handleDelivered);
+    socket.on(MESSAGE_SEEN_EVENT, handleSeen);
     socket.on(NEW_STATUS_EVENT, handleNewStatus);
     socket.on(STATUS_DELETED_EVENT, handleStatusDeleted);
 
@@ -279,12 +289,8 @@ export const ChatLayout: React.FC = () => {
       socket?.off(LEAVE_CHAT_EVENT, _onChatLeave);
       socket?.off(NEW_GROUP_NAME, onGroupChatRename);
       socket?.off(UPDATE_CHAT_LAST_MESSAGE_EVENT, onUpdateChatLastMessage);
-      socket?.off(MESSAGE_DELIVERED_EVENT, (payload) =>
-        dispatch(updateMessageDelivery(payload)),
-      );
-      socket?.off(MESSAGE_SEEN_EVENT, (payload) =>
-        dispatch(markMessagesAsSeen(payload)),
-      );
+      socket.off(MESSAGE_DELIVERED_EVENT, handleDelivered);
+      socket.off(MESSAGE_SEEN_EVENT, handleSeen);
       socket.off(NEW_STATUS_EVENT, handleNewStatus);
       socket.off(STATUS_DELETED_EVENT, handleStatusDeleted);
     };
@@ -305,18 +311,21 @@ export const ChatLayout: React.FC = () => {
     handlePollVoteUpdated,
     handleNewStatus,
     handleStatusDeleted,
+    handleDelivered,
+    handleSeen,
   ]);
 
   const handleLogout = async () => {
     try {
-      dispatch(ApiService.util.resetApiState());
       await logout().unwrap();
       toast.success("Logged out successfully");
+      socket?.disconnect();
+      navigate("/login", { replace: true });
     } catch (error) {
-      toast.error("Local session cleared.");
-    } finally {
-      navigate("/login");
+      console.error("Logout failed:", error);
     }
+
+    // dispatch(ApiService.util.resetApiState());
   };
 
   // useEffect(() => {
