@@ -26,7 +26,7 @@ const CustomCard = ({
       }}
     >
       <div className="flex items-center gap-3 mb-4">
-        {step.icon && <div className="text-2xl">{step.icon}</div>}
+        {step?.icon && <div className="text-2xl">{step.icon}</div>}
         <h3 className="text-xl font-bold dark:text-white">{step.title}</h3>
       </div>
 
