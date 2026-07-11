@@ -186,7 +186,7 @@ export const ChatRoom: React.FC = () => {
   const chatInfo = processChat();
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div id="chat-room" className="flex flex-col h-full overflow-hidden">
       <GroupChatInfo
         open={openGroupInfo}
         currentChat={currentChat}
@@ -201,6 +201,7 @@ export const ChatRoom: React.FC = () => {
       />
 
       <header
+        id="chat-header"
         className={classNames(
           "fixed top-0 right-0 p-2 left-0 bg-white dark:bg-black border-b-[1.5px] dark:border-b-white/10 border-b-gray-600/30 z-20 lg:left-[30rem]",
         )}

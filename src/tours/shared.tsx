@@ -60,7 +60,7 @@ export function createSharedNavigationTour(isMobile: boolean): Tour {
       pointerPadding: 10,
       pointerRadius: 8,
     },
-    
+
     {
       icon: <BellIcon className="w-8 h-8 text-amber-500" />,
 
@@ -84,7 +84,7 @@ export function createSharedNavigationTour(isMobile: boolean): Tour {
     {
       icon: <PencilSquareIcon className="w-8 h-8 text-emerald-500" />,
       title: "Start a New Chat",
-      selector: "#create-chat",
+      selector: selectors.create,
       content: (
         <>
           Click here to begin a new conversation. Choose one of your contacts,
@@ -92,7 +92,7 @@ export function createSharedNavigationTour(isMobile: boolean): Tour {
           messaging.
         </>
       ),
-      side: "bottom",
+      side: (isMobile ? "bottom-right" : "bottom") as Step["side"],
       pointerPadding: 10,
       pointerRadius: 8,
     },
@@ -100,7 +100,7 @@ export function createSharedNavigationTour(isMobile: boolean): Tour {
     {
       icon: <InboxIcon className="w-8 h-8 text-sky-500" />,
       title: "Recent Conversations",
-      selector: "#chat-list",
+      selector: selectors.chatsList,
       content: (
         <>
           Your recent conversations appear here, with the most recent activity
@@ -108,7 +108,7 @@ export function createSharedNavigationTour(isMobile: boolean): Tour {
           media, or catch up on unread messages.
         </>
       ),
-      side: "right",
+      side: isMobile ? undefined : "right",
       pointerPadding: 10,
       pointerRadius: 8,
     },
@@ -116,7 +116,7 @@ export function createSharedNavigationTour(isMobile: boolean): Tour {
     {
       icon: <MagnifyingGlassIcon className="w-8 h-8 text-indigo-500" />,
       title: "Search Conversations",
-      selector: "#search",
+      selector: selectors.search,
       content: (
         <>
           Quickly find any conversation by searching for a contact's name.

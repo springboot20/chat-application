@@ -586,6 +586,7 @@ const MessageInput = ({
 
                 {/* Emoji Button */}
                 <button
+                  id="emoji-picker"
                   onClick={handleOpenAndCloseEmoji}
                   className="p-2 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400"
                   type="button"
@@ -610,6 +611,7 @@ const MessageInput = ({
                       <motion.button
                         type="button"
                         drag
+                        id="voice-button"
                         dragConstraints={{
                           top: -LOCK_THRESHOLD - 60,
                           left: -CANCEL_THRESHOLD - 60,

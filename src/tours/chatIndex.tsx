@@ -26,7 +26,7 @@ export const createChatIndexTour = (isMobile: boolean): Tour => {
 
         title: "Main Workspace",
 
-        selector: "#chat-index",
+        selector: isMobile ? "" : "#chat-index",
 
         content: (
           <>
@@ -40,7 +40,6 @@ export const createChatIndexTour = (isMobile: boolean): Tour => {
             where you interact with the application.
           </>
         ),
-
         pointerPadding: 10,
         pointerRadius: 8,
       },
