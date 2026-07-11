@@ -36,8 +36,6 @@ export function useLinkPreview(message: string) {
       });
   }, [debouncedUrl, trigger]);
 
-  console.log(preview);
-
   return {
     detectedUrl,
     // preview: result.data?.data,

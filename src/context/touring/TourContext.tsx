@@ -34,8 +34,6 @@ const NextStepWrapper: React.FC<{
 }> = ({ children, localTours, setLocalTours }) => {
   const dispatch = useAppDispatch();
 
-  console.log({ localTours });
-
   const startedTour = useRef<string>();
   const location = useLocation();
 
@@ -57,12 +55,8 @@ const NextStepWrapper: React.FC<{
   }, [pendingTours, setLocalTours]);
 
   function waitForSelector(selector: string, callback: () => void) {
-    console.log("Waiting for:", selector);
-
     const interval = setInterval(() => {
       const element = document.querySelector(selector);
-
-      console.log(selector, element);
 
       if (element) {
         clearInterval(interval);
@@ -72,12 +66,6 @@ const NextStepWrapper: React.FC<{
 
     return () => clearInterval(interval);
   }
-
-  useEffect(() => {
-    console.log(document.querySelector("#messages"));
-    console.log(document.querySelector("#message-input"));
-    console.log(document.querySelector("#attachment-button"));
-  }, []);
 
   const handleTourComplete = useCallback(
     async (tourName: string | null) => {
@@ -123,8 +111,6 @@ const NextStepWrapper: React.FC<{
     if (!firstSelector) return;
 
     waitForSelector(firstSelector, () => {
-      console.log("FOUND", firstSelector);
-
       startNextStep(nextTour);
     });
   }, [pendingTours, setLocalTours, startNextStep]);
@@ -134,12 +120,6 @@ const NextStepWrapper: React.FC<{
       steps={localTours}
       cardComponent={(props) => <CustomCard {...props} />}
       onComplete={handleTourComplete}
-      onStart={(tourName) => {
-        console.log(`Tour ${tourName} started`);
-      }}
-      onStepChange={(step, tourName) => {
-        console.log(`Step changed to ${step} in ${tourName}`);
-      }}
     >
       <TourContext.Provider
         value={{

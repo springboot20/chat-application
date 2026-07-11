@@ -44,7 +44,15 @@ export const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
     wavesurferRef.current = wavesurfer;
 
     // Load audio
-    wavesurfer.load(audioUrl);
+    try {
+      wavesurfer.load(audioUrl).catch((err) => {
+        if (err?.name !== "AbortError") {
+          console.error(err);
+        }
+      });
+    } catch (error) {
+      console.log("error: ", error);
+    }
 
     // Event listeners
     wavesurfer.on("ready", () => {
@@ -77,7 +85,9 @@ export const VoiceMessagePlayer: React.FC<VoiceMessagePlayerProps> = ({
     });
 
     return () => {
+      wavesurfer.unAll();
       wavesurfer.destroy();
+      wavesurferRef.current = null;
     };
   }, [audioUrl, duration, isOwnMessage, playbackSpeed]);
 

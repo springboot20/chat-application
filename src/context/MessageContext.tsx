@@ -64,6 +64,7 @@ type MessageContextValue = {
   setMessage: React.Dispatch<React.SetStateAction<string>>;
   bottomRef: React.MutableRefObject<HTMLDivElement | null>;
   setOpenEmoji: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowReply: React.Dispatch<React.SetStateAction<boolean>>;
   messageInputRef: React.MutableRefObject<HTMLTextAreaElement | null>;
   documentInputRef: React.MutableRefObject<HTMLInputElement | null>;
   messageItemRef: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
@@ -423,13 +424,11 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
   const getAllMessages = useCallback(async () => {
     // Early return checks
     if (!socket) {
-      console.log("No socket connection, cannot get reduxStateMessages");
       return;
     }
 
     const chatId = currentChatRef.current?._id;
     if (!chatId) {
-      console.log("No chat selected, cannot get reduxStateMessages");
       return;
     }
 
@@ -603,51 +602,110 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
 
   const handleReplyToChatMessage = useCallback(async () => {
     const chat = currentChatRef.current;
+    const currentUser = currentUserRef.current;
     if (!chat?._id || !socket) return;
+
+    emitStopTyping();
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
 
     const processedMessage = processMentionsContent(message, chat.participants);
 
     const linkPreviewUrl = message?.match(/(https?:\/\/[^\s]+)/i)?.[0];
+    // Clear input fields immediately for better UX
+    const files = attachmentFiles.files;
+    const tempId = "temp-" + Date.now();
 
-    const payload = {
-      chatId: chat._id,
-      messageId: messageToReply,
-      data: {
-        content: processedMessage.content,
-        attachments: attachmentFiles.files,
-        mentions: processedMessage.mentions,
-        linkPreviewUrl,
-      },
+    const convertedFiles = await Promise.all(
+      (files || [])?.map(async (file) => await fileToBase64(file)),
+    );
+
+    // Add optimistic UI update with "queued" status
+    const tempMessage = {
+      _id: tempId,
+      content: processedMessage.content,
+      sender: currentUser!,
+      chat: chat._id,
+      attachments: convertedFiles,
+      linkPreviewUrl,
+      status: "queued", // Custom status
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    await sendMessage(payload)
-      .then((response) => {
-        // Update the Redux store
-        console.log(response);
+    try {
+      dispatch(
+        onMessageReceived({
+          data: tempMessage as unknown as ChatMessageInterface,
+        }),
+      );
 
-        scrollToBottom();
+      if (!isOnline) {
+        await messageQueue.add({
+          chatId: chat._id,
+          content: processedMessage.content,
+          attachments: files || undefined,
+          mentions: processedMessage.mentions,
+        });
+
+        toast.info(
+          "You are offline. Message will be sent when you reconnect.",
+          {
+            autoClose: 3000,
+            position: "top-center",
+          },
+        );
 
         setMessage(""); // Move here
         setAttachmentFiles({ files: null, type: "document-file" }); // Move here
         setShowReply(false); // Close reply UI after sending
         setMessageToReply(""); // Reset messageToReply
+        return;
+      }
 
-        // Play sound when message is sent
-        playMessageSound();
-      })
-      .catch((error: any) => {
-        console.error(error);
-        toast("Failed to send message", { type: "error" });
+      setMessage(""); // Move here
+      setAttachmentFiles({ files: null, type: "document-file" }); // Move here
+      setShowReply(false); // Close reply UI after sending
+      setMessageToReply(""); // Reset messageToReply
+
+      const response = await sendMessage({
+        chatId: chat._id,
+        messageId: messageToReply,
+        data: {
+          content: processedMessage.content,
+          attachments: attachmentFiles.files,
+          mentions: processedMessage.mentions,
+          linkPreviewUrl,
+        },
       });
+
+      scrollToBottom();
+
+      dispatch(
+        replaceOptimisticMessage({
+          chatId: chat._id,
+          tempId: tempId, // The 'temp-xxx' ID you created
+          realMessage: response.data, // The actual message from server
+        }),
+      );
+    } catch (error) {
+      console.error("Failed to send:", error);
+      toast.error("Failed to send message");
+    }
   }, [
     socket,
+    emitStopTyping,
+    typingTimeoutRef,
     processMentionsContent,
     message,
-    messageToReply,
     attachmentFiles.files,
+    dispatch,
+    isOnline,
     sendMessage,
+    messageToReply,
     scrollToBottom,
-    playMessageSound,
   ]);
 
   const onReactionUpdate = useCallback(
@@ -734,8 +792,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
       updatedAt: new Date().toISOString(),
     };
 
-    console.log({ tempMessage });
-
     try {
       dispatch(
         onMessageReceived({
@@ -759,12 +815,13 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
           },
         );
 
-        setTimeout(() => {
-          setMessage("");
-          setAttachmentFiles({} as any);
-        }, 2000);
+        setMessage("");
+        setAttachmentFiles({} as any);
         return;
       }
+
+      setMessage("");
+      setAttachmentFiles({} as any);
 
       const response = await sendMessage({
         chatId: currentChat._id,
@@ -776,9 +833,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
         },
       });
 
-      console.log("Server response:", response);
-      console.log("Server response attachments:", response.data?.attachments);
-
       playMessageSound();
       scrollToBottom();
 
@@ -789,9 +843,6 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
           realMessage: response.data, // The actual message from server
         }),
       );
-
-      setMessage("");
-      setAttachmentFiles({} as any);
     } catch (error) {
       console.error("Failed to send:", error);
       toast.error("Failed to send message");
@@ -853,6 +904,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
       handleSetOpenReply,
       handleSetCloseReply,
       showReply,
+      setShowReply,
       messageToReply,
       showScrollButton,
       sendChatMessage,
@@ -904,6 +956,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
       sendChatMessage,
       filteredMentionUsers,
       selectedUser,
+      setShowReply,
 
       videoThumbnails,
     ],

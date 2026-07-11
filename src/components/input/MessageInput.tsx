@@ -90,9 +90,10 @@ const MessageInput = ({
     imageInputRef,
     documentInputRef,
     showMentionUserMenu,
-    handleSetCloseReply,
     openEmoji,
     filteredMentionUsers,
+    isLoading: isSendingMessage,
+    handleSetCloseReply,
   } = useMessage();
 
   const {
@@ -137,7 +138,7 @@ const MessageInput = ({
 
   const shouldShowSendButton =
     (hasTextContent || hasFiles) && !isActivelyRecording && !isDraggingMic;
-  const canSendMessage = hasTextContent || hasFiles;
+  const canSendMessage = hasTextContent || hasFiles || !isSendingMessage;
 
   const handleSendVoiceMessage = async () => {
     let blobToSend = audioBlob;
@@ -198,8 +199,17 @@ const MessageInput = ({
           attachments: [voiceFile],
           mentions: [],
         });
+
+        if (showReply && messageToReply) {
+          handleSetCloseReply();
+        }
+
         toast.info("Offline. Message queued.");
         return;
+      }
+
+      if (showReply && messageToReply) {
+        handleSetCloseReply();
       }
 
       const response = await sendMessage({

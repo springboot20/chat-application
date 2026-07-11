@@ -256,8 +256,10 @@ export const ChatRoom: React.FC = () => {
       >
         <div
           ref={(e) => {
-            bottomRef.current = e;
-            containerRef.current = e;
+            if (e) {
+              bottomRef.current = e;
+              containerRef.current = e;
+            }
           }}
           className="flex flex-col flex-grow overflow-y-auto gap-10 overflow-x-hidden mb-[8rem] lg:mb-[8.25rem]"
         >
