@@ -96,6 +96,19 @@ export const UserProfileModal = ({
       ?.filter((a) => a.url);
   }, [messagesResponse]);
 
+  const confirm = useConfirm();
+
+  const handleLogout = () => {
+    confirm({
+      title: "Log out?",
+      label: "You'll need to log in again to access your account.",
+      buttonText: "Log Out",
+      onConfirm: async () => {
+        await onLogout?.();
+      },
+    });
+  };
+
   if (!user) return null;
 
   const isMe = currentUser?._id === user._id;
@@ -120,27 +133,23 @@ export const UserProfileModal = ({
 
   const handleBlockToggle = async () => {
     if (!contactRecord) return;
-    if (
-      !window.confirm(
-        `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${user.username}?`,
-      )
-    )
-      return;
 
     const normalizedContact =
       typeof contactRecord.contact !== "string"
         ? contactRecord.contact
         : undefined;
 
-    try {
-      const res = await toggleBlock(String(normalizedContact?._id)).unwrap();
-      toast.success(
-        res.message ||
-          `User ${isBlocked ? "unblocked" : "blocked"} successfully`,
-      );
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to update block status");
-    }
+    confirm({
+      title: `${isBlocked ? "Unblock" : "Block"} ${normalizedContact?.username}`,
+      label: `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${user.username}?`,
+      onConfirm: async () => {
+        const res = await toggleBlock(String(normalizedContact?._id)).unwrap();
+        toast.success(
+          res.message ||
+            `User ${isBlocked ? "unblocked" : "blocked"} successfully`,
+        );
+      },
+    });
   };
 
   const handleSendMessage = async () => {
@@ -179,18 +188,6 @@ export const UserProfileModal = ({
     } catch (error: any) {
       toast.error(error?.data?.message || "Failed to update avatar");
     }
-  };
-
-  const confirm = useConfirm();
-
-  const handleLogout = () => {
-    confirm({
-      title: "Sign out?",
-      label: "You'll need to log in again to access your account.",
-      onConfirm: async () => {
-       await  onLogout?.();
-      },
-    });
   };
 
   return (

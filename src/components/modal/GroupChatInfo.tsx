@@ -32,6 +32,8 @@ import { AttachmentItem } from "../shared/AttachmentItem";
 import { UserAvatar } from "../status/StatusAvatar";
 import { classNames } from "../../utils";
 import { InfoRow } from "../shared/InfoRow";
+import { useConfirm } from "../../context/confirm/ConfirmModal";
+import { useDebounce } from "../../hooks/useDebounce";
 
 type GroupInfoProps = {
   open: boolean;
@@ -58,6 +60,8 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
   const [renamingName, setRenamingName] = useState<boolean>(false);
   const [isAddingParticipant, setIsAddingParticipant] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const confirm = useConfirm();
 
   // Fetch Group Details
   const { data: response, refetch: refetchGroupChatDetails } =
@@ -122,7 +126,10 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
         chatId: currentChat?._id,
         participantId,
       }).unwrap();
+      
       refetchGroupChatDetails();
+      setIsAddingParticipant(!isAddingParticipant);
+
       toast.success(res?.message);
       setSearchQuery(""); // Clear search after adding
     } catch (error: any) {
@@ -131,47 +138,67 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
   };
 
   const handleRemoveParticipant = async (participantId: string) => {
-    try {
-      const res = await removeParticipant({
-        chatId: currentChat?._id,
-        participantId,
-      }).unwrap();
-      refetchGroupChatDetails();
-      toast.success(res?.message);
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to remove participant");
-    }
+    confirm({
+      title: "Remove Participant",
+      label: `Are you sure you want to leave this group`,
+      buttonText: "Remove Participant",
+      async onConfirm() {
+        try {
+          const res = await removeParticipant({
+            chatId: currentChat?._id,
+            participantId,
+          }).unwrap();
+
+          refetchGroupChatDetails();
+
+          toast.success(res?.message);
+        } catch (error: any) {
+          toast.error(error?.data?.message || "Failed to remove participant");
+        }
+      },
+    });
   };
 
   const handleLeaveGroup = async () => {
-    if (!window.confirm("Are you sure you want to leave this group?")) return;
-    try {
-      const res = await leaveGroup(currentChat?._id).unwrap();
-      toast.success(res?.message);
-      handleClose();
-      refetchChats();
-      window.location.reload(); // Simple reload to reset chat state/view
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to leave group");
-    }
+    confirm({
+      title: "Leave Group",
+      label: "Are you sure you want to leave this group",
+      buttonText: "Leave Group",
+      async onConfirm() {
+        try {
+          const res = await leaveGroup(currentChat?._id).unwrap();
+          toast.success(res?.message);
+
+          handleClose();
+          refetchChats();
+
+          window.location.reload(); // Simple reload to reset chat state/view
+        } catch (error: any) {
+          toast.error(error?.data?.message || "Failed to leave group");
+        }
+      },
+    });
   };
 
   const handleDeleteGroup = async () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to delete this group? This cannot be undone.",
-      )
-    )
-      return;
-    try {
-      const res = await deleteGroup(currentChat?._id).unwrap();
-      toast.success(res?.message);
-      handleClose();
-      refetchChats();
-      window.location.reload();
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to delete group");
-    }
+    confirm({
+      title: "Delete Group",
+      label: `Are you sure you want to delete this group? This cannot be undone`,
+      buttonText: "Delete Group",
+      async onConfirm() {
+        try {
+          const res = await deleteGroup(currentChat?._id).unwrap();
+          toast.success(res?.message);
+
+          handleClose();
+          refetchChats();
+
+          window.location.reload();
+        } catch (error: any) {
+          toast.error(error?.data?.message || "Failed to delete group");
+        }
+      },
+    });
   };
 
   const handleSetRenaming = useCallback(() => {
@@ -187,6 +214,33 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
       setSearchQuery("");
     }
   }, [open]);
+
+  const debouncedParticipantSearch = useDebounce(searchQuery, 400);
+
+  const currentParticipants = myContacts.filter(
+    (u) =>
+      !groupChatDetails?.participants?.find((p) => {
+        const normalizedContact =
+          typeof u.contact !== "string" ? u.contact : undefined;
+
+        return p._id === normalizedContact?._id;
+      }),
+  );
+
+  const filteredParticipants = useMemo(() => {
+    if (!debouncedParticipantSearch) return currentParticipants;
+
+    return currentParticipants.filter((participant) => {
+      const normalizedContact =
+        typeof participant.contact !== "string"
+          ? participant.contact
+          : undefined;
+
+      return normalizedContact?.username
+        ?.toLowerCase()
+        .includes(debouncedParticipantSearch?.toLowerCase());
+    });
+  }, [currentParticipants, debouncedParticipantSearch]);
 
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -319,66 +373,49 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700"
                               />
-                              <div className="max-h-40 overflow-y-auto space-y-2">
-                                {myContacts.length > 0 ? (
-                                  myContacts
-                                    .filter(
-                                      (u) =>
-                                        !groupChatDetails?.participants?.find(
-                                          (p) => {
-                                            const normalizedContact =
-                                              typeof u.contact !== "string"
-                                                ? u.contact
-                                                : undefined;
+                              {filteredParticipants?.length > 0 ? (
+                                <div className="max-h-40 overflow-y-auto space-y-2">
+                                  {filteredParticipants?.map(({ contact }) => {
+                                    const normalizedContact =
+                                      typeof contact !== "string"
+                                        ? contact
+                                        : undefined;
 
-                                            return (
-                                              p._id === normalizedContact?._id
-                                            );
-                                          },
-                                        ),
-                                    )
-                                    .map(({ contact }) => {
-                                      const normalizedContact =
-                                        typeof contact !== "string"
-                                          ? contact
-                                          : undefined;
-                                      return (
-                                        <div
-                                          key={normalizedContact?._id}
-                                          className="flex items-center justify-between p-2 rounded hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer"
-                                          onClick={() =>
-                                            handleAddParticipant(
-                                              String(normalizedContact?._id),
-                                            )
-                                          }
-                                        >
-                                          <div className="flex items-center gap-2">
-                                            <img
-                                              src={
-                                                normalizedContact?.avatar?.url
-                                              }
-                                              className="h-8 w-8 rounded-full bg-gray-300"
-                                              alt=""
-                                            />
-                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                              {normalizedContact?.username}
-                                            </span>
-                                          </div>
-                                          <div className="px-2 py-1.5 flex items-center gap-x-1 bg-indigo-600 rounded-lg">
-                                            <span className="text-white font-nunito font-bold text-xs">
-                                              Add
-                                            </span>
-                                            <UserPlusIcon className="h-4 w-4 text-white" />
-                                          </div>
+                                    return (
+                                      <div
+                                        key={normalizedContact?._id}
+                                        className="flex items-center justify-between p-2 rounded-3xl hover:bg-gray-200 dark:hover:bg-zinc-800 cursor-pointer"
+                                        onClick={() =>
+                                          handleAddParticipant(
+                                            String(normalizedContact?._id),
+                                          )
+                                        }
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <img
+                                            src={normalizedContact?.avatar?.url}
+                                            className="h-8 w-8 rounded-full bg-gray-300"
+                                            alt=""
+                                          />
+                                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                            {normalizedContact?.username}
+                                          </span>
                                         </div>
-                                      );
-                                    })
-                                ) : searchQuery ? (
-                                  <p className="text-xs text-center text-gray-500 py-2">
-                                    No users found
-                                  </p>
-                                ) : null}
-                              </div>
+                                        <div className="px-2.5 py-1.5 flex items-center gap-x-1 bg-indigo-600 rounded-2xl">
+                                          <span className="text-white font-nunito font-bold text-xs">
+                                            Add
+                                          </span>
+                                          <UserPlusIcon className="h-4 w-4 text-white" />
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-center text-gray-500 py-2">
+                                  No users found
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -462,14 +499,16 @@ export const GroupChatInfo: React.FC<GroupInfoProps> = ({
                       {/* Danger Zone */}
                       {/* Danger Zone — replace the two <button> blocks with: */}
                       <div className="border-t dark:border-zinc-800 divide-y divide-gray-100 dark:divide-zinc-800">
-                        <InfoRow
-                          icon={
-                            <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                          }
-                          label="Leave Group"
-                          onClick={handleLeaveGroup}
-                          danger
-                        />
+                        {!isAdmin && (
+                          <InfoRow
+                            icon={
+                              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                            }
+                            label="Leave Group"
+                            onClick={handleLeaveGroup}
+                            danger
+                          />
+                        )}
                         {isAdmin && (
                           <InfoRow
                             icon={<TrashIcon className="h-5 w-5" />}

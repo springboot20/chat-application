@@ -230,7 +230,9 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
         : undefined;
 
     confirm({
-      title: `${isBlocked ? "Unblock" : "Block"} ${contactInfo?.username}?`,
+      title: `${isBlocked ? "Unblock" : "Block"} ${contactInfo?.username}`,
+      label: `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${contactInfo?.username}?`,
+      buttonText: "Block",
       onConfirm: async () => {
         const res = await toggleBlock(String(contactInfo?._id)).unwrap();
         toast.success(

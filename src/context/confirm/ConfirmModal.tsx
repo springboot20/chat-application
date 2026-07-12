@@ -11,6 +11,7 @@ import { createPortal } from "react-dom";
 type ConfirmInfo = {
   title: string;
   label?: string;
+  buttonText?: string;
 };
 
 type ConfirmOptions = ConfirmInfo & {

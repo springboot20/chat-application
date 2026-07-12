@@ -27,11 +27,12 @@ export const ConfirmModal = ({
   onConfirm: () => Promise<void>;
   info: {
     label?: string;
+    buttonText?: string;
     title: string;
   };
   isDeleting: boolean;
 }) => {
-  const { label, title } = info;
+  const { label, title, buttonText } = info;
 
   return (
     <ModalWrapper isOpen={open} onClose={onClose}>
@@ -130,7 +131,7 @@ export const ConfirmModal = ({
                   <DotLoader />
                 ) : (
                   <span className="text-white font-bold font-nunito text-base">
-                    Delete
+                    {buttonText ? buttonText : "Delete"}
                   </span>
                 )}
               </button>

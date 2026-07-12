@@ -113,8 +113,9 @@ export const Settings: React.FC<{
 
   const handleLogout = () => {
     confirm({
-      title: "Sign out?",
+      title: "Log out?",
       label: "You'll need to log in again to access your account.",
+      buttonText: "Log Out",
       onConfirm: async () => {
         onLogout?.();
       },
