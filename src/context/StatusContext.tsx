@@ -14,9 +14,11 @@ import {
 import sanitizeHtml from "sanitize-html";
 import {
   StatusGroup,
+  StatusStoriesApiSlice,
   useAddNewMediaStatusMutation,
   useAddNewTextStatusMutation,
 } from "../features/status/status.api.slice";
+import { toast } from "react-toastify";
 
 type StatusWindow = "create-status" | "view-status" | null;
 
@@ -103,6 +105,7 @@ export const StatusContext = createContext<StatusContextValue | null>(null);
 
 export const StatusProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const { statusWindow } = useAppSelector((state) => state.statusStories);
   const [textContent, setTextContent] = useState("");
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -231,13 +234,67 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
             : undefined,
       };
 
-      await addNewTextStatus(payload).unwrap();
+      addNewTextStatus(payload)
+        .unwrap()
+        .catch(() => {
+          toast.error("Failed to post status. Please try again.");
+        });
+
+      resetCreationState();
       handleStatusWindowChange(null);
       return;
     }
-    const formData = new FormData();
 
     const overallFiles = [...selectedImageFiles, ...selectedVideoFiles];
+    if (overallFiles.length === 0) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const now = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    const optimisticItems = overallFiles.map((file, index) => {
+      const type = file.type.startsWith("video/") ? "video" : "image";
+      const fileCaption =
+        captions[type]?.find((c: any) => c.id === file.name)?.text || "";
+
+      return {
+        _id: `${tempId}-${index}`,
+        type,
+        caption: fileCaption,
+        mediaContent: {
+          url: URL.createObjectURL(file),
+        },
+        viewedBy: [],
+        viewCount: 0,
+        visibleTo: [],
+        createdAt: now,
+        updatedAt: now,
+        expiresAt,
+        isUploading: true,
+      };
+    });
+
+    dispatch(
+      StatusStoriesApiSlice.util.updateQueryData(
+        "getUserStatuses",
+        undefined,
+        (draft) => {
+          if (draft.data) {
+            draft.data.items.unshift(...(optimisticItems as any));
+            draft.data.lastUpdated = now;
+          } else {
+            draft.data = {
+              _id: user?._id || "",
+              items: optimisticItems as any,
+              lastUpdated: now,
+              user: user as any,
+            };
+          }
+        },
+      ),
+    );
+
+    const formData = new FormData();
 
     // 1. Prepare Metadata based on your Mongoose Schema structure
     const metadata = overallFiles.map((file) => {
@@ -255,10 +312,7 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
     });
 
     // 2. Append files to FormData
-    overallFiles.forEach((file) => {
-      formData.append("statusMedias", file);
-    });
-
+    overallFiles.forEach((file) => formData.append("statusMedias", file));
     formData.append("privacyType", privacy);
 
     if (privacy === "selected" || privacy === "except") {
@@ -267,24 +321,64 @@ export const StatusProvider = ({ children }: { children: ReactNode }) => {
 
     // 3. Append the metadata as a string
     formData.append("metadata", JSON.stringify(metadata));
+    if (mediaContentType === "video") setSelectedVideoFiles([]);
+    if (mediaContentType === "image") setSelectedImageFiles([]);
+
+    resetCreationState();
+    handleStatusWindowChange(null);
 
     try {
-      await addNewMediaStatus(formData).unwrap();
+      const response = await addNewMediaStatus(formData).unwrap();
 
-      if (mediaContentType === "video") {
-        setSelectedVideoFiles([]);
-      }
+      dispatch(
+        StatusStoriesApiSlice.util.updateQueryData(
+          "getUserStatuses",
+          undefined,
+          (draft) => {
+            if (!draft.data) return;
+            // Swap the optimistic placeholders out for the real, server-confirmed items
+            draft.data.items = draft.data.items.filter(
+              (item) => !item._id.startsWith(tempId),
+            );
+            draft.data.items.unshift(...response.data);
+          },
+        ),
+      );
 
-      if (mediaContentType === "image") {
-        setSelectedImageFiles([]);
-      }
-
-      await Promise.all([
-        Promise.resolve(setTimeout(() => resetCreationState(), 2500)),
-        Promise.resolve(setTimeout(() => handleStatusWindowChange(null), 3000)),
-      ]);
+      dispatch(
+        StatusStoriesApiSlice.util.updateQueryData(
+          "getStatusFeed",
+          undefined,
+          (draft) => {
+            if (!draft.data) return;
+            const userGroup = draft.data.find(
+              (group) => group._id === user?._id,
+            );
+            if (userGroup) {
+              userGroup.items.unshift(...response.data);
+              userGroup.lastUpdated =
+                response.data[0]?.createdAt || new Date().toISOString();
+            }
+          },
+        ),
+      );
     } catch (error) {
       console.error("Upload failed", error);
+
+      dispatch(
+        StatusStoriesApiSlice.util.updateQueryData(
+          "getUserStatuses",
+          undefined,
+          (draft) => {
+            if (!draft.data) return;
+            draft.data.items = draft.data.items.filter(
+              (item) => !item._id.startsWith(tempId),
+            );
+          },
+        ),
+      );
+
+      toast.error("Failed to post status. Please try again.");
     }
   }, [
     mediaContentType,

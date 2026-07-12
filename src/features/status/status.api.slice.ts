@@ -1,5 +1,5 @@
-import { ApiService } from '../../app/services/api.service';
-import { User } from '../../types/auth';
+import { ApiService } from "../../app/services/api.service";
+import { User } from "../../types/auth";
 
 interface TextContent {
   text: string;
@@ -16,24 +16,25 @@ interface MediaContent {
 
 interface Status {
   _id: string;
-  postedBy: Pick<User, '_id' | 'username' | 'avatar' | 'email'> | string;
-  type: 'image' | 'text' | 'video';
+  postedBy: Pick<User, "_id" | "username" | "avatar" | "email"> | string;
+  type: "image" | "text" | "video";
   caption?: string;
   mediaContent?: MediaContent;
   textContent?: TextContent;
-  viewedBy: Pick<User, '_id' | 'username' | 'avatar' | 'email'>[] | string[];
+  viewedBy: Pick<User, "_id" | "username" | "avatar" | "email">[] | string[];
   visibleTo: string[];
   viewCount: number;
   expiresAt: string;
   createdAt: string;
   updatedAt: string;
+  isUploading?: boolean;
 }
 
 interface StatusGroup {
   _id: string;
   items: Status[];
   lastUpdated: string;
-  user: Pick<User, '_id' | 'username' | 'avatar' | 'email'>;
+  user: Pick<User, "_id" | "username" | "avatar" | "email">;
 }
 
 interface AddTextStatusPayload {
@@ -59,21 +60,21 @@ export const StatusStoriesApiSlice = ApiService.injectEndpoints({
     addNewMediaStatus: builder.mutation<Response<Status[]>, FormData>({
       query: (data) => {
         return {
-          url: '/chat-app/statuses/add-status/media/',
+          url: "/chat-app/statuses/add-status/media/",
           body: data,
-          method: 'POST',
+          method: "POST",
         };
       },
 
-      invalidatesTags: ['StatusFeed', 'UserStatuses'],
+      invalidatesTags: ["StatusFeed", "UserStatuses"],
     }),
 
     getStatusFeed: builder.query<Response<StatusGroup[]>, void>({
       query: () => ({
-        url: '/chat-app/statuses/feed/',
-        method: 'GET',
+        url: "/chat-app/statuses/feed/",
+        method: "GET",
       }),
-      providesTags: ['StatusFeed'],
+      providesTags: ["StatusFeed"],
       // Polling every 30 seconds for real-time updates
       keepUnusedDataFor: 30,
       // Transform response to filter expired statuses client-side
@@ -84,7 +85,9 @@ export const StatusStoriesApiSlice = ApiService.injectEndpoints({
           data: response.data
             .map((group) => ({
               ...group,
-              items: group.items.filter((status) => new Date(status.expiresAt) > now),
+              items: group.items.filter(
+                (status) => new Date(status.expiresAt) > now,
+              ),
             }))
             .filter((group) => group.items.length > 0),
         };
@@ -94,52 +97,135 @@ export const StatusStoriesApiSlice = ApiService.injectEndpoints({
     addNewTextStatus: builder.mutation<Response<Status>, AddTextStatusPayload>({
       query: (data) => {
         return {
-          url: '/chat-app/statuses/add-status/text/',
+          url: "/chat-app/statuses/add-status/text/",
           body: data,
-          method: 'POST',
+          method: "POST",
         };
       },
-      invalidatesTags: ['StatusFeed', 'UserStatuses'],
+      invalidatesTags: ["StatusFeed", "UserStatuses"],
 
-      async onQueryStarted(_, { dispatch, queryFulfilled }) {
-        try {
-          const { data: response } = await queryFulfilled;
+      async onQueryStarted(payload, { dispatch, queryFulfilled, getState }) {
+        const tempId = `temp-text-${Date.now()}`;
+        const now = new Date().toISOString();
+        const currentUserId = (getState() as any).auth?.user?._id;
+        const currentUser = (getState() as any).auth?.user;
 
-          dispatch(
-            StatusStoriesApiSlice.util.updateQueryData('getStatusFeed', undefined, (draft) => {
+        const optimisticStatus: Status = {
+          _id: tempId,
+          postedBy: currentUser,
+          type: "text",
+          textContent: {
+            text: payload.text,
+            backgroundColor: payload.backgroundColor,
+            type: payload.type,
+          },
+          viewedBy: [],
+          visibleTo: [],
+          viewCount: 0,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: now,
+          updatedAt: now,
+          isUploading: true,
+        };
+
+        const patchFeedResult = dispatch(
+          StatusStoriesApiSlice.util.updateQueryData(
+            "getStatusFeed",
+            undefined,
+            (draft) => {
               if (draft.data) {
-                const userGroup = draft.data.find((group) => group._id === response.data.postedBy);
+                const userGroup = draft.data.find(
+                  (group) => group._id === currentUserId,
+                );
 
                 if (userGroup) {
-                  userGroup.items.unshift(response.data);
-                  userGroup.lastUpdated = response.data.createdAt;
+                  userGroup.items.unshift();
+                  userGroup.lastUpdated = now;
                 } else {
                   // Create new group if user doesn't have any statuses yet
                   draft.data.unshift({
-                    _id: response.data.postedBy as string,
-                    items: [response.data],
-                    lastUpdated: response.data.createdAt,
-                    user:
-                      typeof response.data.postedBy === 'object'
-                        ? response.data.postedBy
-                        : ({} as User),
+                    _id: currentUser,
+                    items: [],
+                    lastUpdated: now,
+                    user: currentUser,
                   });
                 }
               }
-            }),
+            },
+          ),
+        );
+
+        const patchUserResult = dispatch(
+          StatusStoriesApiSlice.util.updateQueryData(
+            "getUserStatuses",
+            undefined,
+            (draft) => {
+              if (draft.data) {
+                draft.data.items.unshift(optimisticStatus);
+                draft.data.lastUpdated = now;
+              } else {
+                draft.data = {
+                  _id: currentUserId,
+                  items: [optimisticStatus],
+                  lastUpdated: now,
+                  user: currentUser,
+                };
+              }
+            },
+          ),
+        );
+
+        try {
+          const { data: response } = await queryFulfilled;
+
+          // Swap the placeholder for the real server-confirmed status
+          dispatch(
+            StatusStoriesApiSlice.util.updateQueryData(
+              "getStatusFeed",
+              undefined,
+              (draft) => {
+                if (!draft.data) return;
+
+                const userGroup = draft.data.find(
+                  (group) => group._id === currentUserId,
+                );
+
+                if (userGroup) {
+                  const idx = userGroup.items.findIndex(
+                    (s) => s._id === tempId,
+                  );
+                  if (idx !== -1) userGroup.items[idx] = response.data;
+                }
+              },
+            ),
+          );
+
+          dispatch(
+            StatusStoriesApiSlice.util.updateQueryData(
+              "getUserStatuses",
+              undefined,
+              (draft) => {
+                if (!draft.data) return;
+                const idx = draft.data.items.findIndex((s) => s._id === tempId);
+                if (idx !== -1) draft.data.items[idx] = response.data;
+              },
+            ),
           );
         } catch (error) {
-          console.error('Error in optimistic update:', error);
+          console.error("Error in optimistic update:", error);
+
+          patchFeedResult.undo();
+          patchUserResult.undo();
         }
       },
     }),
 
     getUserStatuses: builder.query<Response<StatusGroup | null>, void>({
       query: () => ({
-        url: '/chat-app/statuses/my-status/',
-        method: 'GET',
+        url: "/chat-app/statuses/my-status/",
+        method: "GET",
       }),
-      providesTags: ['UserStatuses'],
+      providesTags: ["UserStatuses"],
       keepUnusedDataFor: 30,
       // Filter expired statuses
       transformResponse: (response: Response<StatusGroup | null>) => {
@@ -150,7 +236,9 @@ export const StatusStoriesApiSlice = ApiService.injectEndpoints({
           ...response,
           data: {
             ...response.data,
-            items: response.data.items.filter((status) => new Date(status.expiresAt) > now),
+            items: response.data.items.filter(
+              (status) => new Date(status.expiresAt) > now,
+            ),
           },
         };
       },
@@ -159,7 +247,7 @@ export const StatusStoriesApiSlice = ApiService.injectEndpoints({
     markStatusAsViewed: builder.mutation<Response<ViewStatusResponse>, string>({
       query: (statusId) => ({
         url: `/chat-app/statuses/${statusId}/view/`,
-        method: 'POST',
+        method: "POST",
       }),
       // Optimistic update for viewed status
       async onQueryStarted(statusId, { dispatch, queryFulfilled, getState }) {
@@ -168,28 +256,34 @@ export const StatusStoriesApiSlice = ApiService.injectEndpoints({
 
           // Update the status feed cache
           dispatch(
-            StatusStoriesApiSlice.util.updateQueryData('getStatusFeed', undefined, (draft) => {
-              if (draft.data) {
-                draft.data.forEach((group) => {
-                  const status = group.items.find((s) => s._id === statusId);
-                  if (status && Array.isArray(status.viewedBy)) {
-                    // Add current user to viewedBy if not already there
-                    const currentUserId = (getState() as any).auth?.user?._id;
-                    if (
-                      currentUserId &&
-                      !status.viewedBy.some((id) =>
-                        typeof id === 'string' ? id === currentUserId : id._id === currentUserId,
-                      )
-                    ) {
-                      status.viewedBy.push(currentUserId);
+            StatusStoriesApiSlice.util.updateQueryData(
+              "getStatusFeed",
+              undefined,
+              (draft) => {
+                if (draft.data) {
+                  draft.data.forEach((group) => {
+                    const status = group.items.find((s) => s._id === statusId);
+                    if (status && Array.isArray(status.viewedBy)) {
+                      // Add current user to viewedBy if not already there
+                      const currentUserId = (getState() as any).auth?.user?._id;
+                      if (
+                        currentUserId &&
+                        !status.viewedBy.some((id) =>
+                          typeof id === "string"
+                            ? id === currentUserId
+                            : id._id === currentUserId,
+                        )
+                      ) {
+                        status.viewedBy.push(currentUserId);
+                      }
                     }
-                  }
-                });
-              }
-            }),
+                  });
+                }
+              },
+            ),
           );
         } catch (error) {
-          console.error('Error marking status as viewed:', error);
+          console.error("Error marking status as viewed:", error);
         }
       },
     }),
@@ -197,32 +291,44 @@ export const StatusStoriesApiSlice = ApiService.injectEndpoints({
     deleteStatus: builder.mutation<Response<{ statusId: string }>, string>({
       query: (statusId) => ({
         url: `/chat-app/statuses/${statusId}/`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: ['StatusFeed', 'UserStatuses'],
+      invalidatesTags: ["StatusFeed", "UserStatuses"],
       // Optimistic delete
       async onQueryStarted(statusId, { dispatch, queryFulfilled }) {
         // Optimistically remove from feed
         const patchFeedResult = dispatch(
-          StatusStoriesApiSlice.util.updateQueryData('getStatusFeed', undefined, (draft) => {
-            if (draft.data) {
-              draft.data = draft.data
-                .map((group) => ({
-                  ...group,
-                  items: group.items.filter((status) => status._id !== statusId),
-                }))
-                .filter((group) => group.items.length > 0);
-            }
-          }),
+          StatusStoriesApiSlice.util.updateQueryData(
+            "getStatusFeed",
+            undefined,
+            (draft) => {
+              if (draft.data) {
+                draft.data = draft.data
+                  .map((group) => ({
+                    ...group,
+                    items: group.items.filter(
+                      (status) => status._id !== statusId,
+                    ),
+                  }))
+                  .filter((group) => group.items.length > 0);
+              }
+            },
+          ),
         );
 
         // Optimistically remove from user statuses
         const patchUserResult = dispatch(
-          StatusStoriesApiSlice.util.updateQueryData('getUserStatuses', undefined, (draft) => {
-            if (draft.data) {
-              draft.data.items = draft.data.items.filter((status) => status._id !== statusId);
-            }
-          }),
+          StatusStoriesApiSlice.util.updateQueryData(
+            "getUserStatuses",
+            undefined,
+            (draft) => {
+              if (draft.data) {
+                draft.data.items = draft.data.items.filter(
+                  (status) => status._id !== statusId,
+                );
+              }
+            },
+          ),
         );
 
         try {
@@ -296,7 +402,9 @@ export const useUnviewedStatusCount = (currentUserId: string) => {
       const unviewedInGroup = group.items.filter((status) => {
         if (Array.isArray(status.viewedBy)) {
           return !status.viewedBy.some((viewer) =>
-            typeof viewer === 'string' ? viewer === currentUserId : viewer._id === currentUserId,
+            typeof viewer === "string"
+              ? viewer === currentUserId
+              : viewer._id === currentUserId,
           );
         }
         return true;
@@ -319,7 +427,7 @@ export const hasViewedStatus = (status: Status, userId: string): boolean => {
   if (!Array.isArray(status.viewedBy)) return false;
 
   return status.viewedBy.some((viewer) =>
-    typeof viewer === 'string' ? viewer === userId : viewer._id === userId,
+    typeof viewer === "string" ? viewer === userId : viewer._id === userId,
   );
 };
 
@@ -331,7 +439,7 @@ export const getTimeRemaining = (expiresAt: string): string => {
   const expiry = new Date(expiresAt).getTime();
   const diff = expiry - now;
 
-  if (diff <= 0) return 'Expired';
+  if (diff <= 0) return "Expired";
 
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
