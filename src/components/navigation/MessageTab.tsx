@@ -82,8 +82,9 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({
     (chatId: string) => {
       setItemDeleted(true);
       dispatch(onChatDelete({ chatId }));
+      navigate(`/chat`);
     },
-    [dispatch],
+    [dispatch, navigate],
   );
 
   /**
