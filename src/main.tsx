@@ -13,6 +13,7 @@ import { StatusProvider } from "./context/StatusContext.tsx";
 import { MessageProvider } from "./context/MessageContext.tsx";
 import { HelmetProvider } from "react-helmet-async";
 import { TourProvider } from "./context/touring/TourContext.tsx";
+import { ConfirmProvider } from "./context/confirm/ConfirmModal.tsx";
 
 checkAndClearStorage();
 
@@ -21,16 +22,18 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <Provider store={store}>
         <SocketProvider>
-          <MessageProvider>
-            <StatusProvider>
-              <ThemeProvider>
-                <TourProvider>
-                  <ToastContainer />
-                  <App />
-                </TourProvider>
-              </ThemeProvider>
-            </StatusProvider>
-          </MessageProvider>
+          <ConfirmProvider>
+            <MessageProvider>
+              <StatusProvider>
+                <ThemeProvider>
+                  <TourProvider>
+                    <ToastContainer />
+                    <App />
+                  </TourProvider>
+                </ThemeProvider>
+              </StatusProvider>
+            </MessageProvider>
+          </ConfirmProvider>
         </SocketProvider>
       </Provider>
     </BrowserRouter>

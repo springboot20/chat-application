@@ -18,7 +18,7 @@ import {
   EnvelopeIcon,
 } from "@heroicons/react/24/outline";
 import { Dialog } from "@headlessui/react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useAppSelector } from "../../redux/redux.hooks";
 import { UserProfileModal } from "../../components/modal/UserProfileModal";
 import { classNames } from "../../utils";
@@ -31,6 +31,7 @@ import {
   useUpdateAccountMutation,
 } from "../../features/auth/auth.slice";
 import { toast } from "react-toastify";
+import { useConfirm } from "../../context/confirm/ConfirmModal";
 
 const changePasswordSchema = Yup.object().shape({
   existingPassword: Yup.string().required("Current password is required"),
@@ -75,7 +76,7 @@ const tabs: { id: TabType; label: string; icon: any; description: string }[] = [
 export const Settings: React.FC<{
   open: boolean;
   onClose: () => void;
-  onLogout?: () => void;
+  onLogout?: () => Promise<void>;
 }> = ({ open, onClose, onLogout }) => {
   const { activeMode } = useTheme();
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -108,8 +109,20 @@ export const Settings: React.FC<{
     setActiveSubTab(null);
   };
 
+  const confirm = useConfirm();
+
+  const handleLogout = () => {
+    confirm({
+      title: "Sign out?",
+      label: "You'll need to log in again to access your account.",
+      onConfirm: async () => {
+        onLogout?.();
+      },
+    });
+  };
+
   return (
-    <>
+    <Fragment>
       <Dialog open={open} onClose={handleClose} className="relative z-[60]">
         <Dialog.Backdrop className="fixed inset-0 z-50 bg-gray-500/75 dark:bg-black/70 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in" />
 
@@ -286,7 +299,7 @@ export const Settings: React.FC<{
                                     </label>
                                     <Field
                                       name="username"
-                                      className="block w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 transition-all dark:text-white"
+                                      className="w-full rounded-md border border-gray-200 dark:border-gray-300/20 bg-gray-50 dark:bg-gray-800 p-3 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-all focus:outline-none"
                                       placeholder="How others see you"
                                     />
                                     <ErrorMessage
@@ -304,7 +317,7 @@ export const Settings: React.FC<{
                                       name="about"
                                       as="textarea"
                                       rows={3}
-                                      className="block w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 transition-all resize-none dark:text-white"
+                                      className="w-full rounded-md border border-gray-200 dark:border-gray-300/20 bg-gray-50 dark:bg-gray-800 p-3 pr-10 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-all focus:outline-none"
                                       placeholder="A few words about yourself..."
                                     />
                                     <ErrorMessage
@@ -321,7 +334,7 @@ export const Settings: React.FC<{
                                         !dirty || !isValid || isUpdatingAccount
                                       }
                                       className={classNames(
-                                        "w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white transition-all",
+                                        "w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white transition-all",
                                         !dirty || !isValid || isUpdatingAccount
                                           ? "bg-gray-300 dark:bg-gray-700 cursor-not-allowed"
                                           : "bg-indigo-600 hover:bg-indigo-700 shadow-md active:scale-[0.98]",
@@ -389,109 +402,115 @@ export const Settings: React.FC<{
                         <section className="space-y-6">
                           <AnimatePresence mode="wait">
                             {!activeSubTab ? (
-                              <motion.div
-                                key="account-menu"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                              >
-                                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-1">
-                                  Account Settings
-                                </h4>
-                                <div className="space-y-3">
-                                  <div className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700/50">
-                                    <div className="flex items-center gap-4">
-                                      <div
-                                        className={classNames(
-                                          "p-2.5 rounded-lg",
-                                          currentUser?.isEmailVerified
-                                            ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                                            : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
-                                        )}
-                                      >
-                                        {currentUser?.isEmailVerified ? (
-                                          <CheckBadgeIcon className="h-5 w-5" />
-                                        ) : (
-                                          <EnvelopeIcon className="h-5 w-5" />
-                                        )}
+                              <Fragment>
+                                <motion.div
+                                  key="account-menu"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -10 }}
+                                >
+                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-1">
+                                    Account Settings
+                                  </h4>
+                                  <div className="space-y-3">
+                                    <div className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700/50">
+                                      <div className="flex items-center gap-4">
+                                        <div
+                                          className={classNames(
+                                            "p-2.5 rounded-lg",
+                                            currentUser?.isEmailVerified
+                                              ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                                              : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
+                                          )}
+                                        >
+                                          {currentUser?.isEmailVerified ? (
+                                            <CheckBadgeIcon className="h-5 w-5" />
+                                          ) : (
+                                            <EnvelopeIcon className="h-5 w-5" />
+                                          )}
+                                        </div>
+                                        <div className="text-left">
+                                          <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                                            Email Status
+                                          </h3>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            {currentUser?.isEmailVerified
+                                              ? "Your account is verified"
+                                              : "Please verify your email address"}
+                                          </p>
+                                        </div>
                                       </div>
-                                      <div className="text-left">
-                                        <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                                          Email Status
-                                        </h3>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                          {currentUser?.isEmailVerified
-                                            ? "Your account is verified"
-                                            : "Please verify your email address"}
-                                        </p>
-                                      </div>
+                                      {!currentUser?.isEmailVerified && (
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              const res =
+                                                await resendVerification().unwrap();
+                                              toast.success(
+                                                res.message ||
+                                                  "Verification email sent!",
+                                              );
+                                            } catch (error: any) {
+                                              toast.error(
+                                                error?.data?.message ||
+                                                  "Failed to resend email",
+                                              );
+                                            }
+                                          }}
+                                          disabled={isResending}
+                                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors disabled:opacity-50"
+                                        >
+                                          {isResending
+                                            ? "Sending..."
+                                            : "Resend"}
+                                        </button>
+                                      )}
                                     </div>
-                                    {!currentUser?.isEmailVerified && (
-                                      <button
-                                        onClick={async () => {
-                                          try {
-                                            const res =
-                                              await resendVerification().unwrap();
-                                            toast.success(
-                                              res.message ||
-                                                "Verification email sent!",
-                                            );
-                                          } catch (error: any) {
-                                            toast.error(
-                                              error?.data?.message ||
-                                                "Failed to resend email",
-                                            );
-                                          }
-                                        }}
-                                        disabled={isResending}
-                                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors disabled:opacity-50"
-                                      >
-                                        {isResending ? "Sending..." : "Resend"}
-                                      </button>
-                                    )}
+
+                                    <button
+                                      onClick={() =>
+                                        setActiveSubTab("password")
+                                      }
+                                      className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all group"
+                                    >
+                                      <div className="flex items-center gap-4">
+                                        <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
+                                          <LockClosedIcon className="h-5 w-5" />
+                                        </div>
+                                        <div className="text-left">
+                                          <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                                            Change Password
+                                          </h3>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Update your account security
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <ChevronRightIcon className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+
+                                    <button
+                                      onClick={handleLogout}
+                                      className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700/50 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all group text-red-600"
+                                    >
+                                      <div className="flex items-center gap-4">
+                                        <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                                          <PowerIcon className="h-5 w-5" />
+                                        </div>
+                                        <div className="text-left">
+                                          <h3 className="text-sm font-bold">
+                                            Sign Out
+                                          </h3>
+                                          <p className="text-xs text-red-500/70">
+                                            Log out of your current session
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <ChevronRightIcon className="h-5 w-5 text-red-400 group-hover:translate-x-1 transition-transform" />
+                                    </button>
                                   </div>
-
-                                  <button
-                                    onClick={() => setActiveSubTab("password")}
-                                    className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all group"
-                                  >
-                                    <div className="flex items-center gap-4">
-                                      <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg text-indigo-600 dark:text-indigo-400">
-                                        <LockClosedIcon className="h-5 w-5" />
-                                      </div>
-                                      <div className="text-left">
-                                        <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                                          Change Password
-                                        </h3>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                          Update your account security
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <ChevronRightIcon className="h-5 w-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                                  </button>
-
-                                  <button
-                                    onClick={onLogout}
-                                    className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700/50 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all group text-red-600"
-                                  >
-                                    <div className="flex items-center gap-4">
-                                      <div className="p-2.5 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                                        <PowerIcon className="h-5 w-5" />
-                                      </div>
-                                      <div className="text-left">
-                                        <h3 className="text-sm font-bold">
-                                          Sign Out
-                                        </h3>
-                                        <p className="text-xs text-red-500/70">
-                                          Log out of your current session
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <ChevronRightIcon className="h-5 w-5 text-red-400 group-hover:translate-x-1 transition-transform" />
-                                  </button>
-                                </div>
-                              </motion.div>
+                                </motion.div>
+                              </Fragment>
                             ) : (
                               <motion.div
                                 key="password-form"
@@ -583,7 +602,7 @@ export const Settings: React.FC<{
                                                     ? "text"
                                                     : "password"
                                                 }
-                                                className="block w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 transition-all dark:text-white"
+                                                className="w-full rounded-md border border-gray-200 dark:border-gray-300/20  bg-gray-50 dark:bg-gray-800 p-3 pr-10 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-all focus:outline-none"
                                               />
                                               <button
                                                 type="button"
@@ -618,7 +637,7 @@ export const Settings: React.FC<{
                                               isChangingPassword
                                             }
                                             className={classNames(
-                                              "w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white transition-all",
+                                              "w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white transition-all",
                                               !dirty ||
                                                 !isValid ||
                                                 isChangingPassword
@@ -657,6 +676,6 @@ export const Settings: React.FC<{
           </div>
         </div>
       </Dialog>
-    </>
+    </Fragment>
   );
 };

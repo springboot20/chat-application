@@ -55,7 +55,7 @@ const navLinks = [
 type SideNavigationProps = {
   setActiveTab: React.Dispatch<React.SetStateAction<Tab>>;
   activeTab: Tab;
-  onLogout?: () => void;
+  onLogout?: () => Promise<void>;
 };
 
 type Tab = "status" | "chat_messages" | "settings";

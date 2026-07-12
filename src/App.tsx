@@ -1,4 +1,4 @@
-// import { useCallback, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { Login } from "./pages/login/Login";
 import { Register } from "./pages/signup/Register";
@@ -6,55 +6,55 @@ import { Forgot } from "./pages/forgot-password/Forgot";
 import { PrivateRoute } from "./routes/PrivateRoute";
 import { PublicRoute } from "./routes/PublicRoutes";
 import { OtpForm } from "./pages/otp-code-form/OtpForm";
-// import { useDispatch } from "react-redux";
-// import { indexDBStorage, DBStorageKeys } from "./utils";
-// import { hydrateChatState } from "./features/chats/chat.reducer";
+import { useDispatch } from "react-redux";
+import { indexDBStorage, DBStorageKeys } from "./utils";
+import { hydrateChatState } from "./features/chats/chat.reducer";
 import { ChatLayout } from "./layouts/ChatLayout";
 import { ChatRoom } from "./pages/Chat/ChatRoom";
 import { ChatIndex } from "./pages/Chat/ChatIndex";
-// import { useAppSelector } from "./redux/redux.hooks";
+import { useAppSelector } from "./redux/redux.hooks";
 
 function App() {
-  // const dispatch = useDispatch();
-  // const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
-  // const hydrate = useCallback(async () => {
-  //   try {
-  //     const chatsEntry = await indexDBStorage.get(
-  //       DBStorageKeys.Chats,
-  //       "all_chats",
-  //     );
-  //     const messagesEntry = await indexDBStorage.get(
-  //       DBStorageKeys.ChatMessages,
-  //       "all_messages",
-  //     );
-  //     const unreadEntry = await indexDBStorage.get(
-  //       DBStorageKeys.UnreadMessages,
-  //       "all_unread",
-  //     );
-  //     const usersEntry = await indexDBStorage.get(
-  //       DBStorageKeys.Users,
-  //       "all_users",
-  //     );
+  const hydrate = useCallback(async () => {
+    try {
+      const chatsEntry = await indexDBStorage.get(
+        DBStorageKeys.Chats,
+        "all_chats",
+      );
+      const messagesEntry = await indexDBStorage.get(
+        DBStorageKeys.ChatMessages,
+        "all_messages",
+      );
+      const unreadEntry = await indexDBStorage.get(
+        DBStorageKeys.UnreadMessages,
+        "all_unread",
+      );
+      const usersEntry = await indexDBStorage.get(
+        DBStorageKeys.Users,
+        "all_users",
+      );
 
-  //     dispatch(
-  //       hydrateChatState({
-  //         chats: (chatsEntry as any)?.data || [],
-  //         chatMessages: (messagesEntry as any)?.data || {},
-  //         unreadMessages: (unreadEntry as any)?.data || [],
-  //         users: (usersEntry as any)?.data || [],
-  //       }),
-  //     );
-  //   } catch (error) {
-  //     console.error("Failed to hydrate chat state:", error);
-  //   }
-  // }, [dispatch]);
+      dispatch(
+        hydrateChatState({
+          chats: (chatsEntry as any)?.data || [],
+          chatMessages: (messagesEntry as any)?.data || {},
+          unreadMessages: (unreadEntry as any)?.data || [],
+          users: (usersEntry as any)?.data || [],
+        }),
+      );
+    } catch (error) {
+      console.error("Failed to hydrate chat state:", error);
+    }
+  }, [dispatch]);
 
-  // useEffect(() => {
-  //   if (!isAuthenticated) return;
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
-  //   hydrate();
-  // }, [hydrate, isAuthenticated]);
+    hydrate();
+  }, [hydrate, isAuthenticated]);
 
   return (
     <Routes>

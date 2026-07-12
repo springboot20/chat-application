@@ -13,7 +13,7 @@ type NavigationProps = {
   open: boolean;
   close: () => any;
   currentChat: ChatListItemInterface;
-  onLogout?: () => void;
+  onLogout?: () => Promise<void>;
 };
 
 export const Navigation: React.FC<NavigationProps> = ({

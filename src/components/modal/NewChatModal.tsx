@@ -24,6 +24,7 @@ import {
 import { User } from "../../types/auth";
 import { toast } from "react-toastify";
 import { Button } from "../buttons/Buttons";
+import { useConfirm } from "../../context/confirm/ConfirmModal";
 
 type NewChatModalProps = {
   open: boolean;
@@ -212,6 +213,7 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
 
   const hasMore = contactsResponse?.data?.pagination?.hasMore;
 
+  const confirm = useConfirm();
   const handleBlockToggle = async (contactRecordId: string) => {
     if (!contactRecordId) return;
 
@@ -227,22 +229,16 @@ const ExistingContactList = ({ onClose }: { onClose: () => void }) => {
         ? contactRecord?.contact
         : undefined;
 
-    if (
-      !window.confirm(
-        `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${contactInfo?.username}?`,
-      )
-    )
-      return;
-
-    try {
-      const res = await toggleBlock(String(contactInfo?._id)).unwrap();
-      toast.success(
-        res.message ||
-          `User ${isBlocked ? "unblocked" : "blocked"} successfully`,
-      );
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to update block status");
-    }
+    confirm({
+      title: `${isBlocked ? "Unblock" : "Block"} ${contactInfo?.username}?`,
+      onConfirm: async () => {
+        const res = await toggleBlock(String(contactInfo?._id)).unwrap();
+        toast.success(
+          res.message ||
+            `User ${isBlocked ? "unblocked" : "blocked"} successfully`,
+        );
+      },
+    });
   };
 
   const lastUserElementRef = useCallback(
@@ -425,6 +421,7 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
 
   const hasMore = contactsResponse?.data?.pagination?.hasMore;
 
+  const confirm = useConfirm();
   const handleBlockToggle = async (contactRecordId: string) => {
     if (!contactRecordId) return;
 
@@ -440,22 +437,16 @@ const NewGroupList = ({ onClose }: { onClose: () => void }) => {
         ? contactRecord?.contact
         : undefined;
 
-    if (
-      !window.confirm(
-        `Are you sure you want to ${isBlocked ? "unblock" : "block"} ${contactInfo?.username}?`,
-      )
-    )
-      return;
-
-    try {
-      const res = await toggleBlock(String(contactInfo?._id)).unwrap();
-      toast.success(
-        res.message ||
-          `User ${isBlocked ? "unblocked" : "blocked"} successfully`,
-      );
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to update block status");
-    }
+    confirm({
+      title: `${isBlocked ? "Unblock" : "Block"} ${contactInfo?.username}?`,
+      onConfirm: async () => {
+        const res = await toggleBlock(String(contactInfo?._id)).unwrap();
+        toast.success(
+          res.message ||
+            `User ${isBlocked ? "unblocked" : "blocked"} successfully`,
+        );
+      },
+    });
   };
 
   const lastUserElementRef = useCallback(

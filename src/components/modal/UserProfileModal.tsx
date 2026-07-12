@@ -36,12 +36,13 @@ import { classNames } from "../../utils";
 import { useMemo } from "react";
 import { AttachmentItem } from "../shared/AttachmentItem";
 import { InfoRow } from "../shared/InfoRow";
+import { useConfirm } from "../../context/confirm/ConfirmModal";
 
 type UserProfileModalProps = {
   open: boolean;
   onClose: () => void;
   user: Partial<User> | null;
-  onLogout?: () => void;
+  onLogout?: () => Promise<void>;
 };
 
 export const UserProfileModal = ({
@@ -180,9 +181,21 @@ export const UserProfileModal = ({
     }
   };
 
+  const confirm = useConfirm();
+
+  const handleLogout = () => {
+    confirm({
+      title: "Sign out?",
+      label: "You'll need to log in again to access your account.",
+      onConfirm: async () => {
+       await  onLogout?.();
+      },
+    });
+  };
+
   return (
     <Transition.Root show={open} as={Fragment}>
-      <Dialog as="div" className="relative z-[100]" onClose={onClose}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" />
 
         <div className="fixed inset-0 overflow-hidden">
@@ -376,7 +389,7 @@ export const UserProfileModal = ({
                         <InfoRow
                           icon={<PowerIcon className="h-5 w-5" />}
                           label="Log Out"
-                          onClick={onLogout}
+                          onClick={handleLogout}
                           danger
                         />
                       )}
