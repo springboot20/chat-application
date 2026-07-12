@@ -319,7 +319,7 @@ export const MessageTabComponent: React.FC<MessageTabComponentProps> = ({
             </div>
 
             {/* Chat List */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar h-full">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
               {isLoadingChats || isSearching ? (
                 <div className="flex justify-center mt-10">
                   <Loading />
