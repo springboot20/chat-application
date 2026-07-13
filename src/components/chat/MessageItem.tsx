@@ -1,9 +1,14 @@
 import {
   ArrowUturnLeftIcon,
+  Bars3BottomLeftIcon,
   CheckIcon,
   ClockIcon,
+  DocumentIcon,
   LinkIcon,
+  MicrophoneIcon,
   NoSymbolIcon,
+  PhotoIcon,
+  VideoCameraIcon,
 } from "@heroicons/react/24/outline";
 import { ChatMessageInterface } from "../../types/chat";
 import {
@@ -1147,12 +1152,58 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 <p className="text-[11px] font-semibold text-[#06cf9c]">
                   {message.repliedMessage?.sender?.username}
                 </p>
-                <p className="text-xs truncate text-[#111b21] dark:text-[#e9edef]">
-                  {message.repliedMessage?.content || "Attachment"}
-                </p>
+
+                {(() => {
+                  const repliedAttachment =
+                    message.repliedMessage?.attachments?.[0];
+                  if (repliedAttachment) {
+                    return (
+                      <div className="flex items-center gap-1.5 text-[#111b21] dark:text-[#e9edef]">
+                        {repliedAttachment.fileType === "image" && (
+                          <PhotoIcon className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        {repliedAttachment.fileType === "video" && (
+                          <VideoCameraIcon className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        {repliedAttachment.fileType === "voice" && (
+                          <MicrophoneIcon className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        {(repliedAttachment.fileType === "document" ||
+                          !repliedAttachment.fileType) && (
+                          <DocumentIcon className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        <span className="text-xs truncate">
+                          {repliedAttachment.fileType === "image"
+                            ? "Photo"
+                            : repliedAttachment.fileType === "video"
+                              ? "Video"
+                              : repliedAttachment.fileType === "voice"
+                                ? "Voice message"
+                                : repliedAttachment.fileName || "Document"}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  if (message.repliedMessage?.contentType === "polling") {
+                    return (
+                      <div className="flex items-center gap-1.5 text-[#111b21] dark:text-[#e9edef]">
+                        <Bars3BottomLeftIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="text-xs truncate">
+                          Poll: {message.repliedMessage.polling?.questionTitle}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <p className="text-xs truncate text-[#111b21] dark:text-[#e9edef]">
+                      {message.repliedMessage?.content || "Message"}
+                    </p>
+                  );
+                })()}
               </div>
             )}
-
             {/* Media Grid / Attachments */}
             {renderMediaGrid()}
 

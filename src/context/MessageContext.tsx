@@ -119,7 +119,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const { currentChat, unreadMessages } = useAppSelector(
+  const { currentChat, unreadMessages, chatMessages } = useAppSelector(
     (state: RootState) => state.chat,
   );
   const { user: currentUser } = useAppSelector(
@@ -622,6 +622,10 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
       (files || [])?.map(async (file) => await fileToBase64(file)),
     );
 
+    const messageToReplyDetails = chatMessages?.[currentChat?._id]?.find(
+      (message: ChatMessageInterface) => message._id === messageToReply,
+    );
+
     // Add optimistic UI update with "queued" status
     const tempMessage = {
       _id: tempId,
@@ -630,6 +634,8 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
       chat: chat._id,
       attachments: convertedFiles,
       linkPreviewUrl,
+      replyId: messageToReply,
+      repliedMessage: messageToReplyDetails,
       status: "queued", // Custom status
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -648,6 +654,7 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
           content: processedMessage.content,
           attachments: files || undefined,
           mentions: processedMessage.mentions,
+          replyId: messageToReply,
         });
 
         toast.info(
@@ -701,10 +708,12 @@ export const MessageProvider: React.FC<{ children: ReactNode }> = ({
     processMentionsContent,
     message,
     attachmentFiles.files,
+    chatMessages,
+    currentChat?._id,
+    messageToReply,
     dispatch,
     isOnline,
     sendMessage,
-    messageToReply,
     scrollToBottom,
   ]);
 

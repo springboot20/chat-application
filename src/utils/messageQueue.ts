@@ -11,7 +11,7 @@ export interface SerializedFile {
 interface QueuedMessage {
   id: string;
   chatId: string;
-  content: string;
+  content?: string;
   attachments?: Attachment[];
   mentions?: any[];
   polling?: Record<string, any>;
@@ -23,7 +23,7 @@ interface QueuedMessage {
 
 interface QueuedMessageInput {
   chatId: string;
-  content: string;
+  content?: string;
   attachments?: File[];
   mentions?: any[];
   polling?: Record<string, any>;

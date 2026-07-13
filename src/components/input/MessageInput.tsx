@@ -111,6 +111,7 @@ const MessageInput = ({
   const { user } = useAppSelector((state) => state.auth);
   const [previewDismissed, setPreviewDismissed] = useState(false);
   const { sendMessage, fileProgress, overallProgress } = useSendMessage();
+  const { chatMessages } = useAppSelector((state) => state.chat);
 
   const { preview } = useLinkPreview(message);
 
@@ -162,11 +163,18 @@ const MessageInput = ({
       type: "audio/webm;codecs=opus",
     });
 
+    const messageToReplyDetails = chatMessages?.[currentChat._id]?.find(
+      (message: ChatMessageInterface) => message._id === messageToReply,
+    );
+
     const optimisticMessage = {
       _id: tempId,
-      content: "",
-      sender: user!,
+      sender: user,
       chat: currentChat._id,
+      ...(messageToReply && {
+        replyId: messageToReply,
+        repliedMessage: messageToReplyDetails,
+      }),
       attachments: [
         {
           url: localAudioUrl,
@@ -195,8 +203,8 @@ const MessageInput = ({
       if (!isOnline) {
         await messageQueue.add({
           chatId: currentChat._id,
-          content: "",
           attachments: [voiceFile],
+          ...(messageToReply && { replyId: messageToReply }),
           mentions: [],
         });
 
@@ -214,6 +222,7 @@ const MessageInput = ({
 
       const response = await sendMessage({
         chatId: currentChat._id,
+        ...(messageToReply && { messageId: messageToReply }),
         data: {
           content: "",
           attachments: [voiceFile],

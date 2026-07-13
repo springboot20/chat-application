@@ -1,15 +1,15 @@
-import { Dialog, Switch } from '@headlessui/react';
+import { Dialog, Switch } from "@headlessui/react";
 import {
   PlusIcon,
   TrashIcon,
   XMarkIcon,
   Bars2Icon,
   PaperAirplaneIcon,
-} from '@heroicons/react/24/outline';
-import { Field, FieldArray, Form, Formik } from 'formik';
-import { nanoid } from 'nanoid';
-import { motion } from 'framer-motion';
-import * as yup from 'yup';
+} from "@heroicons/react/24/outline";
+import { Field, FieldArray, Form, Formik } from "formik";
+import { nanoid } from "nanoid";
+import { motion } from "framer-motion";
+import * as yup from "yup";
 
 import {
   DndContext,
@@ -19,7 +19,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 
 import {
   arrayMove,
@@ -27,17 +27,21 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { useCreatePollingVoteMessageMutation } from '../../features/chats/chat.slice';
-import { classNames } from '../../utils';
-import { useAppDispatch, useAppSelector } from '../../redux/redux.hooks';
-import { RootState } from '../../app/store';
-import { useNetwork } from '../../hooks/useNetwork';
-import { onMessageReceived, replaceOptimisticMessage } from '../../features/chats/chat.reducer';
-import { ChatMessageInterface } from '../../types/chat';
-import { messageQueue } from '../../utils/messageQueue';
-import { toast } from 'react-toastify';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useCreatePollingVoteMessageMutation } from "../../features/chats/chat.slice";
+import { classNames } from "../../utils";
+import { useAppDispatch, useAppSelector } from "../../redux/redux.hooks";
+import { RootState } from "../../app/store";
+import { useNetwork } from "../../hooks/useNetwork";
+import {
+  onMessageReceived,
+  replaceOptimisticMessage,
+} from "../../features/chats/chat.reducer";
+import { ChatMessageInterface } from "../../types/chat";
+import { messageQueue } from "../../utils/messageQueue";
+import { toast } from "react-toastify";
+import { useMessage } from "../../hooks/useMessage";
 
 interface PollingFormState {
   questionTitle: string;
@@ -49,40 +53,47 @@ interface PollingFormState {
 }
 
 const initialFormState: PollingFormState = {
-  questionTitle: '',
+  questionTitle: "",
   allowMultipleAnswer: false,
   options: [
-    { id: nanoid(), optionValue: '' },
-    { id: nanoid(), optionValue: '' },
+    { id: nanoid(), optionValue: "" },
+    { id: nanoid(), optionValue: "" },
   ],
 };
 
 const optionSchema = yup.object().shape({
   optionValue: yup
     .string()
-    .required('Options text is required')
-    .min(5, 'Option must be at least 5 characters')
-    .max(500, 'Option must not exceed 500 characters'),
+    .required("Options text is required")
+    .min(5, "Option must be at least 5 characters")
+    .max(500, "Option must not exceed 500 characters"),
 });
 
 const pollingSchema = yup.object().shape({
   questionTitle: yup
     .string()
-    .required('Polling title is required')
-    .min(3, 'Polling title must be at least 3 characters')
-    .max(200, 'Polling title must not exceed 200 characters'),
+    .required("Polling title is required")
+    .min(3, "Polling title must be at least 3 characters")
+    .max(200, "Polling title must not exceed 200 characters"),
 
   allowMultipleAnswer: yup.boolean().nullable(),
 
   options: yup
     .array()
     .of(optionSchema)
-    .min(2, 'At least one polling option is required')
-    .required('Polling option are required'),
+    .min(2, "At least one polling option is required")
+    .required("Polling option are required"),
 });
 
 const SortableOption = ({ id, index, removeOption, optionsLength }: any) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id,
   });
 
@@ -91,42 +102,46 @@ const SortableOption = ({ id, index, removeOption, optionsLength }: any) => {
     transition,
     zIndex: isDragging ? 10 : 1,
     opacity: isDragging ? 0.5 : 1,
-    position: 'relative' as const,
+    position: "relative" as const,
   };
 
   return (
-    <div ref={setNodeRef} style={style} className='space-y-1'>
+    <div ref={setNodeRef} style={style} className="space-y-1">
       <Field name={`options.${index}.optionValue`}>
         {({ field, meta }: any) => (
           <>
-            <div className='flex items-center gap-x-2'>
+            <div className="flex items-center gap-x-2">
               {/* Drag Handle */}
               <button
-                type='button'
+                type="button"
                 {...attributes}
                 {...listeners}
-                className='cursor-grab active:cursor-grabbing text-gray-400 hover:text-indigo-500'>
-                <Bars2Icon className='size-5' />
+                className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-indigo-500"
+              >
+                <Bars2Icon className="size-5" />
               </button>
 
               <input
-                type='text'
+                type="text"
                 {...field}
                 placeholder={`Option ${index + 1}`}
-                className='flex-1 w-full rounded-lg border-0 bg-gray-100 dark:bg-gray-800 p-3 text-sm text-gray-900 dark:text-white placeholder-gray-500 transition-all focus:ring-2 focus:ring-indigo-500'
+                className="flex-1 w-full rounded-lg border-0 bg-gray-100 dark:bg-gray-800 p-3 text-sm text-gray-900 dark:text-white placeholder-gray-500 transition-all focus:ring-2 focus:ring-indigo-500"
               />
 
               {optionsLength > 2 && (
                 <button
-                  type='button'
+                  type="button"
                   onClick={() => removeOption(index)}
-                  className='flex items-center justify-center p-2 rounded-full bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400'>
-                  <TrashIcon className='size-4' strokeWidth={2} />
+                  className="flex items-center justify-center p-2 rounded-full bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
+                >
+                  <TrashIcon className="size-4" strokeWidth={2} />
                 </button>
               )}
             </div>
             {meta.touched && meta.error && (
-              <small className='text-xs text-red-500 ml-7 block'>{meta.error}</small>
+              <small className="text-xs text-red-500 ml-7 block">
+                {meta.error}
+              </small>
             )}
           </>
         )}
@@ -139,10 +154,14 @@ export const PollingMessageModal: React.FC<{
   open: boolean;
   close: () => void;
 }> = ({ open, close }) => {
-  const { currentChat } = useAppSelector((state: RootState) => state.chat);
+  const { currentChat, chatMessages } = useAppSelector(
+    (state: RootState) => state.chat,
+  );
   const user = useAppSelector((state: RootState) => state.auth.user);
-  const [createPollingVoteMessage, { isLoading }] = useCreatePollingVoteMessageMutation();
+  const [createPollingVoteMessage, { isLoading }] =
+    useCreatePollingVoteMessageMutation();
   const { isOnline: hasInternet } = useNetwork();
+  const { messageToReply, handleSetCloseReply, showReply } = useMessage();
 
   const dispatch = useAppDispatch();
 
@@ -155,19 +174,22 @@ export const PollingMessageModal: React.FC<{
   );
 
   return (
-    <Dialog open={open} onClose={close} className='relative z-[60]'>
-      <Dialog.Backdrop className='fixed inset-0 z-50 bg-gray-500/75 dark:bg-black/70 transition-opacity' />
+    <Dialog open={open} onClose={close} className="relative z-[60]">
+      <Dialog.Backdrop className="fixed inset-0 z-50 bg-gray-500/75 dark:bg-black/70 transition-opacity" />
 
-      <div className='fixed inset-0 w-screen overflow-y-auto'>
-        <div className='flex min-h-full items-center justify-center p-4'>
-          <Dialog.Panel className='flex w-full max-w-xl transform bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transition-all'>
-            <div className='relative w-full'>
-              <div className='flex items-center justify-between w-full h-16 px-6 border-b dark:border-gray-800'>
-                <Dialog.Title className='text-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent'>
+      <div className="fixed inset-0 w-screen overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-4">
+          <Dialog.Panel className="flex w-full max-w-xl transform bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl transition-all">
+            <div className="relative w-full">
+              <div className="flex items-center justify-between w-full h-16 px-6 border-b dark:border-gray-800">
+                <Dialog.Title className="text-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
                   Create Polling
                 </Dialog.Title>
-                <button onClick={close} className='text-gray-400 hover:text-gray-600'>
-                  <XMarkIcon className='size-6' />
+                <button
+                  onClick={close}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="size-6" />
                 </button>
               </div>
 
@@ -177,13 +199,22 @@ export const PollingMessageModal: React.FC<{
                 onSubmit={async (values) => {
                   const tempId = `temp-${Date.now()}`;
 
+                  const messageToReplyDetails = chatMessages?.[
+                    currentChat._id
+                  ]?.find(
+                    (message: ChatMessageInterface) =>
+                      message._id === messageToReply,
+                  );
+
                   const tempMessage = {
                     _id: tempId,
-                    content: '',
                     sender: user!,
                     chat: currentChat._id,
-                    contentType: 'polling',
-                    attachments: [],
+                    contentType: "polling",
+                    ...(messageToReply && {
+                      replyId: messageToReply,
+                      repliedMessage: messageToReplyDetails,
+                    }),
                     polling: {
                       questionTitle: values.questionTitle,
                       options: values.options.map((opt) => ({
@@ -192,22 +223,23 @@ export const PollingMessageModal: React.FC<{
                       })),
                       allowMultipleAnswer: values.allowMultipleAnswer,
                     },
-                    status: 'queued',
+                    status: "queued",
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                   };
 
                   dispatch(
-                    onMessageReceived({ data: tempMessage as unknown as ChatMessageInterface }),
+                    onMessageReceived({
+                      data: tempMessage as unknown as ChatMessageInterface,
+                    }),
                   );
+
                   try {
                     if (!hasInternet) {
                       await messageQueue.add({
                         chatId: currentChat._id,
-                        content: '',
-                        attachments: [],
-                        mentions: [],
-                        contentType: 'polling',
+                        contentType: "polling",
+                        ...(messageToReply && { replyId: messageToReply }),
                         polling: {
                           questionTitle: values.questionTitle,
                           options: values.options.map((opt) => ({
@@ -218,19 +250,24 @@ export const PollingMessageModal: React.FC<{
                         },
                       });
 
-                      toast.info('Offline. Message queued.');
-
+                      toast.info("Offline. Message queued.");
+                      if (messageToReply && showReply) handleSetCloseReply();
                       return;
                     }
 
                     const response = await createPollingVoteMessage({
                       chatId: currentChat?._id,
+                      ...(messageToReply && {
+                        messageToReply,
+                      }),
                       questionTitle: values.questionTitle,
                       options: values.options.map((opt) => ({
                         optionValue: opt.optionValue,
                       })),
                       allowMultipleAnswer: values.allowMultipleAnswer,
                     }).unwrap();
+
+                    if (messageToReply && showReply) handleSetCloseReply();
 
                     if (response.data) {
                       dispatch(
@@ -243,21 +280,22 @@ export const PollingMessageModal: React.FC<{
                       close(); // Close modal on success
                     }
                   } catch (error) {
-                    console.error('Failed to create poll', error);
+                    console.error("Failed to create poll", error);
                   }
-                }}>
+                }}
+              >
                 {({ values, setFieldValue, isSubmitting, dirty, isValid }) => {
                   // const canSendPollingVote = Object.values(errors).length > 0;
                   console.log(dirty);
 
                   return (
                     <Form>
-                      <div className='flex items-center justify-between p-4 border-b dark:border-gray-800'>
+                      <div className="flex items-center justify-between p-4 border-b dark:border-gray-800">
                         <div>
-                          <h4 className='text-sm font-medium text-gray-900 dark:text-white'>
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                             Multiple answers
                           </h4>
-                          <p className='text-xs text-gray-500'>
+                          <p className="text-xs text-gray-500">
                             Allow voters to select more than one option
                           </p>
                         </div>
@@ -265,37 +303,40 @@ export const PollingMessageModal: React.FC<{
                         <Switch
                           checked={values.allowMultipleAnswer}
                           onChange={(checked: boolean) =>
-                            setFieldValue('allowMultipleAnswer', checked)
+                            setFieldValue("allowMultipleAnswer", checked)
                           }
                           className={`${
                             values.allowMultipleAnswer
-                              ? 'bg-indigo-600'
-                              : 'bg-gray-200 dark:bg-gray-700'
-                          } relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2`}>
+                              ? "bg-indigo-600"
+                              : "bg-gray-200 dark:bg-gray-700"
+                          } relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2`}
+                        >
                           <span
-                            aria-hidden='true'
+                            aria-hidden="true"
                             className={`${
-                              values.allowMultipleAnswer ? 'translate-x-5' : 'translate-x-0'
+                              values.allowMultipleAnswer
+                                ? "translate-x-5"
+                                : "translate-x-0"
                             } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
                           />
                         </Switch>
                       </div>
-                      <div className='p-6'>
+                      <div className="p-6">
                         {/* Question Title Field... (Keep your existing title code) */}
-                        <div className='mb-6'>
-                          <label className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 inline-block'>
+                        <div className="mb-6">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 inline-block">
                             Question Title
                           </label>
                           <Field
-                            name='questionTitle'
-                            className='w-full rounded-lg border-0 bg-gray-100 dark:bg-gray-800 p-3 text-sm text-gray-900 dark:text-white'
+                            name="questionTitle"
+                            className="w-full rounded-lg border-0 bg-gray-100 dark:bg-gray-800 p-3 text-sm text-gray-900 dark:text-white"
                           />
                         </div>
 
-                        <FieldArray name='options'>
+                        <FieldArray name="options">
                           {({ remove }) => (
-                            <div className='mt-4'>
-                              <label className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 inline-block'>
+                            <div className="mt-4">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 inline-block">
                                 Options (Drag to reorder)
                               </label>
 
@@ -312,37 +353,48 @@ export const PollingMessageModal: React.FC<{
                                       (opt) => opt.id === over.id,
                                     );
 
-                                    const newOrder = arrayMove(values.options, oldIndex, newIndex);
-                                    setFieldValue('options', newOrder);
+                                    const newOrder = arrayMove(
+                                      values.options,
+                                      oldIndex,
+                                      newIndex,
+                                    );
+                                    setFieldValue("options", newOrder);
                                   }
-                                }}>
+                                }}
+                              >
                                 <SortableContext
-                                  items={values.options.map((opt) => String(opt.id))}
-                                  strategy={verticalListSortingStrategy}>
-                                  <div className='space-y-3'>
-                                    {values.options.map((opt: any, index: number) => (
-                                      <SortableOption
-                                        key={opt.id}
-                                        index={index}
-                                        id={opt.id}
-                                        removeOption={remove}
-                                        optionsLength={values.options.length}
-                                      />
-                                    ))}
+                                  items={values.options.map((opt) =>
+                                    String(opt.id),
+                                  )}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  <div className="space-y-3">
+                                    {values.options.map(
+                                      (opt: any, index: number) => (
+                                        <SortableOption
+                                          key={opt.id}
+                                          index={index}
+                                          id={opt.id}
+                                          removeOption={remove}
+                                          optionsLength={values.options.length}
+                                        />
+                                      ),
+                                    )}
                                   </div>
                                 </SortableContext>
                               </DndContext>
 
                               <button
-                                type='button'
-                                className='flex items-center gap-x-2 text-sm px-4 py-2 rounded-lg bg-indigo-600 text-white mt-6 hover:bg-indigo-700 transition-colors ml-auto'
+                                type="button"
+                                className="flex items-center gap-x-2 text-sm px-4 py-2 rounded-lg bg-indigo-600 text-white mt-6 hover:bg-indigo-700 transition-colors ml-auto"
                                 onClick={() =>
-                                  setFieldValue('options', [
+                                  setFieldValue("options", [
                                     ...values.options,
-                                    { id: nanoid(), optionValue: '' },
+                                    { id: nanoid(), optionValue: "" },
                                   ])
-                                }>
-                                <PlusIcon className='size-4' />
+                                }
+                              >
+                                <PlusIcon className="size-4" />
                                 <span>Add Option</span>
                               </button>
                             </div>
@@ -350,28 +402,37 @@ export const PollingMessageModal: React.FC<{
                         </FieldArray>
 
                         <motion.button
-                          key='send-button'
-                          title='Send message'
-                          type='submit'
+                          key="send-button"
+                          title="Send message"
+                          type="submit"
                           disabled={!dirty || !isValid || isLoading}
                           transition={{
                             duration: 0.2,
                             ease: [0.4, 0, 0.2, 1],
                           }}
                           className={classNames(
-                            'p-3 rounded-full transition-colors duration-200 shadow-lg flex items-center space-x-3 justify-center',
+                            "p-3 rounded-full transition-colors duration-200 shadow-lg flex items-center space-x-3 justify-center",
                             dirty && isValid && !isLoading
-                              ? 'bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed',
+                              ? "bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white"
+                              : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed",
                           )}
-                          whileHover={dirty && isValid && !isLoading ? { scale: 1.05 } : {}}
-                          whileTap={dirty && isValid && !isLoading ? { scale: 0.95 } : {}}>
+                          whileHover={
+                            dirty && isValid && !isLoading
+                              ? { scale: 1.05 }
+                              : {}
+                          }
+                          whileTap={
+                            dirty && isValid && !isLoading
+                              ? { scale: 0.95 }
+                              : {}
+                          }
+                        >
                           {isLoading || isSubmitting ? (
-                            <span className='size-4 rounded-full animate-spin border-t border-white' />
+                            <span className="size-4 rounded-full animate-spin border-t border-white" />
                           ) : (
                             <>
                               <span>Create Polling</span>
-                              <PaperAirplaneIcon className='h-5 w-5' />
+                              <PaperAirplaneIcon className="h-5 w-5" />
                             </>
                           )}
                         </motion.button>

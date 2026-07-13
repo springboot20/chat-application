@@ -16,6 +16,7 @@ interface GroupChatInterface {
 
 interface PollingMutation {
   chatId: string;
+  messageToReply?: string;
   questionTitle: string;
   options: Array<{
     optionValue: string;
@@ -120,10 +121,21 @@ export const ChatApiSlice = ApiService.injectEndpoints({
     }),
 
     createPollingVoteMessage: builder.mutation<Response, PollingMutation>({
-      query: ({ allowMultipleAnswer, options, questionTitle, chatId }) => {
+      query: ({
+        allowMultipleAnswer,
+        options,
+        questionTitle,
+        chatId,
+        messageToReply,
+      }) => {
         return {
           url: `/chat-app/messages/${chatId}/polling-vote`,
-          body: { allowMultipleAnswer, options, questionTitle },
+          body: {
+            allowMultipleAnswer,
+            options,
+            questionTitle,
+            messageId: messageToReply,
+          },
           method: "POST",
         };
       },

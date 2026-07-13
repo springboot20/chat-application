@@ -1,10 +1,10 @@
 // hooks/useMessageQueue.ts
-import { useCallback, useEffect } from 'react';
-import { messageQueue } from '../utils/messageQueue';
-import { useNetwork } from './useNetwork';
-import { toast } from 'react-toastify';
-import { useChat } from './useChat';
-import { useSendMessage } from './useSendMessage';
+import { useCallback, useEffect } from "react";
+import { messageQueue } from "../utils/messageQueue";
+import { useNetwork } from "./useNetwork";
+import { toast } from "react-toastify";
+import { useChat } from "./useChat";
+import { useSendMessage } from "./useSendMessage";
 
 export const useMessageQueue = () => {
   const { isOnline } = useNetwork();
@@ -15,7 +15,9 @@ export const useMessageQueue = () => {
   const processQueue = useCallback(async () => {
     if (!isOnline) return;
 
-    const queuedMessages = await messageQueue.getAllForChatWithFiles(currentChat?._id);
+    const queuedMessages = await messageQueue.getAllForChatWithFiles(
+      currentChat?._id,
+    );
 
     if (queuedMessages.length === 0) return;
 
@@ -34,28 +36,28 @@ export const useMessageQueue = () => {
         // Remove from queue on success
         messageQueue.remove(queuedMsg.id);
       } catch (error) {
-        console.error(`❌ Failed to send queued message: ${queuedMsg.id}`, error);
+        console.error(
+          `❌ Failed to send queued message: ${queuedMsg.id}`,
+          error,
+        );
         // Keep in queue to retry later
       }
     }
 
     const remaining = await messageQueue.getAll();
     if (remaining.length === 0) {
-      toast.success('All queued messages sent!');
+      toast.success("All queued messages sent!");
     } else {
-      toast.warning(`${remaining.length} message(s) failed to send. Will retry.`);
+      toast.warning(
+        `${remaining.length} message(s) failed to send. Will retry.`,
+      );
     }
   }, [currentChat?._id, isOnline, sendMessage]);
 
   // Auto-process queue when coming online
   useEffect(() => {
     if (isOnline) {
-      // Small delay to ensure socket is ready
-      const timer = setTimeout(() => {
-        processQueue();
-      }, 1000);
-
-      return () => clearTimeout(timer);
+      processQueue();
     }
   }, [isOnline, processQueue]);
 
