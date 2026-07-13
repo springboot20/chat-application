@@ -168,7 +168,7 @@ export const SelectModalInput: React.FC<{
                                 : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
                             )}
                           >
-                            {opt?.label[0]}
+                            {opt?.label?.[0]}
                           </div>
                           <span
                             className={classNames(
