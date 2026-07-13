@@ -1267,7 +1267,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                               </p>
                             )}
                             <div className="flex items-center gap-1.5 mt-2">
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between w-full shrink-0">
                                 <div className="flex items-center gap-x-2">
                                   <LinkIcon className="size-4 text-gray-400 dark:text-white" />
                                   <span className="text-xs text-[#667781] dark:text-white truncate tracking-wide">
