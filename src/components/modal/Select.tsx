@@ -137,11 +137,11 @@ export const SelectModalInput: React.FC<{
           ) : filteredOptions?.length > 0 ? (
             filteredOptions?.map((opt, index) => {
               const isLast = index === filteredOptions.length - 1;
-              const isContact = opt.isContact || false;
+              const isContact = opt?.isContact || false;
 
               return (
                 <Combobox.Option
-                  key={opt.value}
+                  key={opt?.value}
                   value={opt}
                   className={({ active }) =>
                     classNames(
@@ -168,7 +168,7 @@ export const SelectModalInput: React.FC<{
                                 : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
                             )}
                           >
-                            {opt.label[0]}
+                            {opt?.label[0]}
                           </div>
                           <span
                             className={classNames(
@@ -178,7 +178,7 @@ export const SelectModalInput: React.FC<{
                                 : "font-medium text-gray-700 dark:text-gray-300",
                             )}
                           >
-                            {opt.label}
+                            {opt?.label}
                           </span>
                         </div>
 
@@ -194,7 +194,7 @@ export const SelectModalInput: React.FC<{
                         {showAddToContact && !isContact && onAddToContact && (
                           <button
                             type="button"
-                            onClick={(e) => handleAddToContact(e, opt.value)}
+                            onClick={(e) => handleAddToContact(e, opt?.value)}
                             className="py-1.5 px-2.5 border border-violet-200 dark:border-transparent rounded-full bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-all group flex items-center gap-x-2"
                             title="Add to contacts"
                           >
@@ -214,11 +214,11 @@ export const SelectModalInput: React.FC<{
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                onToggleBlockContact(opt.value);
+                                onToggleBlockContact(opt?.value);
                               }}
                               className={classNames(
                                 "inline-flex justify-center items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset transition-colors",
-                                opt.isBlocked
+                                opt?.isBlocked
                                   ? "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-900"
                                   : "bg-white text-red-600 ring-red-200 hover:bg-red-50 dark:bg-transparent dark:text-red-400 dark:ring-red-900 dark:hover:bg-red-900/10",
                               )}
